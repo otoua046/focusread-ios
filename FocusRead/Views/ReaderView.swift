@@ -9,6 +9,8 @@ struct ReaderView: View {
     @AppStorage(TypographySettingsKey.fontWeight) private var fontWeight: String = ReaderFontWeight.regular.rawValue
     @AppStorage(TypographySettingsKey.isItalic) private var isItalic: Bool = false
     @AppStorage(TypographySettingsKey.textColor) private var textColor: String = ReaderTextColor.primary.rawValue
+    @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
 
     @State private var verticalDragStartWPM: Int?
     @State private var showingTypographySettings = false
@@ -44,6 +46,15 @@ struct ReaderView: View {
         .animation(.smooth(duration: 0.18), value: viewModel.currentWord)
         .sheet(isPresented: $showingTypographySettings) {
             TypographySettingsView()
+        }
+        .onAppear {
+            syncBehaviorSettings()
+        }
+        .onChange(of: punctuationPausesEnabled) {
+            syncBehaviorSettings()
+        }
+        .onChange(of: longWordDelayMode) {
+            syncBehaviorSettings()
         }
         .onDisappear {
             viewModel.cleanup()
@@ -139,6 +150,13 @@ struct ReaderView: View {
             isItalic: isItalic,
             textColor: ReaderTextColor(rawValue: textColor) ?? .primary
         )
+    }
+
+    private func syncBehaviorSettings() {
+        viewModel.updateBehaviorSettings(ReaderBehaviorSettings(
+            punctuationPausesEnabled: punctuationPausesEnabled,
+            longWordDelayMode: LongWordDelayMode(rawValue: longWordDelayMode) ?? .moderate
+        ))
     }
 
     private var tapGesture: some Gesture {

@@ -7,6 +7,7 @@ final class ReaderViewModel: ObservableObject {
     @Published private(set) var session: ReadingSession
     private let engine: RSVPReadingEngine
     private let haptics = UIImpactFeedbackGenerator(style: .light)
+    private var behaviorSettings: ReaderBehaviorSettings
 
     @Published var isPlaying = false
     @Published var controlsVisible = true
@@ -14,6 +15,7 @@ final class ReaderViewModel: ObservableObject {
     init(session: ReadingSession, engine: RSVPReadingEngine = RSVPReadingEngine()) {
         self.session = session
         self.engine = engine
+        self.behaviorSettings = Self.storedBehaviorSettings()
         haptics.prepare()
     }
 
@@ -52,6 +54,9 @@ final class ReaderViewModel: ObservableObject {
             await engine.start(
                 sessionProvider: { [weak self] in
                     self?.session ?? ReadingSession(tokens: [])
+                },
+                behaviorProvider: { [weak self] in
+                    self?.behaviorSettings ?? .default
                 },
                 advance: { [weak self] in
                     guard let self else { return false }
@@ -112,6 +117,10 @@ final class ReaderViewModel: ObservableObject {
         controlsVisible = true
     }
 
+    func updateBehaviorSettings(_ settings: ReaderBehaviorSettings) {
+        behaviorSettings = settings
+    }
+
     func cleanup() {
         Task { await engine.stop() }
     }
@@ -138,5 +147,16 @@ final class ReaderViewModel: ObservableObject {
         }
         haptics.impactOccurred(intensity: intensity)
         haptics.prepare()
+    }
+
+    private static func storedBehaviorSettings() -> ReaderBehaviorSettings {
+        let defaults = UserDefaults.standard
+        let punctuationPauses = defaults.object(forKey: ReaderBehaviorSettingsKey.punctuationPausesEnabled) as? Bool ?? true
+        let rawLongWordMode = defaults.string(forKey: ReaderBehaviorSettingsKey.longWordDelayMode) ?? LongWordDelayMode.moderate.rawValue
+
+        return ReaderBehaviorSettings(
+            punctuationPausesEnabled: punctuationPauses,
+            longWordDelayMode: LongWordDelayMode(rawValue: rawLongWordMode) ?? .moderate
+        )
     }
 }

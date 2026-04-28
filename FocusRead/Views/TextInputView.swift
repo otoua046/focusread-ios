@@ -4,6 +4,8 @@ import UIKit
 struct TextInputView: View {
     @ObservedObject var viewModel: InputViewModel
     let onStart: () -> Void
+    let onStartImportedDocument: (ImportedDocument) -> Void
+    @StateObject private var documentImportViewModel = DocumentImportViewModel()
     @State private var showingTypographySettings = false
     @FocusState private var isEditorFocused: Bool
 
@@ -57,6 +59,18 @@ struct TextInputView: View {
             }
             .sheet(isPresented: $showingTypographySettings) {
                 TypographySettingsView()
+            }
+            .sheet(isPresented: $documentImportViewModel.isImportSheetPresented) {
+                DocumentImportView(viewModel: documentImportViewModel) { document in
+                    documentImportViewModel.dismissImport()
+                    onStartImportedDocument(document)
+                }
+            }
+            .fileImporter(
+                isPresented: $documentImportViewModel.isFileImporterPresented,
+                allowedContentTypes: DocumentPickerService.allowedContentTypes
+            ) { result in
+                documentImportViewModel.handleFileImporterResult(result)
             }
         }
     }
@@ -160,6 +174,22 @@ struct TextInputView: View {
                 }
             } label: {
                 Label("Use Sample Text", systemImage: "text.quote")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(AppTheme.primaryText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(AppTheme.controlBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(AppTheme.border, lineWidth: 1)
+                    }
+            }
+
+            Button {
+                isEditorFocused = false
+                documentImportViewModel.presentFilePicker()
+            } label: {
+                Label("Import File", systemImage: "doc.badge.plus")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)

@@ -12,6 +12,8 @@ struct TypographySettingsView: View {
     @AppStorage(TypographySettingsKey.appearance) private var appearance: String = AppAppearance.system.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
     @AppStorage(ReaderBehaviorSettingsKey.hapticsEnabled) private var hapticsEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
 
     var body: some View {
         NavigationStack {
@@ -143,9 +145,29 @@ struct TypographySettingsView: View {
 
                         Divider().foregroundStyle(AppTheme.border)
 
-                        settingsInfoRow(title: "Punctuation pauses", value: "Enabled")
+                        Toggle("Punctuation Pauses", isOn: $punctuationPausesEnabled)
+                            .tint(AppTheme.primaryText)
+
                         Divider().foregroundStyle(AppTheme.border)
-                        settingsInfoRow(title: "Long-word delay", value: "Adaptive")
+
+                        settingsRow("Long Word Delay") {
+                            Picker("Long Word Delay", selection: $longWordDelayMode) {
+                                ForEach(LongWordDelayMode.allCases) { mode in
+                                    Text(mode.title).tag(mode.rawValue)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
+                        Divider().foregroundStyle(AppTheme.border)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Punctuation pauses add natural reading pauses after commas, periods, and paragraph breaks.")
+                            Text("Long-word delay gives extra time for longer words, names, and numbers.")
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                     }
 
                     settingsSection("About / Reset") {
@@ -225,6 +247,8 @@ struct TypographySettingsView: View {
         appearance = AppAppearance.system.rawValue
         defaultWPM = ReadingSession.defaultWPM
         hapticsEnabled = true
+        punctuationPausesEnabled = true
+        longWordDelayMode = LongWordDelayMode.moderate.rawValue
         resetTypography()
     }
 
@@ -256,16 +280,6 @@ struct TypographySettingsView: View {
                 .foregroundStyle(AppTheme.primaryText)
             content()
         }
-    }
-
-    private func settingsInfoRow(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(value)
-                .foregroundStyle(AppTheme.secondaryText)
-        }
-        .font(.subheadline)
     }
 
     private func settingsActionRow(title: String, systemImage: String, action: @escaping () -> Void) -> some View {

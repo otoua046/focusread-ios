@@ -17,6 +17,9 @@ struct RootView: View {
             } else {
                 TextInputView(viewModel: inputViewModel) {
                     startReading()
+                } onStartImportedDocument: { document in
+                    inputViewModel.text = document.text
+                    startReading()
                 }
                 .transition(.opacity)
             }
