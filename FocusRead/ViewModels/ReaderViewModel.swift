@@ -98,6 +98,8 @@ final class ReaderViewModel: ObservableObject {
                 return "\(session.document.fileName ?? session.document.title): \(structureTitle)"
             }
             return "\(session.document.fileName ?? session.document.title): Page \(currentSectionNumber)"
+        case .image:
+            return "\(session.document.fileName ?? session.document.title): Page \(currentSectionNumber)"
         case .epub:
             let location = currentEPUBLocationTitle ?? "\(currentEPUBSectionKind) \(currentSectionNumber)"
             return "\(session.document.fileName ?? session.document.title): \(location)"
@@ -106,7 +108,7 @@ final class ReaderViewModel: ObservableObject {
 
     var sectionNavigationAvailable: Bool {
         switch session.document.sourceType {
-        case .pdf, .epub:
+        case .pdf, .epub, .image:
             return session.document.sections.count > 1
         case .pastedText, .txt:
             return false
@@ -557,7 +559,7 @@ final class ReaderViewModel: ObservableObject {
 
     private var currentSectionNumber: Int {
         switch session.document.sourceType {
-        case .pdf:
+        case .pdf, .image:
             currentSectionMetadata?.pageNumber ?? session.currentToken?.sourcePageNumber ?? 1
         case .epub:
             currentSectionMetadata?.chapterNumber ?? session.currentToken?.sourceChapterNumber ?? 1

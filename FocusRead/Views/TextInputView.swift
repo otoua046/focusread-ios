@@ -107,6 +107,22 @@ struct TextInputView: View {
                     onStartImportedDocument(document)
                 }
             }
+            .sheet(isPresented: $documentImportViewModel.isCameraCapturePresented) {
+                CameraCaptureView(
+                    onCapture: documentImportViewModel.handleCameraCapture,
+                    onCancel: documentImportViewModel.handleImagePickerCancellation,
+                    onFailure: documentImportViewModel.handleImagePickerFailure
+                )
+                .ignoresSafeArea()
+            }
+            .sheet(isPresented: $documentImportViewModel.isPhotoLibraryPickerPresented) {
+                PhotoLibraryPicker(
+                    selectionLimit: 0,
+                    onImagesPicked: documentImportViewModel.handlePhotoLibrarySelection,
+                    onCancel: documentImportViewModel.handleImagePickerCancellation,
+                    onFailure: documentImportViewModel.handleImagePickerFailure
+                )
+            }
             .fileImporter(
                 isPresented: $documentImportViewModel.isFileImporterPresented,
                 allowedContentTypes: DocumentPickerService.allowedContentTypes
@@ -220,11 +236,17 @@ struct TextInputView: View {
             .disabled(!viewModel.canStart)
             .opacity(viewModel.canStart ? 1 : 0.45)
 
-            Button {
-                isEditorFocused = false
-                documentImportViewModel.presentFilePicker()
+            Menu {
+                ForEach(ImportSource.allCases) { source in
+                    Button {
+                        isEditorFocused = false
+                        documentImportViewModel.presentImportSource(source)
+                    } label: {
+                        Label(source.title, systemImage: source.systemImageName)
+                    }
+                }
             } label: {
-                Label("Import File", systemImage: "doc.badge.plus")
+                Label("Import", systemImage: "square.and.arrow.down")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)
@@ -235,7 +257,6 @@ struct TextInputView: View {
                             .strokeBorder(AppTheme.border, lineWidth: 1)
                     }
             }
-            .buttonStyle(.plain)
         }
     }
 

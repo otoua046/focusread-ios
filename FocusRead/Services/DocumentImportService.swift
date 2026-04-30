@@ -45,13 +45,16 @@ struct DocumentImportService: Sendable {
 actor DocumentImportWorker {
     private let pickerService: DocumentPickerService
     private let importService: DocumentImportService
+    private let imageImportService: ImageOCRImportService
 
     init(
         pickerService: DocumentPickerService = DocumentPickerService(),
-        importService: DocumentImportService = DocumentImportService()
+        importService: DocumentImportService = DocumentImportService(),
+        imageImportService: ImageOCRImportService = ImageOCRImportService()
     ) {
         self.pickerService = pickerService
         self.importService = importService
+        self.imageImportService = imageImportService
     }
 
     func importDocument(
@@ -62,6 +65,22 @@ actor DocumentImportWorker {
         let file = try pickerService.copySecurityScopedFile(from: url)
         return try await importService.extractText(
             from: file,
+            smartCleanupMode: smartCleanupMode,
+            progress: progress
+        )
+    }
+
+    func importImages(
+        _ images: [OCRImagePage],
+        title: String,
+        fileName: String,
+        smartCleanupMode: SmartCleanupMode,
+        progress: @escaping DocumentImportProgressHandler
+    ) async throws -> ImportedDocument {
+        try await imageImportService.importImages(
+            images,
+            title: title,
+            fileName: fileName,
             smartCleanupMode: smartCleanupMode,
             progress: progress
         )

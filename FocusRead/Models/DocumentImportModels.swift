@@ -228,6 +228,7 @@ enum DocumentSourceType: Equatable, Sendable {
     case txt
     case pdf
     case epub
+    case image
 
     var label: String {
         switch self {
@@ -237,6 +238,38 @@ enum DocumentSourceType: Equatable, Sendable {
             "PDF"
         case .epub:
             "EPUB"
+        case .image:
+            "Image OCR"
+        }
+    }
+}
+
+enum ImportSource: String, CaseIterable, Identifiable, Sendable {
+    case files
+    case camera
+    case photoLibrary
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .files:
+            "Files"
+        case .camera:
+            "Camera"
+        case .photoLibrary:
+            "Photo Library"
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .files:
+            "folder"
+        case .camera:
+            "camera"
+        case .photoLibrary:
+            "photo.on.rectangle"
         }
     }
 }
@@ -245,12 +278,25 @@ struct DocumentImportProgress: Equatable, Sendable {
     let message: String
     let completedUnitCount: Int?
     let totalUnitCount: Int?
+    let unitName: String
 
     static let starting = DocumentImportProgress(
         message: "Extracting text...",
         completedUnitCount: nil,
         totalUnitCount: nil
     )
+
+    init(
+        message: String,
+        completedUnitCount: Int?,
+        totalUnitCount: Int?,
+        unitName: String = "pages"
+    ) {
+        self.message = message
+        self.completedUnitCount = completedUnitCount
+        self.totalUnitCount = totalUnitCount
+        self.unitName = unitName
+    }
 
     var fractionCompleted: Double? {
         guard let completedUnitCount,
@@ -269,7 +315,7 @@ struct DocumentImportProgress: Equatable, Sendable {
             return nil
         }
 
-        return "\(completedUnitCount) of \(totalUnitCount) pages"
+        return "\(completedUnitCount) of \(totalUnitCount) \(unitName)"
     }
 }
 
@@ -284,6 +330,9 @@ enum DocumentImportError: LocalizedError, Equatable, Sendable {
     case epubContentsNotFound
     case epubNoReadableText
     case epubExtractionFailed
+    case cameraUnavailable
+    case cameraAccessDenied
+    case imageImportFailed
     case unsupportedFileType(String)
 
     var title: String {
@@ -308,6 +357,12 @@ enum DocumentImportError: LocalizedError, Equatable, Sendable {
             "EPUB Contains No Readable Text"
         case .epubExtractionFailed:
             "EPUB Extraction Failed"
+        case .cameraUnavailable:
+            "Camera Unavailable"
+        case .cameraAccessDenied:
+            "Camera Access Needed"
+        case .imageImportFailed:
+            "Could Not Import Image"
         case .unsupportedFileType:
             "Unsupported File"
         }
@@ -324,7 +379,7 @@ enum DocumentImportError: LocalizedError, Equatable, Sendable {
         case .unreadablePDF:
             "FocusRead could not open this PDF."
         case .noReadableText:
-            "FocusRead could not find readable text in this file."
+            "No readable text found."
         case .ocrFailed:
             "FocusRead could not recognize text from this scanned PDF."
         case .invalidEPUB:
@@ -335,6 +390,12 @@ enum DocumentImportError: LocalizedError, Equatable, Sendable {
             "FocusRead opened the EPUB but did not find readable chapter text."
         case .epubExtractionFailed:
             "FocusRead could not extract text from this EPUB."
+        case .cameraUnavailable:
+            "This device does not have an available camera."
+        case .cameraAccessDenied:
+            "Allow camera access in Settings to scan text with FocusRead."
+        case .imageImportFailed:
+            "FocusRead could not load the selected image."
         case .unsupportedFileType:
             "This file type is not supported yet."
         }

@@ -40,6 +40,9 @@
 		720000000000000000000011 /* HistorySidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000111 /* HistorySidebarView.swift */; };
 		720000000000000000000012 /* WordLookupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000112 /* WordLookupService.swift */; };
 		720000000000000000000013 /* DictionaryLookupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000113 /* DictionaryLookupView.swift */; };
+		720000000000000000000014 /* ImageOCRImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000114 /* ImageOCRImportService.swift */; };
+		720000000000000000000015 /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000115 /* CameraCaptureView.swift */; };
+		720000000000000000000016 /* PhotoLibraryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000116 /* PhotoLibraryPicker.swift */; };
 		730000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 730000000000000000000101 /* ZIPFoundation */; };
 		740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000101 /* EPUBTextExtractorTests.swift */; };
 		740000000000000000000002 /* minimal.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000102 /* minimal.epub */; };
@@ -95,6 +98,9 @@
 		720000000000000000000111 /* HistorySidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistorySidebarView.swift; sourceTree = "<group>"; };
 		720000000000000000000112 /* WordLookupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordLookupService.swift; sourceTree = "<group>"; };
 		720000000000000000000113 /* DictionaryLookupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryLookupView.swift; sourceTree = "<group>"; };
+		720000000000000000000114 /* ImageOCRImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageOCRImportService.swift; sourceTree = "<group>"; };
+		720000000000000000000115 /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
+		720000000000000000000116 /* PhotoLibraryPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryPicker.swift; sourceTree = "<group>"; };
 		740000000000000000000011 /* FocusReadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusReadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		740000000000000000000101 /* EPUBTextExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractorTests.swift; sourceTree = "<group>"; };
 		740000000000000000000102 /* minimal.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = minimal.epub; sourceTree = "<group>"; };
@@ -179,6 +185,7 @@
 				720000000000000000000106 /* OCRTextExtractor.swift */,
 				720000000000000000000107 /* PDFTextExtractor.swift */,
 				720000000000000000000108 /* DocumentImportService.swift */,
+				720000000000000000000114 /* ImageOCRImportService.swift */,
 				72000000000000000000010B /* SmartCleanupService.swift */,
 				72000000000000000000010C /* DocumentStructureAnalyzerService.swift */,
 				72000000000000000000010E /* ReadingHistoryStore.swift */,
@@ -208,6 +215,8 @@
 				710000000000000000000105 /* ReaderControlsView.swift */,
 				71000000000000000000010D /* TypographySettingsView.swift */,
 				72000000000000000000010A /* DocumentImportView.swift */,
+				720000000000000000000115 /* CameraCaptureView.swift */,
+				720000000000000000000116 /* PhotoLibraryPicker.swift */,
 				720000000000000000000111 /* HistorySidebarView.swift */,
 				720000000000000000000113 /* DictionaryLookupView.swift */,
 			);
@@ -383,6 +392,7 @@
 				720000000000000000000006 /* OCRTextExtractor.swift in Sources */,
 				720000000000000000000007 /* PDFTextExtractor.swift in Sources */,
 				720000000000000000000008 /* DocumentImportService.swift in Sources */,
+				720000000000000000000014 /* ImageOCRImportService.swift in Sources */,
 				72000000000000000000000B /* SmartCleanupService.swift in Sources */,
 				72000000000000000000000C /* DocumentStructureAnalyzerService.swift in Sources */,
 				72000000000000000000000E /* ReadingHistoryStore.swift in Sources */,
@@ -391,6 +401,8 @@
 				720000000000000000000012 /* WordLookupService.swift in Sources */,
 				71000000000000000000000D /* TypographySettingsView.swift in Sources */,
 				72000000000000000000000A /* DocumentImportView.swift in Sources */,
+				720000000000000000000015 /* CameraCaptureView.swift in Sources */,
+				720000000000000000000016 /* PhotoLibraryPicker.swift in Sources */,
 				720000000000000000000011 /* HistorySidebarView.swift in Sources */,
 				720000000000000000000013 /* DictionaryLookupView.swift in Sources */,
 				71000000000000000000000E /* AppTheme.swift in Sources */,
@@ -494,6 +506,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = FocusRead;
+				INFOPLIST_KEY_NSCameraUsageDescription = "FocusRead uses the camera to scan text for reading.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -518,6 +531,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = FocusRead;
+				INFOPLIST_KEY_NSCameraUsageDescription = "FocusRead uses the camera to scan text for reading.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
