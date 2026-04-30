@@ -48,6 +48,12 @@ struct ReaderView: View {
         .sheet(isPresented: $showingTypographySettings) {
             TypographySettingsView()
         }
+        .sheet(item: $viewModel.lookupRequest) { request in
+            DictionaryLookupView(term: request.term)
+        }
+        .alert("No definition found.", isPresented: $viewModel.noDefinitionFound) {
+            Button("OK", role: .cancel) {}
+        }
         .onAppear {
             syncBehaviorSettings()
         }
@@ -99,13 +105,23 @@ struct ReaderView: View {
 
             Spacer()
 
-            Button {
-                showingTypographySettings = true
-            } label: {
-                Image(systemName: "gearshape")
+            HStack(spacing: 10) {
+                Button {
+                    viewModel.lookupCurrentWord()
+                } label: {
+                    Image(systemName: "book")
+                }
+                .buttonStyle(.topReaderControl)
+                .accessibilityLabel("Look up current word")
+
+                Button {
+                    showingTypographySettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .buttonStyle(.topReaderControl)
+                .accessibilityLabel("Typography settings")
             }
-            .buttonStyle(.topReaderControl)
-            .accessibilityLabel("Typography settings")
             .zIndex(1)
         }
         .padding(.horizontal, 2)
@@ -129,6 +145,9 @@ struct ReaderView: View {
                     .allowsHitTesting(false)
             }
             .frame(maxWidth: .infinity)
+            .onLongPressGesture {
+                viewModel.lookupCurrentWord()
+            }
 
             ProgressView(value: viewModel.progress)
                 .progressViewStyle(.linear)
