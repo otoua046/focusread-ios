@@ -10,6 +10,7 @@ final class DocumentImportViewModel: ObservableObject {
 
     private let worker: DocumentImportWorker
     private var importTask: Task<Void, Never>?
+    private var activeImportID: UUID?
     private var lastSelectedURL: URL?
 
     init(worker: DocumentImportWorker = DocumentImportWorker()) {
@@ -47,6 +48,7 @@ final class DocumentImportViewModel: ObservableObject {
     func chooseAnotherFile() {
         importTask?.cancel()
         importTask = nil
+        activeImportID = nil
         state = .idle
         isImportSheetPresented = false
 
@@ -59,12 +61,15 @@ final class DocumentImportViewModel: ObservableObject {
     func dismissImport() {
         importTask?.cancel()
         importTask = nil
+        activeImportID = nil
         isImportSheetPresented = false
         state = .idle
     }
 
     private func startImport(from url: URL) {
         importTask?.cancel()
+        let importID = UUID()
+        activeImportID = importID
         state = .loading(.starting)
         isImportSheetPresented = true
         let cleanupMode = SmartCleanupAvailability.effectiveMode(savedRawValue: smartCleanupMode)
@@ -78,19 +83,27 @@ final class DocumentImportViewModel: ObservableObject {
             do {
                 let document = try await worker.importDocument(from: url, smartCleanupMode: cleanupMode) { [weak self] progress in
                     await MainActor.run {
+                        guard self?.activeImportID == importID else { return }
                         self?.state = .loading(progress)
                     }
                 }
 
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, activeImportID == importID else { return }
                 state = .preview(document)
             } catch is CancellationError {
+                guard activeImportID == importID else { return }
                 state = .idle
                 isImportSheetPresented = false
             } catch let error as DocumentImportError {
+                guard activeImportID == importID else { return }
                 state = .failed(error)
             } catch {
+                guard activeImportID == importID else { return }
                 state = .failed(.noReadableText)
+            }
+
+            if activeImportID == importID {
+                importTask = nil
             }
         }
     }

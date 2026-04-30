@@ -350,7 +350,11 @@ final class ReaderViewModel: ObservableObject {
                 .filter { $0.sectionIndices == [sectionIndex] }
                 .sorted { $0.wordRange.lowerBound < $1.wordRange.lowerBound }
 
-            sections[index] = sections[index].withText(sectionChunks.map(\.effectiveText).joined(separator: "\n\n"))
+            let sectionText = sectionChunks
+                .map { $0.effectiveText.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+            sections[index] = sections[index].withText(sectionText)
         }
 
         let updatedDocument = ImportedDocument(
