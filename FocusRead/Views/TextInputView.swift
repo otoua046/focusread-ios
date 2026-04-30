@@ -3,45 +3,91 @@ import UIKit
 
 struct TextInputView: View {
     @ObservedObject var viewModel: InputViewModel
+    @ObservedObject var historyStore: LocalReadingHistoryStore
     let onStart: () -> Void
     let onStartImportedDocument: (ImportedDocument) -> Void
+    let onResumeSavedRead: (SavedRead) -> Void
     @StateObject private var documentImportViewModel = DocumentImportViewModel()
     @State private var showingTypographySettings = false
+    @State private var isHistoryPresented = false
     @FocusState private var isEditorFocused: Bool
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                FocusReadBackground()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        isEditorFocused = false
+            GeometryReader { proxy in
+                let sidebarIsPersistent = proxy.size.width >= 760
+
+                ZStack(alignment: .leading) {
+                    FocusReadBackground()
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            isEditorFocused = false
+                        }
+
+                    if sidebarIsPersistent {
+                        HStack(spacing: 0) {
+                            HistorySidebarView(
+                                store: historyStore,
+                                isPresented: $isHistoryPresented,
+                                isPersistent: sidebarIsPersistent,
+                                onResume: onResumeSavedRead
+                            )
+                            .frame(width: min(320, max(286, proxy.size.width * 0.36)))
+
+                            mainContent
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    } else {
+                        mainContent
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        if isHistoryPresented {
+                            HistorySidebarView(
+                                store: historyStore,
+                                isPresented: $isHistoryPresented,
+                                isPersistent: false,
+                                onResume: onResumeSavedRead
+                            )
+                            .frame(width: min(320, max(286, proxy.size.width * 0.82)))
+                            .transition(.move(edge: .leading).combined(with: .opacity))
+                            .zIndex(2)
+                        }
                     }
 
-                VStack(spacing: 22) {
-                    header
-                    editor
-                    actions
-                    aiCleanupFooter
+                    if isHistoryPresented && !sidebarIsPersistent {
+                        Color.black.opacity(0.16)
+                            .ignoresSafeArea()
+                            .padding(.leading, min(320, max(286, proxy.size.width * 0.82)))
+                            .onTapGesture {
+                                isHistoryPresented = false
+                            }
+                            .transition(.opacity)
+                            .zIndex(1)
+                    }
                 }
-                .padding(.horizontal, 22)
-                .padding(.vertical, 18)
+                .gesture(openHistoryGesture(isEnabled: !sidebarIsPersistent))
+                .animation(.smooth(duration: 0.28), value: isHistoryPresented)
+                .animation(.smooth(duration: 0.28), value: sidebarIsPersistent)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isHistoryPresented.toggle()
+                    } label: {
+                        Image(systemName: "sidebar.left")
+                    }
+                    .buttonStyle(.topReaderControl)
+                    .accessibilityLabel(isHistoryPresented ? "Hide reading history" : "Show reading history")
+                }
+
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingTypographySettings = true
                     } label: {
                         Image(systemName: "gearshape")
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                            .foregroundStyle(AppTheme.controlForeground)
-                            .background(AppTheme.controlBackground, in: Circle())
-                            .overlay {
-                                Circle().strokeBorder(AppTheme.border, lineWidth: 1)
-                            }
                     }
+                    .buttonStyle(.topReaderControl)
                     .accessibilityLabel("Typography settings")
                 }
 
@@ -68,6 +114,17 @@ struct TextInputView: View {
                 documentImportViewModel.handleFileImporterResult(result)
             }
         }
+    }
+
+    private var mainContent: some View {
+        VStack(spacing: 22) {
+            header
+            editor
+            actions
+            aiCleanupFooter
+        }
+        .padding(.horizontal, 22)
+        .padding(.vertical, 18)
     }
 
     private var header: some View {
@@ -178,6 +235,7 @@ struct TextInputView: View {
                             .strokeBorder(AppTheme.border, lineWidth: 1)
                     }
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -198,6 +256,22 @@ struct TextInputView: View {
         if let string = UIPasteboard.general.string, !string.isEmpty {
             viewModel.text = string
         }
+    }
+
+    private func openHistoryGesture(isEnabled: Bool) -> some Gesture {
+        DragGesture(minimumDistance: 28)
+            .onEnded { value in
+                guard isEnabled else { return }
+                if value.startLocation.x < 28,
+                   value.translation.width > 80,
+                   abs(value.translation.height) < 60 {
+                    isHistoryPresented = true
+                } else if isHistoryPresented,
+                          value.translation.width < -80,
+                          abs(value.translation.height) < 70 {
+                    isHistoryPresented = false
+                }
+            }
     }
 }
 

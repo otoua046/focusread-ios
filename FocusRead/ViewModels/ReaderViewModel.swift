@@ -11,9 +11,12 @@ final class ReaderViewModel: ObservableObject {
     private let tokenizer: TextTokenizer
     private let cleanupService: SmartCleanupService
     private let structureAnalyzerService: DocumentStructureAnalyzerService
+    private let readingHistoryStore: ReadingHistoryStore?
     private let haptics = UIImpactFeedbackGenerator(style: .light)
     private var behaviorSettings: ReaderBehaviorSettings
     private var importedDocument: ImportedDocument?
+    private var savedReadID: UUID?
+    private var lastPersistedWordIndex: Int
     private var cleanupChunks: [DocumentCleanupChunk]
     private var structureState: DocumentStructureState = .empty
     private var structureProcessedChunkCount = 0
@@ -30,15 +33,20 @@ final class ReaderViewModel: ObservableObject {
         engine: RSVPReadingEngine = RSVPReadingEngine(),
         tokenizer: TextTokenizer = TextTokenizer(),
         cleanupService: SmartCleanupService = SmartCleanupService(),
-        structureAnalyzerService: DocumentStructureAnalyzerService = DocumentStructureAnalyzerService()
+        structureAnalyzerService: DocumentStructureAnalyzerService = DocumentStructureAnalyzerService(),
+        readingHistoryStore: ReadingHistoryStore? = nil,
+        savedReadID: UUID? = nil
     ) {
         self.session = session
         self.engine = engine
         self.tokenizer = tokenizer
         self.cleanupService = cleanupService
         self.structureAnalyzerService = structureAnalyzerService
+        self.readingHistoryStore = readingHistoryStore
         self.behaviorSettings = Self.storedBehaviorSettings()
         self.importedDocument = importedDocument
+        self.savedReadID = savedReadID
+        self.lastPersistedWordIndex = session.currentIndex
         self.cleanupChunks = importedDocument?.cleanupChunks ?? []
         haptics.prepare()
         startBackgroundAICleanupIfNeeded()
@@ -161,6 +169,7 @@ final class ReaderViewModel: ObservableObject {
         withAnimationStateChange {
             session.rewindWord()
         }
+        persistProgress(force: true)
         triggerHaptic(intensity: 0.45)
     }
 
@@ -169,6 +178,7 @@ final class ReaderViewModel: ObservableObject {
         withAnimationStateChange {
             session.skipWord()
         }
+        persistProgress(force: true)
         triggerHaptic(intensity: 0.35)
     }
 
@@ -177,6 +187,7 @@ final class ReaderViewModel: ObservableObject {
         withAnimationStateChange {
             session.rewindSentence()
         }
+        persistProgress(force: true)
         triggerHaptic(intensity: 0.7)
     }
 
@@ -210,6 +221,7 @@ final class ReaderViewModel: ObservableObject {
         withAnimationStateChange {
             session.currentIndex = targetTokenIndex
         }
+        persistProgress(force: true)
         triggerHaptic(intensity: 0.6)
     }
 
@@ -234,9 +246,28 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func cleanup() {
+        persistProgress(force: true)
         cleanupTask?.cancel()
         cleanupTask = nil
         Task { await engine.stop() }
+    }
+
+    func persistProgress(force: Bool = false) {
+        guard let readingHistoryStore,
+              let savedReadID,
+              var read = readingHistoryStore.read(withID: savedReadID) else {
+            return
+        }
+
+        let movedEnough = abs(session.currentIndex - lastPersistedWordIndex) >= 25
+        guard force || movedEnough || session.isAtEnd else { return }
+
+        read = SavedReadMapper.updating(read, from: session)
+        if let importedDocument {
+            read.sections = SavedReadMapper.savedSections(from: importedDocument)
+        }
+        readingHistoryStore.save(read)
+        lastPersistedWordIndex = session.currentIndex
     }
 
     private func startBackgroundAICleanupIfNeeded() {
@@ -448,10 +479,12 @@ final class ReaderViewModel: ObservableObject {
         if session.isAtEnd {
             isPlaying = false
             controlsVisible = true
+            persistProgress(force: true)
             return false
         }
 
         session.advance()
+        persistProgress()
         return true
     }
 
