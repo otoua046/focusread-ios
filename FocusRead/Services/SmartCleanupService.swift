@@ -246,7 +246,7 @@ struct SmartCleanupService: Sendable {
         let originalByIndex = Dictionary(uniqueKeysWithValues: originalSections.map { ($0.index, $0) })
 
         switch sourceType {
-        case .pdf:
+        case .pdf, .image:
             return pdfCleanupChunks(originalByIndex: originalByIndex, smartSections: smartSections)
         case .epub:
             return smartSections.flatMap { section in
