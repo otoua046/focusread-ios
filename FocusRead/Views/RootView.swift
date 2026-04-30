@@ -17,6 +17,8 @@ struct RootView: View {
             } else {
                 TextInputView(viewModel: inputViewModel) {
                     startReading()
+                } onStartImportedDocument: { document in
+                    startReading(importedDocument: document)
                 }
                 .transition(.opacity)
             }
@@ -27,7 +29,22 @@ struct RootView: View {
     private func startReading() {
         let tokens = tokenizer.tokenize(inputViewModel.text)
         guard !tokens.isEmpty else { return }
-        let session = ReadingSession(tokens: tokens, wordsPerMinute: defaultWPM)
+        let session = ReadingSession(
+            tokens: tokens,
+            document: .pastedText(),
+            wordsPerMinute: defaultWPM
+        )
         readerViewModel = ReaderViewModel(session: session)
+    }
+
+    private func startReading(importedDocument: ImportedDocument) {
+        let tokens = tokenizer.tokenize(importedDocument)
+        guard !tokens.isEmpty else { return }
+        let session = ReadingSession(
+            tokens: tokens,
+            document: ReadingDocument(importedDocument: importedDocument),
+            wordsPerMinute: defaultWPM
+        )
+        readerViewModel = ReaderViewModel(session: session, importedDocument: importedDocument)
     }
 }

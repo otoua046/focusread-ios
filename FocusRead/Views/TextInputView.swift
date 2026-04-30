@@ -4,6 +4,8 @@ import UIKit
 struct TextInputView: View {
     @ObservedObject var viewModel: InputViewModel
     let onStart: () -> Void
+    let onStartImportedDocument: (ImportedDocument) -> Void
+    @StateObject private var documentImportViewModel = DocumentImportViewModel()
     @State private var showingTypographySettings = false
     @FocusState private var isEditorFocused: Bool
 
@@ -20,18 +22,13 @@ struct TextInputView: View {
                     header
                     editor
                     actions
+                    aiCleanupFooter
                 }
                 .padding(.horizontal, 22)
                 .padding(.vertical, 18)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("FocusRead")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(AppTheme.primaryText)
-                }
-
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingTypographySettings = true
@@ -57,6 +54,18 @@ struct TextInputView: View {
             }
             .sheet(isPresented: $showingTypographySettings) {
                 TypographySettingsView()
+            }
+            .sheet(isPresented: $documentImportViewModel.isImportSheetPresented) {
+                DocumentImportView(viewModel: documentImportViewModel) { document in
+                    documentImportViewModel.dismissImport()
+                    onStartImportedDocument(document)
+                }
+            }
+            .fileImporter(
+                isPresented: $documentImportViewModel.isFileImporterPresented,
+                allowedContentTypes: DocumentPickerService.allowedContentTypes
+            ) { result in
+                documentImportViewModel.handleFileImporterResult(result)
             }
         }
     }
@@ -155,11 +164,10 @@ struct TextInputView: View {
             .opacity(viewModel.canStart ? 1 : 0.45)
 
             Button {
-                withAnimation(.smooth) {
-                    viewModel.useSampleText()
-                }
+                isEditorFocused = false
+                documentImportViewModel.presentFilePicker()
             } label: {
-                Label("Use Sample Text", systemImage: "text.quote")
+                Label("Import File", systemImage: "doc.badge.plus")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)
@@ -170,6 +178,19 @@ struct TextInputView: View {
                             .strokeBorder(AppTheme.border, lineWidth: 1)
                     }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var aiCleanupFooter: some View {
+        if SmartCleanupAvailability.isAICleanupAvailable {
+            Text("AI Cleanup available on this device")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(AppTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 2)
+                .padding(.bottom, 4)
         }
     }
 

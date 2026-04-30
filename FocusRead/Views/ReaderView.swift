@@ -9,6 +9,8 @@ struct ReaderView: View {
     @AppStorage(TypographySettingsKey.fontWeight) private var fontWeight: String = ReaderFontWeight.regular.rawValue
     @AppStorage(TypographySettingsKey.isItalic) private var isItalic: Bool = false
     @AppStorage(TypographySettingsKey.textColor) private var textColor: String = ReaderTextColor.primary.rawValue
+    @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
 
     @State private var verticalDragStartWPM: Int?
     @State private var showingTypographySettings = false
@@ -45,6 +47,15 @@ struct ReaderView: View {
         .sheet(isPresented: $showingTypographySettings) {
             TypographySettingsView()
         }
+        .onAppear {
+            syncBehaviorSettings()
+        }
+        .onChange(of: punctuationPausesEnabled) {
+            syncBehaviorSettings()
+        }
+        .onChange(of: longWordDelayMode) {
+            syncBehaviorSettings()
+        }
         .onDisappear {
             viewModel.cleanup()
         }
@@ -73,13 +84,20 @@ struct ReaderView: View {
             Spacer()
 
             VStack(spacing: 3) {
-                Text("\(viewModel.wordsPerMinute) WPM")
+                Text(viewModel.locationIndicatorTitle)
                     .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity)
                 Text(viewModel.progressLabel)
                     .font(.caption2)
                     .foregroundStyle(AppTheme.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
             .monospacedDigit()
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
 
             Spacer()
 
@@ -139,6 +157,13 @@ struct ReaderView: View {
             isItalic: isItalic,
             textColor: ReaderTextColor(rawValue: textColor) ?? .primary
         )
+    }
+
+    private func syncBehaviorSettings() {
+        viewModel.updateBehaviorSettings(ReaderBehaviorSettings(
+            punctuationPausesEnabled: punctuationPausesEnabled,
+            longWordDelayMode: LongWordDelayMode(rawValue: longWordDelayMode) ?? .moderate
+        ))
     }
 
     private var tapGesture: some Gesture {

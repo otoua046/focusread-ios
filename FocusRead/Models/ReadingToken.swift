@@ -11,6 +11,11 @@ struct ReadingToken: Identifiable, Equatable, Sendable {
     let id: Int
     let text: String
     let rawText: String
+    let globalWordIndex: Int
+    let sourcePageNumber: Int?
+    let sourceChapterNumber: Int?
+    let sourceChapterTitle: String?
+    let sourceSectionIndex: Int?
     let pauseKind: PauseKind
     let sentenceIndex: Int
     let containsNumber: Bool

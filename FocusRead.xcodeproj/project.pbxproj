@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -21,7 +21,35 @@
 		71000000000000000000000C /* TypographySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010C /* TypographySettings.swift */; };
 		71000000000000000000000D /* TypographySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010D /* TypographySettingsView.swift */; };
 		71000000000000000000000E /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010F /* AppTheme.swift */; };
-/* End PBXBuildFile section */
+		720000000000000000000001 /* DocumentImportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000101 /* DocumentImportModels.swift */; };
+		720000000000000000000002 /* DocumentTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000102 /* DocumentTextExtractor.swift */; };
+		720000000000000000000003 /* DocumentPickerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000103 /* DocumentPickerService.swift */; };
+		720000000000000000000004 /* TextFileExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000104 /* TextFileExtractor.swift */; };
+		720000000000000000000005 /* EPUBTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000105 /* EPUBTextExtractor.swift */; };
+		720000000000000000000006 /* OCRTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000106 /* OCRTextExtractor.swift */; };
+		720000000000000000000007 /* PDFTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000107 /* PDFTextExtractor.swift */; };
+		720000000000000000000008 /* DocumentImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000108 /* DocumentImportService.swift */; };
+		720000000000000000000009 /* DocumentImportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000109 /* DocumentImportViewModel.swift */; };
+		72000000000000000000000A /* DocumentImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010A /* DocumentImportView.swift */; };
+		72000000000000000000000B /* SmartCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010B /* SmartCleanupService.swift */; };
+		72000000000000000000000C /* DocumentStructureAnalyzerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010C /* DocumentStructureAnalyzerService.swift */; };
+		730000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 730000000000000000000101 /* ZIPFoundation */; };
+		740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000101 /* EPUBTextExtractorTests.swift */; };
+		740000000000000000000002 /* minimal.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000102 /* minimal.epub */; };
+		740000000000000000000003 /* jane-austen_pride-and-prejudice.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000103 /* jane-austen_pride-and-prejudice.epub */; };
+		740000000000000000000004 /* accessible_epub_3.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000104 /* accessible_epub_3.epub */; };
+		740000000000000000000005 /* pg1342-images-3.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000105 /* pg1342-images-3.epub */; };
+	/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		740000000000000000000201 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 710000000000000000000080 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 710000000000000000000070;
+			remoteInfo = FocusRead;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		710000000000000000000011 /* FocusRead.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FocusRead.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -40,33 +68,60 @@
 		71000000000000000000010D /* TypographySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographySettingsView.swift; sourceTree = "<group>"; };
 		71000000000000000000010E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		71000000000000000000010F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		720000000000000000000101 /* DocumentImportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportModels.swift; sourceTree = "<group>"; };
+		720000000000000000000102 /* DocumentTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentTextExtractor.swift; sourceTree = "<group>"; };
+		720000000000000000000103 /* DocumentPickerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPickerService.swift; sourceTree = "<group>"; };
+		720000000000000000000104 /* TextFileExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFileExtractor.swift; sourceTree = "<group>"; };
+		720000000000000000000105 /* EPUBTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractor.swift; sourceTree = "<group>"; };
+		720000000000000000000106 /* OCRTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRTextExtractor.swift; sourceTree = "<group>"; };
+		720000000000000000000107 /* PDFTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFTextExtractor.swift; sourceTree = "<group>"; };
+		720000000000000000000108 /* DocumentImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportService.swift; sourceTree = "<group>"; };
+		720000000000000000000109 /* DocumentImportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportViewModel.swift; sourceTree = "<group>"; };
+		72000000000000000000010A /* DocumentImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportView.swift; sourceTree = "<group>"; };
+		72000000000000000000010B /* SmartCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCleanupService.swift; sourceTree = "<group>"; };
+		72000000000000000000010C /* DocumentStructureAnalyzerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentStructureAnalyzerService.swift; sourceTree = "<group>"; };
+		740000000000000000000011 /* FocusReadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusReadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		740000000000000000000101 /* EPUBTextExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractorTests.swift; sourceTree = "<group>"; };
+		740000000000000000000102 /* minimal.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = minimal.epub; sourceTree = "<group>"; };
+		740000000000000000000103 /* jane-austen_pride-and-prejudice.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = "jane-austen_pride-and-prejudice.epub"; sourceTree = "<group>"; };
+		740000000000000000000104 /* accessible_epub_3.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = accessible_epub_3.epub; sourceTree = "<group>"; };
+		740000000000000000000105 /* pg1342-images-3.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = "pg1342-images-3.epub"; sourceTree = "<group>"; };
+	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		710000000000000000000020 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				730000000000000000000001 /* ZIPFoundation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXFrameworksBuildPhase section */
+		740000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+	/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		710000000000000000000030 = {
 			isa = PBXGroup;
-			children = (
-				710000000000000000000040 /* FocusRead */,
-				710000000000000000000050 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
-		710000000000000000000040 /* FocusRead */ = {
-			isa = PBXGroup;
-			children = (
-				710000000000000000000101 /* FocusReadApp.swift */,
-				710000000000000000000060 /* Models */,
-				710000000000000000000061 /* Services */,
+				children = (
+					710000000000000000000040 /* FocusRead */,
+					740000000000000000000040 /* FocusReadTests */,
+					710000000000000000000050 /* Products */,
+				);
+				sourceTree = "<group>";
+			};
+			710000000000000000000040 /* FocusRead */ = {
+				isa = PBXGroup;
+				children = (
+					710000000000000000000101 /* FocusReadApp.swift */,
+					710000000000000000000060 /* Models */,
+					710000000000000000000061 /* Services */,
 				710000000000000000000062 /* ViewModels */,
 				710000000000000000000064 /* Theme */,
 				710000000000000000000063 /* Views */,
@@ -77,18 +132,20 @@
 		};
 		710000000000000000000050 /* Products */ = {
 			isa = PBXGroup;
-			children = (
-				710000000000000000000011 /* FocusRead.app */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
+				children = (
+					710000000000000000000011 /* FocusRead.app */,
+					740000000000000000000011 /* FocusReadTests.xctest */,
+				);
+				name = Products;
+				sourceTree = "<group>";
+			};
 		710000000000000000000060 /* Models */ = {
 			isa = PBXGroup;
 			children = (
 				710000000000000000000106 /* ReadingToken.swift */,
 				710000000000000000000107 /* ReadingSession.swift */,
 				71000000000000000000010C /* TypographySettings.swift */,
+				720000000000000000000101 /* DocumentImportModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -98,6 +155,15 @@
 			children = (
 				710000000000000000000108 /* TextTokenizer.swift */,
 				710000000000000000000109 /* RSVPReadingEngine.swift */,
+				720000000000000000000102 /* DocumentTextExtractor.swift */,
+				720000000000000000000103 /* DocumentPickerService.swift */,
+				720000000000000000000104 /* TextFileExtractor.swift */,
+				720000000000000000000105 /* EPUBTextExtractor.swift */,
+				720000000000000000000106 /* OCRTextExtractor.swift */,
+				720000000000000000000107 /* PDFTextExtractor.swift */,
+				720000000000000000000108 /* DocumentImportService.swift */,
+				72000000000000000000010B /* SmartCleanupService.swift */,
+				72000000000000000000010C /* DocumentStructureAnalyzerService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -107,6 +173,7 @@
 			children = (
 				71000000000000000000010A /* ReaderViewModel.swift */,
 				71000000000000000000010B /* InputViewModel.swift */,
+				720000000000000000000109 /* DocumentImportViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -119,6 +186,7 @@
 				710000000000000000000104 /* ReaderView.swift */,
 				710000000000000000000105 /* ReaderControlsView.swift */,
 				71000000000000000000010D /* TypographySettingsView.swift */,
+				72000000000000000000010A /* DocumentImportView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -128,10 +196,38 @@
 			children = (
 				71000000000000000000010F /* AppTheme.swift */,
 			);
-			path = Theme;
+				path = Theme;
+				sourceTree = "<group>";
+			};
+		740000000000000000000040 /* FocusReadTests */ = {
+			isa = PBXGroup;
+			children = (
+				740000000000000000000101 /* EPUBTextExtractorTests.swift */,
+				740000000000000000000041 /* Fixtures */,
+			);
+			path = FocusReadTests;
 			sourceTree = "<group>";
 		};
-/* End PBXGroup section */
+		740000000000000000000041 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				740000000000000000000042 /* EPUB */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
+		740000000000000000000042 /* EPUB */ = {
+			isa = PBXGroup;
+			children = (
+				740000000000000000000104 /* accessible_epub_3.epub */,
+				740000000000000000000103 /* jane-austen_pride-and-prejudice.epub */,
+				740000000000000000000102 /* minimal.epub */,
+				740000000000000000000105 /* pg1342-images-3.epub */,
+			);
+			path = EPUB;
+			sourceTree = "<group>";
+		};
+	/* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		710000000000000000000070 /* FocusRead */ = {
@@ -142,16 +238,39 @@
 				710000000000000000000020 /* Frameworks */,
 				710000000000000000000073 /* Resources */,
 			);
+				buildRules = (
+				);
+				dependencies = (
+				);
+				name = FocusRead;
+				packageProductDependencies = (
+					730000000000000000000101 /* ZIPFoundation */,
+			);
+			productName = FocusRead;
+				productReference = 710000000000000000000011 /* FocusRead.app */;
+				productType = "com.apple.product-type.application";
+			};
+		740000000000000000000070 /* FocusReadTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 740000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadTests" */;
+			buildPhases = (
+				740000000000000000000071 /* Sources */,
+				740000000000000000000020 /* Frameworks */,
+				740000000000000000000073 /* Resources */,
+			);
 			buildRules = (
 			);
 			dependencies = (
+				740000000000000000000202 /* PBXTargetDependency */,
 			);
-			name = FocusRead;
-			productName = FocusRead;
-			productReference = 710000000000000000000011 /* FocusRead.app */;
-			productType = "com.apple.product-type.application";
+			name = FocusReadTests;
+			packageProductDependencies = (
+			);
+			productName = FocusReadTests;
+			productReference = 740000000000000000000011 /* FocusReadTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
-/* End PBXNativeTarget section */
+	/* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		710000000000000000000080 /* Project object */ = {
@@ -164,6 +283,10 @@
 					710000000000000000000070 = {
 						CreatedOnToolsVersion = 26.4;
 					};
+					740000000000000000000070 = {
+						CreatedOnToolsVersion = 26.4;
+						TestTargetID = 710000000000000000000070;
+					};
 				};
 			};
 			buildConfigurationList = 710000000000000000000081 /* Build configuration list for PBXProject "FocusRead" */;
@@ -175,13 +298,17 @@
 				Base,
 			);
 			mainGroup = 710000000000000000000030;
+			packageReferences = (
+				730000000000000000000201 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+			);
 			productRefGroup = 710000000000000000000050 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (
-				710000000000000000000070 /* FocusRead */,
-			);
-		};
+				targets = (
+					710000000000000000000070 /* FocusRead */,
+					740000000000000000000070 /* FocusReadTests */,
+				);
+			};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
@@ -192,7 +319,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXResourcesBuildPhase section */
+		740000000000000000000073 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				740000000000000000000004 /* accessible_epub_3.epub in Resources */,
+				740000000000000000000003 /* jane-austen_pride-and-prejudice.epub in Resources */,
+				740000000000000000000002 /* minimal.epub in Resources */,
+				740000000000000000000005 /* pg1342-images-3.epub in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+	/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		710000000000000000000071 /* Sources */ = {
@@ -206,17 +344,45 @@
 				710000000000000000000005 /* ReaderControlsView.swift in Sources */,
 				710000000000000000000006 /* ReadingToken.swift in Sources */,
 				710000000000000000000007 /* ReadingSession.swift in Sources */,
+				720000000000000000000001 /* DocumentImportModels.swift in Sources */,
 				710000000000000000000008 /* TextTokenizer.swift in Sources */,
 				710000000000000000000009 /* RSVPReadingEngine.swift in Sources */,
 				71000000000000000000000A /* ReaderViewModel.swift in Sources */,
 				71000000000000000000000B /* InputViewModel.swift in Sources */,
+				720000000000000000000009 /* DocumentImportViewModel.swift in Sources */,
 				71000000000000000000000C /* TypographySettings.swift in Sources */,
+				720000000000000000000002 /* DocumentTextExtractor.swift in Sources */,
+				720000000000000000000003 /* DocumentPickerService.swift in Sources */,
+				720000000000000000000004 /* TextFileExtractor.swift in Sources */,
+				720000000000000000000005 /* EPUBTextExtractor.swift in Sources */,
+				720000000000000000000006 /* OCRTextExtractor.swift in Sources */,
+				720000000000000000000007 /* PDFTextExtractor.swift in Sources */,
+				720000000000000000000008 /* DocumentImportService.swift in Sources */,
+				72000000000000000000000B /* SmartCleanupService.swift in Sources */,
+				72000000000000000000000C /* DocumentStructureAnalyzerService.swift in Sources */,
 				71000000000000000000000D /* TypographySettingsView.swift in Sources */,
+				72000000000000000000000A /* DocumentImportView.swift in Sources */,
 				71000000000000000000000E /* AppTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXSourcesBuildPhase section */
+		740000000000000000000071 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+	/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		740000000000000000000202 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 710000000000000000000070 /* FocusRead */;
+			targetProxy = 740000000000000000000201 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		710000000000000000000082 /* Debug */ = {
@@ -335,7 +501,43 @@
 			};
 			name = Release;
 		};
-/* End XCBuildConfiguration section */
+		740000000000000000000091 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WFH2TCAAQ8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FocusRead.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FocusRead";
+			};
+			name = Debug;
+		};
+		740000000000000000000092 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WFH2TCAAQ8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FocusRead.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FocusRead";
+			};
+			name = Release;
+		};
+	/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 		710000000000000000000081 /* Build configuration list for PBXProject "FocusRead" */ = {
@@ -356,7 +558,35 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-/* End XCConfigurationList section */
+		740000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				740000000000000000000091 /* Debug */,
+				740000000000000000000092 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+	/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		730000000000000000000201 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.20;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		730000000000000000000101 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 730000000000000000000201 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 710000000000000000000080 /* Project object */;
 }

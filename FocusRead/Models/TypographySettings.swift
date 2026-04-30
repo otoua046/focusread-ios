@@ -12,6 +12,95 @@ enum TypographySettingsKey {
 enum ReaderBehaviorSettingsKey {
     static let defaultWPM = "defaultWPM"
     static let hapticsEnabled = "hapticsEnabled"
+    static let punctuationPausesEnabled = "punctuationPausesEnabled"
+    static let longWordDelayMode = "longWordDelayMode"
+    static let smartCleanupMode = "smartCleanupMode"
+}
+
+struct ReaderBehaviorSettings: Equatable, Sendable {
+    var punctuationPausesEnabled: Bool
+    var longWordDelayMode: LongWordDelayMode
+
+    static let `default` = ReaderBehaviorSettings(
+        punctuationPausesEnabled: true,
+        longWordDelayMode: .moderate
+    )
+}
+
+enum LongWordDelayMode: String, CaseIterable, Identifiable, Sendable {
+    case off
+    case moderate
+    case strong
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .off: return "Off"
+        case .moderate: return "Moderate"
+        case .strong: return "Strong"
+        }
+    }
+
+    func extraMultiplier(for token: ReadingToken) -> Double {
+        switch self {
+        case .off:
+            return 0
+        case .moderate:
+            return moderateExtraMultiplier(for: token)
+        case .strong:
+            return strongExtraMultiplier(for: token)
+        }
+    }
+
+    private func moderateExtraMultiplier(for token: ReadingToken) -> Double {
+        var multiplier = 0.0
+        if token.isLongWord {
+            multiplier += min(Double(token.text.count - 8) * 0.05, 0.35)
+        }
+        if token.containsNumber {
+            multiplier += 0.25
+        }
+        return multiplier
+    }
+
+    private func strongExtraMultiplier(for token: ReadingToken) -> Double {
+        var multiplier = 0.0
+        if token.isLongWord {
+            multiplier += min(Double(token.text.count - 8) * 0.08, 0.55)
+        }
+        if token.containsNumber {
+            multiplier += 0.4
+        }
+        return multiplier
+    }
+}
+
+enum SmartCleanupMode: String, CaseIterable, Identifiable, Sendable {
+    case off
+    case smart
+    case ai
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .off: return "Off"
+        case .smart: return "Smart Cleanup"
+        case .ai: return "AI Cleanup"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .off:
+            return "No cleanup applied."
+        case .smart:
+            return "Uses local rules to clean spacing, line breaks, headers, and OCR artifacts."
+        case .ai:
+            return "Uses on-device intelligence when available to clean imported text while preserving meaning."
+        }
+    }
 }
 
 enum AppAppearance: String, CaseIterable, Identifiable, Sendable {

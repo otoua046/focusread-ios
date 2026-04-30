@@ -1,0 +1,123 @@
+import Foundation
+import SwiftUI
+
+@MainActor
+final class DocumentImportViewModel: ObservableObject {
+    @Published var isFileImporterPresented = false
+    @Published var isImportSheetPresented = false
+    @Published private(set) var state: DocumentImportState = .idle
+    @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
+
+    private let worker: DocumentImportWorker
+    private var importTask: Task<Void, Never>?
+    private var activeImportID: UUID?
+    private var lastSelectedURL: URL?
+
+    init(worker: DocumentImportWorker = DocumentImportWorker()) {
+        self.worker = worker
+    }
+
+    var canRetry: Bool {
+        lastSelectedURL != nil
+    }
+
+    func presentFilePicker() {
+        isFileImporterPresented = true
+    }
+
+    func handleFileImporterResult(_ result: Result<URL, Error>) {
+        switch result {
+        case .success(let url):
+            lastSelectedURL = url
+            startImport(from: url)
+        case .failure(let error):
+            guard !Self.isUserCancellation(error) else {
+                return
+            }
+
+            state = .failed(.fileCopyFailed)
+            isImportSheetPresented = true
+        }
+    }
+
+    func retryImport() {
+        guard let lastSelectedURL else { return }
+        startImport(from: lastSelectedURL)
+    }
+
+    func chooseAnotherFile() {
+        importTask?.cancel()
+        importTask = nil
+        activeImportID = nil
+        state = .idle
+        isImportSheetPresented = false
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            isFileImporterPresented = true
+        }
+    }
+
+    func dismissImport() {
+        importTask?.cancel()
+        importTask = nil
+        activeImportID = nil
+        isImportSheetPresented = false
+        state = .idle
+    }
+
+    private func startImport(from url: URL) {
+        importTask?.cancel()
+        let importID = UUID()
+        activeImportID = importID
+        state = .loading(.starting)
+        isImportSheetPresented = true
+        let cleanupMode = SmartCleanupAvailability.effectiveMode(savedRawValue: smartCleanupMode)
+        if smartCleanupMode != cleanupMode.rawValue {
+            smartCleanupMode = cleanupMode.rawValue
+        }
+
+        importTask = Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                let document = try await worker.importDocument(from: url, smartCleanupMode: cleanupMode) { [weak self] progress in
+                    await MainActor.run {
+                        guard self?.activeImportID == importID else { return }
+                        self?.state = .loading(progress)
+                    }
+                }
+
+                guard !Task.isCancelled, activeImportID == importID else { return }
+                state = .preview(document)
+            } catch is CancellationError {
+                guard activeImportID == importID else { return }
+                state = .idle
+                isImportSheetPresented = false
+            } catch let error as DocumentImportError {
+                guard activeImportID == importID else { return }
+                state = .failed(error)
+            } catch {
+                guard activeImportID == importID else { return }
+                state = .failed(.noReadableText)
+            }
+
+            if activeImportID == importID {
+                importTask = nil
+            }
+        }
+    }
+
+    private static func isUserCancellation(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == NSCocoaErrorDomain &&
+            nsError.code == CocoaError.Code.userCancelled.rawValue
+    }
+}
+
+enum DocumentImportState: Equatable {
+    case idle
+    case loading(DocumentImportProgress)
+    case preview(ImportedDocument)
+    case failed(DocumentImportError)
+}

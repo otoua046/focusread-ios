@@ -3,7 +3,7 @@ import Combine
 
 @MainActor
 final class InputViewModel: ObservableObject {
-    @Published var text = ""
+    @Published var text = sampleText
 
     var canStart: Bool {
         !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
