@@ -6,19 +6,23 @@ struct ReaderControlsView: View {
     var body: some View {
         VStack(spacing: 18) {
             HStack(spacing: 14) {
-                Button {
-                    viewModel.rewindSentence()
-                } label: {
-                    Image(systemName: "backward.end.fill")
-                        .foregroundStyle(AppTheme.controlForeground)
-                        .frame(width: 44, height: 44)
-                        .background(AppTheme.controlBackground, in: Circle())
-                        .overlay {
-                            Circle().strokeBorder(AppTheme.border, lineWidth: 1)
-                        }
+                if viewModel.sectionNavigationAvailable {
+                    Button {
+                        viewModel.jumpToPreviousSection()
+                    } label: {
+                        Image(systemName: "chevron.left.to.line")
+                            .foregroundStyle(AppTheme.controlForeground)
+                            .frame(width: 44, height: 44)
+                            .background(AppTheme.controlBackground, in: Circle())
+                            .overlay {
+                                Circle().strokeBorder(AppTheme.border, lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!viewModel.canJumpToPreviousSection)
+                    .opacity(viewModel.canJumpToPreviousSection ? 1 : 0.35)
+                    .accessibilityLabel("Previous section")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Rewind sentence")
 
                 Button {
                     viewModel.rewindWord()
@@ -60,19 +64,23 @@ struct ReaderControlsView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Skip word")
 
-                Button {
-                    viewModel.adjustSpeed(by: 25)
-                } label: {
-                    Image(systemName: "plus")
-                        .foregroundStyle(AppTheme.controlForeground)
-                        .frame(width: 44, height: 44)
-                        .background(AppTheme.controlBackground, in: Circle())
-                        .overlay {
-                            Circle().strokeBorder(AppTheme.border, lineWidth: 1)
-                        }
+                if viewModel.sectionNavigationAvailable {
+                    Button {
+                        viewModel.jumpToNextSection()
+                    } label: {
+                        Image(systemName: "chevron.right.to.line")
+                            .foregroundStyle(AppTheme.controlForeground)
+                            .frame(width: 44, height: 44)
+                            .background(AppTheme.controlBackground, in: Circle())
+                            .overlay {
+                                Circle().strokeBorder(AppTheme.border, lineWidth: 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!viewModel.canJumpToNextSection)
+                    .opacity(viewModel.canJumpToNextSection ? 1 : 0.35)
+                    .accessibilityLabel("Next section")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Increase speed")
             }
             .font(.headline)
 

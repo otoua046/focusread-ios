@@ -22,7 +22,7 @@ struct PDFTextExtractor: DocumentTextExtractor {
             throw DocumentImportError.noReadableText
         }
 
-        var pageTexts: [String] = []
+        var sections: [ImportedDocumentSection] = []
 
         for pageIndex in 0..<pageCount {
             try Task.checkCancellation()
@@ -33,13 +33,22 @@ struct PDFTextExtractor: DocumentTextExtractor {
                 totalUnitCount: pageCount
             ))
 
-            guard let page = document.page(at: pageIndex),
-                  let pageText = page.string?.focusReadNormalizedDocumentText,
-                  !pageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-                continue
+            let pageText: String
+            if let page = document.page(at: pageIndex),
+               let extractedText = page.string?.focusReadNormalizedDocumentText {
+                pageText = extractedText
+            } else {
+                pageText = ""
             }
 
-            pageTexts.append(pageText)
+            sections.append(ImportedDocumentSection(
+                index: pageIndex,
+                text: pageText,
+                pageNumber: pageIndex + 1,
+                chapterNumber: nil,
+                chapterTitle: nil,
+                wordRange: nil
+            ))
         }
 
         await progress(DocumentImportProgress(
@@ -48,12 +57,12 @@ struct PDFTextExtractor: DocumentTextExtractor {
             totalUnitCount: pageCount
         ))
 
-        let text = pageTexts.joined(separator: "\n\n").focusReadNormalizedDocumentText
+        let text = sections.map(\.text).joined(separator: "\n\n").focusReadNormalizedDocumentText
         if text.trimmingCharacters(in: .whitespacesAndNewlines).count >= minimumNativeTextCharacterCount {
             return ImportedDocument(
                 fileName: file.fileName,
-                text: text,
-                sourceType: .pdfText
+                sourceType: .pdf,
+                sections: sections
             )
         }
 

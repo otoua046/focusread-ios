@@ -4,7 +4,6 @@ import UIKit
 import Vision
 
 struct OCRTextExtractor: DocumentTextExtractor {
-    private let maximumPages = 20
     private let maximumRenderedPixelDimension: CGFloat = 1_800
 
     func extractText(
@@ -20,16 +19,24 @@ struct OCRTextExtractor: DocumentTextExtractor {
             throw DocumentImportError.noReadableText
         }
 
-        let pagesToProcess = min(pageCount, maximumPages)
-        var pageTexts: [String] = []
+        var sections = (0..<pageCount).map { pageIndex in
+            ImportedDocumentSection(
+                index: pageIndex,
+                text: "",
+                pageNumber: pageIndex + 1,
+                chapterNumber: nil,
+                chapterTitle: nil,
+                wordRange: nil
+            )
+        }
 
-        for pageIndex in 0..<pagesToProcess {
+        for pageIndex in 0..<pageCount {
             try Task.checkCancellation()
 
             await progress(DocumentImportProgress(
                 message: "Recognizing scanned PDF text...",
                 completedUnitCount: pageIndex,
-                totalUnitCount: pagesToProcess
+                totalUnitCount: pageCount
             ))
 
             guard let page = document.page(at: pageIndex),
@@ -39,25 +46,32 @@ struct OCRTextExtractor: DocumentTextExtractor {
 
             let lines = try recognizeText(in: cgImage)
             if !lines.isEmpty {
-                pageTexts.append(lines.joined(separator: "\n"))
+                sections[pageIndex] = ImportedDocumentSection(
+                    index: pageIndex,
+                    text: lines.joined(separator: "\n").focusReadNormalizedDocumentText,
+                    pageNumber: pageIndex + 1,
+                    chapterNumber: nil,
+                    chapterTitle: nil,
+                    wordRange: nil
+                )
             }
         }
 
         await progress(DocumentImportProgress(
             message: "Recognizing scanned PDF text...",
-            completedUnitCount: pagesToProcess,
-            totalUnitCount: pagesToProcess
+            completedUnitCount: pageCount,
+            totalUnitCount: pageCount
         ))
 
-        let text = pageTexts.joined(separator: "\n\n").focusReadNormalizedDocumentText
+        let text = sections.map(\.text).joined(separator: "\n\n").focusReadNormalizedDocumentText
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw DocumentImportError.ocrFailed
         }
 
         return ImportedDocument(
             fileName: file.fileName,
-            text: text,
-            sourceType: .pdfOCR
+            sourceType: .pdf,
+            sections: sections
         )
     }
 

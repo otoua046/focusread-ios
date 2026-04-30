@@ -5,18 +5,43 @@ import UIKit
 @MainActor
 final class ReaderViewModel: ObservableObject {
     @Published private(set) var session: ReadingSession
+    @Published private(set) var cleanupProgress: AICleanupProgress?
+    @Published private(set) var structureProgress: DocumentStructureProgress?
     private let engine: RSVPReadingEngine
+    private let tokenizer: TextTokenizer
+    private let cleanupService: SmartCleanupService
+    private let structureAnalyzerService: DocumentStructureAnalyzerService
     private let haptics = UIImpactFeedbackGenerator(style: .light)
     private var behaviorSettings: ReaderBehaviorSettings
+    private var importedDocument: ImportedDocument?
+    private var cleanupChunks: [DocumentCleanupChunk]
+    private var structureState: DocumentStructureState = .empty
+    private var structureProcessedChunkCount = 0
+    private var structureSummariesByChunkID: [UUID: ChunkStructureSummary] = [:]
+    private var structureLabelBySectionIndex: [Int: String] = [:]
+    private var cleanupTask: Task<Void, Never>?
 
     @Published var isPlaying = false
     @Published var controlsVisible = true
 
-    init(session: ReadingSession, engine: RSVPReadingEngine = RSVPReadingEngine()) {
+    init(
+        session: ReadingSession,
+        importedDocument: ImportedDocument? = nil,
+        engine: RSVPReadingEngine = RSVPReadingEngine(),
+        tokenizer: TextTokenizer = TextTokenizer(),
+        cleanupService: SmartCleanupService = SmartCleanupService(),
+        structureAnalyzerService: DocumentStructureAnalyzerService = DocumentStructureAnalyzerService()
+    ) {
         self.session = session
         self.engine = engine
+        self.tokenizer = tokenizer
+        self.cleanupService = cleanupService
+        self.structureAnalyzerService = structureAnalyzerService
         self.behaviorSettings = Self.storedBehaviorSettings()
+        self.importedDocument = importedDocument
+        self.cleanupChunks = importedDocument?.cleanupChunks ?? []
         haptics.prepare()
+        startBackgroundAICleanupIfNeeded()
     }
 
     var currentWord: String {
@@ -33,8 +58,62 @@ final class ReaderViewModel: ObservableObject {
     }
 
     var progressLabel: String {
-        guard !session.tokens.isEmpty else { return "0 / 0" }
-        return "\(session.currentIndex + 1) / \(session.tokens.count)"
+        "Word \(currentWordNumber)/\(session.tokens.count)"
+    }
+
+    var locationIndicatorTitle: String {
+        switch session.document.sourceType {
+        case .pastedText:
+            return "Pasted Text"
+        case .txt:
+            if let structureTitle = currentStructureLocationTitle {
+                return structureTitle
+            }
+            return session.document.fileName ?? session.document.title
+        case .pdf:
+            if let structureTitle = currentStructureLocationTitle {
+                return "\(session.document.fileName ?? session.document.title): \(structureTitle)"
+            }
+            return "\(session.document.fileName ?? session.document.title): Page \(currentSectionNumber)"
+        case .epub:
+            let location = currentEPUBLocationTitle ?? "\(currentEPUBSectionKind) \(currentSectionNumber)"
+            return "\(session.document.fileName ?? session.document.title): \(location)"
+        }
+    }
+
+    var sectionNavigationAvailable: Bool {
+        switch session.document.sourceType {
+        case .pdf, .epub:
+            return session.document.sections.count > 1
+        case .pastedText, .txt:
+            return false
+        }
+    }
+
+    var currentSectionMetadata: ReadingDocumentSection? {
+        guard let index = session.currentToken?.sourceSectionIndex else {
+            return nil
+        }
+
+        return session.document.sections.first { $0.index == index }
+    }
+
+    var canJumpToPreviousSection: Bool {
+        guard sectionNavigationAvailable,
+              let currentIndex = currentSectionMetadata?.index else {
+            return false
+        }
+
+        return readableSectionIndex(before: currentIndex) != nil
+    }
+
+    var canJumpToNextSection: Bool {
+        guard sectionNavigationAvailable,
+              let currentIndex = currentSectionMetadata?.index else {
+            return false
+        }
+
+        return readableSectionIndex(after: currentIndex) != nil
     }
 
     func togglePlayback() {
@@ -101,6 +180,39 @@ final class ReaderViewModel: ObservableObject {
         triggerHaptic(intensity: 0.7)
     }
 
+    func jumpToPreviousSection() {
+        guard let currentIndex = currentSectionMetadata?.index,
+              let targetIndex = readableSectionIndex(before: currentIndex) else {
+            return
+        }
+
+        jumpToSection(index: targetIndex)
+    }
+
+    func jumpToNextSection() {
+        guard let currentIndex = currentSectionMetadata?.index,
+              let targetIndex = readableSectionIndex(after: currentIndex) else {
+            return
+        }
+
+        jumpToSection(index: targetIndex)
+    }
+
+    func jumpToSection(index: Int) {
+        guard sectionNavigationAvailable,
+              let targetTokenIndex = firstReadableTokenIndex(in: index)
+                ?? readableSectionIndex(after: index).flatMap({ firstReadableTokenIndex(in: $0) })
+                ?? readableSectionIndex(before: index).flatMap({ firstReadableTokenIndex(in: $0) }) else {
+            return
+        }
+
+        pause(showControls: true)
+        withAnimationStateChange {
+            session.currentIndex = targetTokenIndex
+        }
+        triggerHaptic(intensity: 0.6)
+    }
+
     func adjustSpeed(by delta: Int) {
         setWPM(session.wordsPerMinute + delta, haptic: true)
     }
@@ -122,7 +234,209 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func cleanup() {
+        cleanupTask?.cancel()
+        cleanupTask = nil
         Task { await engine.stop() }
+    }
+
+    private func startBackgroundAICleanupIfNeeded() {
+        guard importedDocument?.cleanupMode == .ai,
+              SmartCleanupAvailability.isAICleanupAvailable,
+              !cleanupChunks.isEmpty else {
+            return
+        }
+
+        cleanupProgress = AICleanupProgress(processedChunkCount: 0, totalChunkCount: cleanupChunks.count, isProcessing: true)
+        let chunks = cleanupChunks
+
+        cleanupTask = Task { [weak self, cleanupService, structureAnalyzerService] in
+            for chunk in chunks {
+                guard !Task.isCancelled else { return }
+
+                let shouldContinue = await MainActor.run {
+                    guard let self else { return false }
+                    self.markCleanupChunk(chunk.id, status: .processing)
+                    self.markStructureAnalysisStartedIfNeeded()
+                    return true
+                }
+                guard shouldContinue else {
+                    return
+                }
+
+                let modelText = await cleanupService.foundationModelTextCleanup(for: chunk.smartCleanedText)
+                guard !Task.isCancelled else { return }
+
+                let validatedText: String?
+                if let modelText,
+                   SmartCleanupService.isSafeTextCleanup(original: chunk.smartCleanedText, cleaned: modelText),
+                   (chunk.sectionIndices.count == 1 || SmartCleanupService.pdfSectionTexts(from: modelText, sectionIndices: chunk.sectionIndices) != nil) {
+                    validatedText = modelText
+                } else {
+                    validatedText = nil
+                }
+
+                await MainActor.run {
+                    self?.finishCleanupChunk(chunk.id, aiCleanedText: validatedText)
+                }
+
+                let structureContext = await MainActor.run { () -> (DocumentStructureState, [String])? in
+                    guard let self else { return nil }
+                    return (
+                        self.structureState,
+                        structureAnalyzerService.deterministicHeadingCandidates(for: chunk, in: self.importedDocument)
+                    )
+                }
+                guard !Task.isCancelled, let structureContext else { return }
+
+                let structureSummary = await structureAnalyzerService.analyze(
+                    chunk: chunk,
+                    structureState: structureContext.0,
+                    nearbyHeadingCandidates: structureContext.1
+                )
+                guard !Task.isCancelled else { return }
+
+                await MainActor.run {
+                    self?.finishStructureAnalysis(for: chunk, summary: structureSummary)
+                }
+            }
+
+            await MainActor.run {
+                self?.cleanupProgress = self?.cleanupProgress?.finished()
+                self?.structureProgress = self?.structureProgress?.finished()
+                self?.cleanupTask = nil
+            }
+        }
+    }
+
+    private func markCleanupChunk(_ id: UUID, status: DocumentCleanupChunkStatus) {
+        guard let index = cleanupChunks.firstIndex(where: { $0.id == id }) else { return }
+        cleanupChunks[index].status = status
+        updateCleanupProgress()
+    }
+
+    private func finishCleanupChunk(_ id: UUID, aiCleanedText: String?) {
+        guard let index = cleanupChunks.firstIndex(where: { $0.id == id }) else { return }
+
+        cleanupChunks[index].aiCleanedText = aiCleanedText
+        cleanupChunks[index].status = aiCleanedText == nil ? .failed : .completed
+
+        if aiCleanedText != nil {
+            applyCompletedCleanupChunk(cleanupChunks[index])
+        }
+
+        updateCleanupProgress()
+    }
+
+    private func applyCompletedCleanupChunk(_ chunk: DocumentCleanupChunk) {
+        guard let importedDocument else { return }
+
+        let currentLocation = currentTokenLocation()
+        var sections = importedDocument.sections
+
+        if chunk.sectionIndices.count > 1 {
+            guard let aiCleanedText = chunk.aiCleanedText,
+                  let sectionTexts = SmartCleanupService.pdfSectionTexts(from: aiCleanedText, sectionIndices: chunk.sectionIndices) else {
+                return
+            }
+
+            for (sectionIndex, text) in sectionTexts {
+                guard let index = sections.firstIndex(where: { $0.index == sectionIndex }) else { continue }
+                sections[index] = sections[index].withText(text)
+            }
+        } else {
+            let sectionIndex = chunk.sectionIndex
+            guard let index = sections.firstIndex(where: { $0.index == sectionIndex }) else { return }
+            let sectionChunks = cleanupChunks
+                .filter { $0.sectionIndices == [sectionIndex] }
+                .sorted { $0.wordRange.lowerBound < $1.wordRange.lowerBound }
+
+            sections[index] = sections[index].withText(sectionChunks.map(\.effectiveText).joined(separator: "\n\n"))
+        }
+
+        let updatedDocument = ImportedDocument(
+            fileName: importedDocument.fileName,
+            displayTitle: importedDocument.displayTitle,
+            sourceType: importedDocument.sourceType,
+            sections: sections,
+            cleanupMode: importedDocument.cleanupMode,
+            cleanupChunks: cleanupChunks
+        )
+        self.importedDocument = updatedDocument
+
+        let newTokens = tokenizer.tokenize(updatedDocument)
+        guard !newTokens.isEmpty else { return }
+
+        session.tokens = newTokens
+        session.document = ReadingDocument(importedDocument: updatedDocument)
+        session.currentIndex = tokenIndex(matching: currentLocation, in: newTokens)
+    }
+
+    private func updateCleanupProgress() {
+        guard !cleanupChunks.isEmpty else {
+            cleanupProgress = nil
+            return
+        }
+
+        let processed = cleanupChunks.filter { $0.status == .completed || $0.status == .failed }.count
+        cleanupProgress = AICleanupProgress(
+            processedChunkCount: processed,
+            totalChunkCount: cleanupChunks.count,
+            isProcessing: processed < cleanupChunks.count
+        )
+    }
+
+    private func markStructureAnalysisStartedIfNeeded() {
+        guard importedDocument?.cleanupMode == .ai,
+              SmartCleanupAvailability.isAICleanupAvailable,
+              !cleanupChunks.isEmpty,
+              structureProgress == nil else {
+            return
+        }
+
+        structureProgress = DocumentStructureProgress(
+            processedChunkCount: structureProcessedChunkCount,
+            totalChunkCount: cleanupChunks.count,
+            isProcessing: true
+        )
+    }
+
+    private func finishStructureAnalysis(for chunk: DocumentCleanupChunk, summary: ChunkStructureSummary?) {
+        structureProcessedChunkCount += 1
+
+        if let summary {
+            structureSummariesByChunkID[chunk.id] = summary
+            structureState = structureAnalyzerService.updatedState(
+                byApplying: summary,
+                to: structureState,
+                chunk: chunk
+            )
+            applyStructureLabel(from: summary, chunk: chunk)
+        }
+
+        updateStructureProgress()
+    }
+
+    private func updateStructureProgress() {
+        guard !cleanupChunks.isEmpty else {
+            structureProgress = nil
+            return
+        }
+
+        structureProgress = DocumentStructureProgress(
+            processedChunkCount: min(structureProcessedChunkCount, cleanupChunks.count),
+            totalChunkCount: cleanupChunks.count,
+            isProcessing: structureProcessedChunkCount < cleanupChunks.count
+        )
+    }
+
+    private func applyStructureLabel(from summary: ChunkStructureSummary, chunk: DocumentCleanupChunk) {
+        guard let label = structureAnalyzerService.acceptedLabel(from: summary) else {
+            return
+        }
+
+        for sectionIndex in chunk.sectionIndices {
+            structureLabelBySectionIndex[sectionIndex] = label
+        }
     }
 
     private func advanceFromEngine() -> Bool {
@@ -141,6 +455,140 @@ final class ReaderViewModel: ObservableObject {
         change()
     }
 
+    private var currentWordNumber: Int {
+        guard !session.tokens.isEmpty else { return 0 }
+        return session.currentIndex + 1
+    }
+
+    private func currentTokenLocation() -> TokenLocation? {
+        guard session.tokens.indices.contains(session.currentIndex) else {
+            return nil
+        }
+
+        let token = session.tokens[session.currentIndex]
+        guard let sectionIndex = token.sourceSectionIndex else {
+            return nil
+        }
+
+        let sectionOffset = session.tokens[..<session.currentIndex]
+            .filter { $0.sourceSectionIndex == sectionIndex }
+            .count
+
+        return TokenLocation(sectionIndex: sectionIndex, wordOffsetInSection: sectionOffset)
+    }
+
+    private func tokenIndex(matching location: TokenLocation?, in tokens: [ReadingToken]) -> Int {
+        guard let location else {
+            return min(session.currentIndex, max(tokens.count - 1, 0))
+        }
+
+        let sectionTokenIndices = tokens.indices.filter { tokens[$0].sourceSectionIndex == location.sectionIndex }
+        guard !sectionTokenIndices.isEmpty else {
+            return min(session.currentIndex, max(tokens.count - 1, 0))
+        }
+
+        let offset = min(location.wordOffsetInSection, sectionTokenIndices.count - 1)
+        return sectionTokenIndices[offset]
+    }
+
+    private var currentSectionNumber: Int {
+        switch session.document.sourceType {
+        case .pdf:
+            currentSectionMetadata?.pageNumber ?? session.currentToken?.sourcePageNumber ?? 1
+        case .epub:
+            currentSectionMetadata?.chapterNumber ?? session.currentToken?.sourceChapterNumber ?? 1
+        case .pastedText, .txt:
+            1
+        }
+    }
+
+    private var currentEPUBLocationTitle: String? {
+        guard let title = currentSectionMetadata?.title?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !title.isEmpty,
+              title.count <= 80 else {
+            if let structureTitle = currentStructureLocationTitle {
+                return structureTitle
+            }
+            return nil
+        }
+
+        return title
+    }
+
+    private var currentEPUBSectionKind: String {
+        switch currentSectionMetadata?.epubSectionRole {
+        case .chapter:
+            return "Chapter"
+        case .part:
+            return "Part"
+        case .frontMatter, .backMatter, .appendix, .reference, .body, nil:
+            return "Section"
+        }
+    }
+
+    private var currentStructureLocationTitle: String? {
+        guard let chunk = currentCleanupChunk,
+              let summary = structureSummariesByChunkID[chunk.id],
+              let label = structureAnalyzerService.acceptedLabel(from: summary) else {
+            if let sectionIndex = currentSectionMetadata?.index {
+                return structureLabelBySectionIndex[sectionIndex]
+            }
+            return nil
+        }
+
+        if let chapterNumber = chunk.chapterNumber {
+            return "Chapter \(chapterNumber): \(label)"
+        }
+
+        if let pageRange = chunk.sourcePageRange {
+            if pageRange.lowerBound == pageRange.upperBound {
+                return "Page \(pageRange.lowerBound): \(label)"
+            }
+            return "Pages \(pageRange.lowerBound)-\(pageRange.upperBound): \(label)"
+        }
+
+        return label
+    }
+
+    private var currentCleanupChunk: DocumentCleanupChunk? {
+        guard let token = session.currentToken else {
+            return nil
+        }
+
+        if let chunk = cleanupChunks.first(where: { $0.wordRange.contains(token.globalWordIndex) }) {
+            return chunk
+        }
+
+        guard let sectionIndex = token.sourceSectionIndex else {
+            return nil
+        }
+
+        return cleanupChunks.first { $0.sectionIndices.contains(sectionIndex) }
+    }
+
+    private func firstReadableTokenIndex(in sectionIndex: Int) -> Int? {
+        session.tokens.firstIndex { $0.sourceSectionIndex == sectionIndex }
+    }
+
+    private func sectionHasReadableTokens(_ sectionIndex: Int) -> Bool {
+        firstReadableTokenIndex(in: sectionIndex) != nil
+    }
+
+    private func readableSectionIndex(before sectionIndex: Int) -> Int? {
+        session.document.sections
+            .map(\.index)
+            .filter { $0 < sectionIndex }
+            .reversed()
+            .first { sectionHasReadableTokens($0) }
+    }
+
+    private func readableSectionIndex(after sectionIndex: Int) -> Int? {
+        session.document.sections
+            .map(\.index)
+            .filter { $0 > sectionIndex }
+            .first { sectionHasReadableTokens($0) }
+    }
+
     private func triggerHaptic(intensity: CGFloat) {
         guard UserDefaults.standard.object(forKey: ReaderBehaviorSettingsKey.hapticsEnabled) as? Bool ?? true else {
             return
@@ -157,6 +605,56 @@ final class ReaderViewModel: ObservableObject {
         return ReaderBehaviorSettings(
             punctuationPausesEnabled: punctuationPauses,
             longWordDelayMode: LongWordDelayMode(rawValue: rawLongWordMode) ?? .moderate
+        )
+    }
+}
+
+struct AICleanupProgress: Equatable, Sendable {
+    let processedChunkCount: Int
+    let totalChunkCount: Int
+    let isProcessing: Bool
+
+    func finished() -> AICleanupProgress {
+        AICleanupProgress(
+            processedChunkCount: totalChunkCount,
+            totalChunkCount: totalChunkCount,
+            isProcessing: false
+        )
+    }
+}
+
+struct DocumentStructureProgress: Equatable, Sendable {
+    let processedChunkCount: Int
+    let totalChunkCount: Int
+    let isProcessing: Bool
+
+    func finished() -> DocumentStructureProgress {
+        DocumentStructureProgress(
+            processedChunkCount: totalChunkCount,
+            totalChunkCount: totalChunkCount,
+            isProcessing: false
+        )
+    }
+}
+
+private struct TokenLocation {
+    let sectionIndex: Int
+    let wordOffsetInSection: Int
+}
+
+private extension ImportedDocumentSection {
+    func withText(_ text: String) -> ImportedDocumentSection {
+        ImportedDocumentSection(
+            index: index,
+            text: text,
+            pageNumber: pageNumber,
+            chapterNumber: chapterNumber,
+            chapterTitle: chapterTitle,
+            wordRange: wordRange,
+            epubNavigationLevel: epubNavigationLevel,
+            epubSectionRole: epubSectionRole,
+            epubStructureSource: epubStructureSource,
+            epubStructureConfidence: epubStructureConfidence
         )
     }
 }

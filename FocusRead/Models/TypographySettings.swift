@@ -14,6 +14,7 @@ enum ReaderBehaviorSettingsKey {
     static let hapticsEnabled = "hapticsEnabled"
     static let punctuationPausesEnabled = "punctuationPausesEnabled"
     static let longWordDelayMode = "longWordDelayMode"
+    static let smartCleanupMode = "smartCleanupMode"
 }
 
 struct ReaderBehaviorSettings: Equatable, Sendable {
@@ -72,6 +73,33 @@ enum LongWordDelayMode: String, CaseIterable, Identifiable, Sendable {
             multiplier += 0.4
         }
         return multiplier
+    }
+}
+
+enum SmartCleanupMode: String, CaseIterable, Identifiable, Sendable {
+    case off
+    case smart
+    case ai
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .off: return "Off"
+        case .smart: return "Smart Cleanup"
+        case .ai: return "AI Cleanup"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .off:
+            return "No cleanup applied."
+        case .smart:
+            return "Uses local rules to clean spacing, line breaks, headers, and OCR artifacts."
+        case .ai:
+            return "Uses on-device intelligence when available to clean imported text while preserving meaning."
+        }
     }
 }
 

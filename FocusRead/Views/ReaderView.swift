@@ -84,13 +84,20 @@ struct ReaderView: View {
             Spacer()
 
             VStack(spacing: 3) {
-                Text("\(viewModel.wordsPerMinute) WPM")
+                Text(viewModel.locationIndicatorTitle)
                     .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity)
                 Text(viewModel.progressLabel)
                     .font(.caption2)
                     .foregroundStyle(AppTheme.secondaryText)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
             }
             .monospacedDigit()
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
 
             Spacer()
 

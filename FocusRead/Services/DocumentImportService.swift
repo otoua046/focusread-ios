@@ -4,31 +4,41 @@ struct DocumentImportService: Sendable {
     private let textExtractor: TextFileExtractor
     private let pdfExtractor: PDFTextExtractor
     private let epubExtractor: EPUBTextExtractor
+    private let smartCleanupService: SmartCleanupService
 
     init(
         textExtractor: TextFileExtractor = TextFileExtractor(),
         pdfExtractor: PDFTextExtractor = PDFTextExtractor(),
-        epubExtractor: EPUBTextExtractor = EPUBTextExtractor()
+        epubExtractor: EPUBTextExtractor = EPUBTextExtractor(),
+        smartCleanupService: SmartCleanupService = SmartCleanupService()
     ) {
         self.textExtractor = textExtractor
         self.pdfExtractor = pdfExtractor
         self.epubExtractor = epubExtractor
+        self.smartCleanupService = smartCleanupService
     }
 
     func extractText(
         from file: ImportedFile,
+        smartCleanupMode: SmartCleanupMode,
         progress: @escaping DocumentImportProgressHandler
     ) async throws -> ImportedDocument {
-        switch file.fileExtension {
+        let document = switch file.fileExtension {
         case "txt":
-            return try await textExtractor.extractText(from: file, progress: progress)
+            try await textExtractor.extractText(from: file, progress: progress)
         case "pdf":
-            return try await pdfExtractor.extractText(from: file, progress: progress)
+            try await pdfExtractor.extractText(from: file, progress: progress)
         case "epub":
-            return try await epubExtractor.extractText(from: file, progress: progress)
+            try await epubExtractor.extractText(from: file, progress: progress)
         default:
             throw DocumentImportError.unsupportedFileType(file.fileExtension)
         }
+
+        return await smartCleanupService.clean(
+            document,
+            mode: smartCleanupMode,
+            progress: progress
+        )
     }
 }
 
@@ -46,9 +56,14 @@ actor DocumentImportWorker {
 
     func importDocument(
         from url: URL,
+        smartCleanupMode: SmartCleanupMode,
         progress: @escaping DocumentImportProgressHandler
     ) async throws -> ImportedDocument {
         let file = try pickerService.copySecurityScopedFile(from: url)
-        return try await importService.extractText(from: file, progress: progress)
+        return try await importService.extractText(
+            from: file,
+            smartCleanupMode: smartCleanupMode,
+            progress: progress
+        )
     }
 }

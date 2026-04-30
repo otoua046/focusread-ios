@@ -14,6 +14,7 @@ struct TypographySettingsView: View {
     @AppStorage(ReaderBehaviorSettingsKey.hapticsEnabled) private var hapticsEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
+    @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
 
     var body: some View {
         NavigationStack {
@@ -29,7 +30,7 @@ struct TypographySettingsView: View {
                     }
 
                     settingsSection("Typography") {
-                        settingsRow("Font Family") {
+                        settingsInlineRow("Font Family") {
                             Picker("Font Family", selection: $fontFamily) {
                                 ForEach(ReaderFontFamily.allCases) { family in
                                     Text(family.title).tag(family.rawValue)
@@ -170,6 +171,28 @@ struct TypographySettingsView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     }
 
+                    settingsSection("Text Cleanup") {
+                        settingsRow("Imported Text") {
+                            Picker("Imported Text", selection: cleanupModeBinding) {
+                                ForEach(availableCleanupModes) { mode in
+                                    Text(mode.title).tag(mode.rawValue)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
+                        Divider().foregroundStyle(AppTheme.border)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            ForEach(availableCleanupModes) { mode in
+                                Text("\(mode.title): \(mode.description)")
+                            }
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                    }
+
                     settingsSection("About / Reset") {
                         settingsActionRow(
                             title: "Reset Typography",
@@ -188,7 +211,7 @@ struct TypographySettingsView: View {
                         Divider().foregroundStyle(AppTheme.border)
 
                         HStack {
-                            Text("App")
+                            Text(appNameString)
                             Spacer()
                             Text(appVersionString)
                                 .foregroundStyle(AppTheme.secondaryText)
@@ -209,7 +232,11 @@ struct TypographySettingsView: View {
                     }
                 }
             }
+            .onAppear {
+                normalizeCleanupMode()
+            }
         }
+        .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
     }
 
     private var currentStyle: FontStyle {
@@ -229,10 +256,31 @@ struct TypographySettingsView: View {
         )
     }
 
+    private var availableCleanupModes: [SmartCleanupMode] {
+        SmartCleanupAvailability.availableModes
+    }
+
+    private var cleanupModeBinding: Binding<String> {
+        Binding(
+            get: {
+                SmartCleanupAvailability.effectiveMode(savedRawValue: smartCleanupMode).rawValue
+            },
+            set: { newValue in
+                smartCleanupMode = SmartCleanupAvailability.effectiveMode(savedRawValue: newValue).rawValue
+            }
+        )
+    }
+
     private var appVersionString: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
         return "\(version) (\(build))"
+    }
+
+    private var appNameString: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? "FocusRead"
     }
 
     private func resetTypography() {
@@ -249,7 +297,15 @@ struct TypographySettingsView: View {
         hapticsEnabled = true
         punctuationPausesEnabled = true
         longWordDelayMode = LongWordDelayMode.moderate.rawValue
+        smartCleanupMode = SmartCleanupAvailability.defaultMode.rawValue
         resetTypography()
+    }
+
+    private func normalizeCleanupMode() {
+        let effectiveMode = SmartCleanupAvailability.effectiveMode(savedRawValue: smartCleanupMode)
+        if smartCleanupMode != effectiveMode.rawValue {
+            smartCleanupMode = effectiveMode.rawValue
+        }
     }
 
     private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -278,6 +334,18 @@ struct TypographySettingsView: View {
             Text(title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(AppTheme.primaryText)
+            content()
+        }
+    }
+
+    private func settingsInlineRow<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        HStack(spacing: 12) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            Spacer(minLength: 12)
+
             content()
         }
     }

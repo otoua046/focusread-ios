@@ -22,18 +22,13 @@ struct TextInputView: View {
                     header
                     editor
                     actions
+                    aiCleanupFooter
                 }
                 .padding(.horizontal, 22)
                 .padding(.vertical, 18)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("FocusRead")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(AppTheme.primaryText)
-                }
-
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingTypographySettings = true
@@ -169,23 +164,6 @@ struct TextInputView: View {
             .opacity(viewModel.canStart ? 1 : 0.45)
 
             Button {
-                withAnimation(.smooth) {
-                    viewModel.useSampleText()
-                }
-            } label: {
-                Label("Use Sample Text", systemImage: "text.quote")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(AppTheme.primaryText)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(AppTheme.controlBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .strokeBorder(AppTheme.border, lineWidth: 1)
-                    }
-            }
-
-            Button {
                 isEditorFocused = false
                 documentImportViewModel.presentFilePicker()
             } label: {
@@ -200,6 +178,19 @@ struct TextInputView: View {
                             .strokeBorder(AppTheme.border, lineWidth: 1)
                     }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var aiCleanupFooter: some View {
+        if SmartCleanupAvailability.isAICleanupAvailable {
+            Text("AI Cleanup available on this device")
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(AppTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 2)
+                .padding(.bottom, 4)
         }
     }
 

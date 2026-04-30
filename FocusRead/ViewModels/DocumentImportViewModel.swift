@@ -6,6 +6,7 @@ final class DocumentImportViewModel: ObservableObject {
     @Published var isFileImporterPresented = false
     @Published var isImportSheetPresented = false
     @Published private(set) var state: DocumentImportState = .idle
+    @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
 
     private let worker: DocumentImportWorker
     private var importTask: Task<Void, Never>?
@@ -66,12 +67,16 @@ final class DocumentImportViewModel: ObservableObject {
         importTask?.cancel()
         state = .loading(.starting)
         isImportSheetPresented = true
+        let cleanupMode = SmartCleanupAvailability.effectiveMode(savedRawValue: smartCleanupMode)
+        if smartCleanupMode != cleanupMode.rawValue {
+            smartCleanupMode = cleanupMode.rawValue
+        }
 
         importTask = Task { [weak self] in
             guard let self else { return }
 
             do {
-                let document = try await worker.importDocument(from: url) { [weak self] progress in
+                let document = try await worker.importDocument(from: url, smartCleanupMode: cleanupMode) { [weak self] progress in
                     await MainActor.run {
                         self?.state = .loading(progress)
                     }

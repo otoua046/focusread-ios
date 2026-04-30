@@ -63,7 +63,7 @@ struct DocumentImportView: View {
     private func previewView(_ document: ImportedDocument) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 8) {
-                Label(document.fileName, systemImage: "doc.text")
+                Label(document.displayTitle, systemImage: "doc.text")
                     .font(.headline)
                     .foregroundStyle(AppTheme.primaryText)
                     .lineLimit(2)

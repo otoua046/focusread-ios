@@ -20,7 +20,7 @@ struct TextFileExtractor: DocumentTextExtractor {
         return ImportedDocument(
             fileName: file.fileName,
             text: normalizedText,
-            sourceType: .plainText
+            sourceType: .txt
         )
     }
 }
