@@ -2,6 +2,12 @@ import Foundation
 import Combine
 import UIKit
 
+struct WordLookupRequest: Identifiable, Equatable {
+    let term: String
+
+    var id: String { term }
+}
+
 @MainActor
 final class ReaderViewModel: ObservableObject {
     @Published private(set) var session: ReadingSession
@@ -9,6 +15,7 @@ final class ReaderViewModel: ObservableObject {
     @Published private(set) var structureProgress: DocumentStructureProgress?
     private let engine: RSVPReadingEngine
     private let tokenizer: TextTokenizer
+    private let wordLookupService: WordLookupService
     private let cleanupService: SmartCleanupService
     private let structureAnalyzerService: DocumentStructureAnalyzerService
     private let readingHistoryStore: ReadingHistoryStore?
@@ -26,12 +33,15 @@ final class ReaderViewModel: ObservableObject {
 
     @Published var isPlaying = false
     @Published var controlsVisible = true
+    @Published var lookupRequest: WordLookupRequest?
+    @Published var noDefinitionFound = false
 
     init(
         session: ReadingSession,
         importedDocument: ImportedDocument? = nil,
         engine: RSVPReadingEngine = RSVPReadingEngine(),
         tokenizer: TextTokenizer = TextTokenizer(),
+        wordLookupService: WordLookupService = WordLookupService(),
         cleanupService: SmartCleanupService = SmartCleanupService(),
         structureAnalyzerService: DocumentStructureAnalyzerService = DocumentStructureAnalyzerService(),
         readingHistoryStore: ReadingHistoryStore? = nil,
@@ -40,6 +50,7 @@ final class ReaderViewModel: ObservableObject {
         self.session = session
         self.engine = engine
         self.tokenizer = tokenizer
+        self.wordLookupService = wordLookupService
         self.cleanupService = cleanupService
         self.structureAnalyzerService = structureAnalyzerService
         self.readingHistoryStore = readingHistoryStore
@@ -54,6 +65,10 @@ final class ReaderViewModel: ObservableObject {
 
     var currentWord: String {
         session.currentToken?.text ?? ""
+    }
+
+    var sanitizedCurrentWordForLookup: String? {
+        wordLookupService.sanitizedTerm(from: currentWord)
     }
 
     var wordsPerMinute: Int {
@@ -243,6 +258,18 @@ final class ReaderViewModel: ObservableObject {
 
     func updateBehaviorSettings(_ settings: ReaderBehaviorSettings) {
         behaviorSettings = settings
+    }
+
+    func lookupCurrentWord() {
+        pause(showControls: true)
+
+        guard let term = sanitizedCurrentWordForLookup,
+              wordLookupService.hasDefinition(for: term) else {
+            noDefinitionFound = true
+            return
+        }
+
+        lookupRequest = WordLookupRequest(term: term)
     }
 
     func cleanup() {
