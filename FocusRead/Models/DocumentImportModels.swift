@@ -9,6 +9,7 @@ struct ImportedFile: Sendable {
 struct ImportedDocument: Equatable, Sendable {
     let fileName: String
     let displayTitle: String
+    let author: String?
     let sourceType: DocumentSourceType
     let previewImageData: Data?
     let sections: [ImportedDocumentSection]
@@ -18,6 +19,7 @@ struct ImportedDocument: Equatable, Sendable {
     init(
         fileName: String,
         displayTitle: String? = nil,
+        author: String? = nil,
         text: String,
         sourceType: DocumentSourceType,
         previewImageData: Data? = nil,
@@ -26,6 +28,7 @@ struct ImportedDocument: Equatable, Sendable {
     ) {
         self.fileName = fileName
         self.displayTitle = displayTitle ?? fileName
+        self.author = author
         self.sourceType = sourceType
         self.previewImageData = previewImageData
         self.cleanupMode = cleanupMode
@@ -45,6 +48,7 @@ struct ImportedDocument: Equatable, Sendable {
     init(
         fileName: String,
         displayTitle: String? = nil,
+        author: String? = nil,
         sourceType: DocumentSourceType,
         sections: [ImportedDocumentSection],
         previewImageData: Data? = nil,
@@ -53,6 +57,7 @@ struct ImportedDocument: Equatable, Sendable {
     ) {
         self.fileName = fileName
         self.displayTitle = displayTitle ?? fileName
+        self.author = author
         self.sourceType = sourceType
         self.previewImageData = previewImageData
         self.sections = sections
@@ -69,6 +74,7 @@ struct ImportedDocument: Equatable, Sendable {
         ImportedDocument(
             fileName: fileName,
             displayTitle: displayTitle,
+            author: author,
             sourceType: sourceType,
             sections: sections,
             previewImageData: previewImageData,

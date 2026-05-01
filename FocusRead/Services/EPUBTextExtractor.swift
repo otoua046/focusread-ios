@@ -71,6 +71,7 @@ struct EPUBTextExtractor: DocumentTextExtractor {
             return ImportedDocument(
                 fileName: file.fileName,
                 displayTitle: package.metadataTitle,
+                author: package.metadataAuthor,
                 sourceType: .epub,
                 sections: sections,
                 previewImageData: previewImageData
@@ -740,6 +741,7 @@ private struct EPUBPackage {
     let opfPath: String
     let opfDirectory: String
     let metadataTitle: String?
+    let metadataAuthor: String?
     let coverItemID: String?
     let manifest: [String: ManifestItem]
     let spine: [String]
@@ -891,6 +893,7 @@ private enum EPUBPackageParser {
             opfPath: opfPath,
             opfDirectory: opfPath.deletingLastPathComponent,
             metadataTitle: EPUBStructureBuilder.cleanedNavigationTitle(delegate.metadataTitle),
+            metadataAuthor: delegate.metadataAuthor,
             coverItemID: delegate.coverItemID,
             manifest: delegate.manifest,
             spine: delegate.spine,
@@ -1216,8 +1219,11 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
     var spineTOCID: String?
     var coverItemID: String?
     var metadataTitle: String?
+    var metadataAuthor: String?
     private var capturingTitle = false
+    private var capturingAuthor = false
     private var titleText = ""
+    private var authorText = ""
 
     init(opfPath: String) {
         self.opfPath = opfPath
@@ -1235,6 +1241,11 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
             if metadataTitle == nil {
                 capturingTitle = true
                 titleText = ""
+            }
+        case "creator":
+            if metadataAuthor == nil {
+                capturingAuthor = true
+                authorText = ""
             }
         case "meta":
             if coverItemID == nil,
@@ -1275,6 +1286,8 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
     func parser(_ parser: XMLParser, foundCharacters string: String) {
         if capturingTitle {
             titleText.append(string)
+        } else if capturingAuthor {
+            authorText.append(string)
         }
     }
 
@@ -1284,18 +1297,25 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
         namespaceURI: String?,
         qualifiedName qName: String?
     ) {
-        guard elementName.xmlLocalName == "title", capturingTitle else {
-            return
+        if elementName.xmlLocalName == "title" && capturingTitle {
+            let title = titleText
+                .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !title.isEmpty {
+                metadataTitle = title
+            }
+            capturingTitle = false
+            titleText = ""
+        } else if elementName.xmlLocalName == "creator" && capturingAuthor {
+            let author = authorText
+                .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !author.isEmpty {
+                metadataAuthor = author
+            }
+            capturingAuthor = false
+            authorText = ""
         }
-
-        let title = titleText
-            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if !title.isEmpty {
-            metadataTitle = title
-        }
-        capturingTitle = false
-        titleText = ""
     }
 }
 

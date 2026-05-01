@@ -20,6 +20,8 @@ struct SavedRead: Identifiable, Codable, Equatable, Sendable {
     var cleanupModeUsed: String
     var isFavorite: Bool
     var readingStats: SavedReadStats
+    var author: String?
+    var manualSortIndex: Int?
 
     var documentText: String {
         sections.map(\.text)
