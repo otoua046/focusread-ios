@@ -256,7 +256,10 @@ struct LibraryView: View {
             )
             guard updatedRead.thumbnailPath != read.thumbnailPath else { continue }
             await MainActor.run {
-                store.save(updatedRead)
+                if var latestRead = store.read(withID: read.id) {
+                    latestRead.thumbnailPath = updatedRead.thumbnailPath
+                    store.save(latestRead)
+                }
             }
         }
     }
