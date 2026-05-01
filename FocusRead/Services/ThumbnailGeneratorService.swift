@@ -34,7 +34,7 @@ actor ThumbnailGeneratorService {
 
     func attachThumbnail(to read: SavedRead, previewImageData: Data?) async -> SavedRead {
         let thumbnailURL = self.thumbnailURL(for: read)
-        if fileManager.fileExists(atPath: thumbnailURL.path) {
+        if previewImageData == nil, fileManager.fileExists(atPath: thumbnailURL.path) {
             var updated = read
             updated.thumbnailPath = thumbnailRelativePath(for: read)
             return updated

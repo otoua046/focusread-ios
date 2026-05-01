@@ -158,7 +158,10 @@ struct RootView: View {
             }
 
             await MainActor.run {
-                readingHistoryStore.save(updatedRead, durability: .immediate)
+                if var latestRead = readingHistoryStore.read(withID: read.id) {
+                    latestRead.thumbnailPath = updatedRead.thumbnailPath
+                    readingHistoryStore.save(latestRead, durability: .immediate)
+                }
             }
         }
     }
