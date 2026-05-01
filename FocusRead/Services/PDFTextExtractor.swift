@@ -1,5 +1,6 @@
 import Foundation
 import PDFKit
+import UIKit
 
 struct PDFTextExtractor: DocumentTextExtractor {
     private let ocrExtractor: OCRTextExtractor
@@ -16,6 +17,7 @@ struct PDFTextExtractor: DocumentTextExtractor {
         guard let document = PDFDocument(url: file.localURL) else {
             throw DocumentImportError.unreadablePDF
         }
+        let previewImageData = firstPagePreviewData(for: document)
 
         let pageCount = document.pageCount
         guard pageCount > 0 else {
@@ -62,7 +64,8 @@ struct PDFTextExtractor: DocumentTextExtractor {
             return ImportedDocument(
                 fileName: file.fileName,
                 sourceType: .pdf,
-                sections: sections
+                sections: sections,
+                previewImageData: previewImageData
             )
         }
 
@@ -73,5 +76,14 @@ struct PDFTextExtractor: DocumentTextExtractor {
         ))
 
         return try await ocrExtractor.extractText(from: file, progress: progress)
+    }
+
+    private func firstPagePreviewData(for document: PDFDocument) -> Data? {
+        guard let page = document.page(at: 0) else {
+            return nil
+        }
+
+        let thumbnail = page.thumbnail(of: CGSize(width: 480, height: 640), for: .cropBox)
+        return thumbnail.jpegData(compressionQuality: 0.88)
     }
 }

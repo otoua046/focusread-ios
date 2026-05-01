@@ -93,6 +93,7 @@ struct RootView: View {
         )
         let savedRead = SavedReadMapper.makeSavedRead(from: inputViewModel.text, tokens: tokens)
         readingHistoryStore.save(savedRead)
+        attachThumbnail(for: savedRead, previewImageData: nil)
         readerViewModel = ReaderViewModel(
             session: session,
             readingHistoryStore: readingHistoryStore,
@@ -110,6 +111,7 @@ struct RootView: View {
         )
         let savedRead = SavedReadMapper.makeSavedRead(from: importedDocument, tokens: tokens)
         readingHistoryStore.save(savedRead)
+        attachThumbnail(for: savedRead, previewImageData: importedDocument.previewImageData)
         readerViewModel = ReaderViewModel(
             session: session,
             importedDocument: importedDocument,
@@ -142,5 +144,22 @@ struct RootView: View {
             readingHistoryStore: readingHistoryStore,
             savedReadID: updatedRead.id
         )
+    }
+
+    private func attachThumbnail(for read: SavedRead, previewImageData: Data?) {
+        Task {
+            let updatedRead = await ThumbnailGeneratorService.shared.attachThumbnail(
+                to: read,
+                previewImageData: previewImageData
+            )
+
+            guard updatedRead.thumbnailPath != read.thumbnailPath else {
+                return
+            }
+
+            await MainActor.run {
+                readingHistoryStore.save(updatedRead, durability: .immediate)
+            }
+        }
     }
 }
