@@ -72,8 +72,6 @@ enum SavedReadMapper {
 
     static func updating(_ read: SavedRead, from session: ReadingSession, now: Date = Date()) -> SavedRead {
         var updated = read
-        updated.displayTitle = session.document.title
-        updated.originalFileName = session.document.fileName
         updated.sourceType = savedSourceType(from: session.document.sourceType)
         updated.updatedAt = now
         updated.lastOpenedAt = now
