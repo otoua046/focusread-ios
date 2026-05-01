@@ -5,45 +5,35 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     @Published private(set) var savedReads: [SavedRead] = []
 
     private let fileURL: URL
-    private let decoder: JSONDecoder
-    private let fileManager: FileManager
+    private let loader: ReadingHistoryFileLoader
     private let writer: ReadingHistoryFileWriter
     private var persistRevision = 0
     private var persistenceSuspended = false
+    private var hasLocalMutations = false
 
     init(fileManager: FileManager = .default) {
-        self.fileManager = fileManager
         let supportDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
         let directory = supportDirectory.appendingPathComponent("FocusRead", isDirectory: true)
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         self.fileURL = directory.appendingPathComponent("SavedReads.json")
+        self.loader = ReadingHistoryFileLoader(fileURL: fileURL)
         self.writer = ReadingHistoryFileWriter(fileURL: fileURL)
-
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        self.decoder = decoder
 
         load()
     }
 
     func load() {
-        guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            savedReads = []
-            return
-        }
-
-        do {
-            let data = try Data(contentsOf: fileURL)
-            savedReads = try decoder.decode([SavedRead].self, from: data)
-                .sortedByHistoryRecency()
-        } catch {
-            quarantineUnreadableHistoryFile(error: error)
-            savedReads = []
+        hasLocalMutations = false
+        loader.load { [weak self] result in
+            Task { @MainActor in
+                self?.applyLoadResult(result)
+            }
         }
     }
 
     func save(_ read: SavedRead, durability: ReadingHistoryPersistenceDurability = .normal) {
+        hasLocalMutations = true
         if let index = savedReads.firstIndex(where: { $0.id == read.id }) {
             savedReads[index] = read
         } else {
@@ -54,6 +44,7 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     }
 
     func delete(_ read: SavedRead) {
+        hasLocalMutations = true
         savedReads.removeAll { $0.id == read.id }
         persist(durability: .normal)
     }
@@ -67,6 +58,23 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
 
     func read(withID id: UUID) -> SavedRead? {
         savedReads.first { $0.id == id }
+    }
+
+    private func applyLoadResult(_ result: ReadingHistoryLoadResult) {
+        guard !hasLocalMutations else { return }
+
+        switch result {
+        case .missing:
+            savedReads = []
+        case .loaded(let reads):
+            savedReads = reads.sortedByHistoryRecency()
+        case .failed(let quarantineSucceeded, let message):
+            savedReads = []
+            persistenceSuspended = !quarantineSucceeded
+            if !quarantineSucceeded {
+                assertionFailure("Unable to quarantine unreadable reading history: \(message)")
+            }
+        }
     }
 
     private func persist(durability: ReadingHistoryPersistenceDurability) {
@@ -84,17 +92,53 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
         }
     }
 
-    private func quarantineUnreadableHistoryFile(error loadError: Error) {
-        guard fileManager.fileExists(atPath: fileURL.path) else { return }
+}
+
+private enum ReadingHistoryLoadResult: Sendable {
+    case missing
+    case loaded([SavedRead])
+    case failed(quarantineSucceeded: Bool, message: String)
+}
+
+private final class ReadingHistoryFileLoader: @unchecked Sendable {
+    private let fileURL: URL
+    private let queue = DispatchQueue(label: "FocusRead.ReadingHistoryFileLoader", qos: .utility)
+
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+    }
+
+    func load(completion: @escaping @Sendable (ReadingHistoryLoadResult) -> Void) {
+        queue.async { [self] in
+            guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                completion(.missing)
+                return
+            }
+
+            do {
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let data = try Data(contentsOf: fileURL)
+                let reads = try decoder.decode([SavedRead].self, from: data)
+                completion(.loaded(reads))
+            } catch {
+                completion(quarantineUnreadableHistoryFile(loadError: error))
+            }
+        }
+    }
+
+    private func quarantineUnreadableHistoryFile(loadError: Error) -> ReadingHistoryLoadResult {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            return .failed(quarantineSucceeded: true, message: "\(loadError)")
+        }
 
         let quarantineURL = quarantinedFileURL()
         do {
-            try fileManager.copyItem(at: fileURL, to: quarantineURL)
-            try? fileManager.removeItem(at: fileURL)
-            persistenceSuspended = false
+            try FileManager.default.copyItem(at: fileURL, to: quarantineURL)
+            try? FileManager.default.removeItem(at: fileURL)
+            return .failed(quarantineSucceeded: true, message: "\(loadError)")
         } catch {
-            persistenceSuspended = true
-            assertionFailure("Unable to quarantine unreadable reading history after \(loadError): \(error)")
+            return .failed(quarantineSucceeded: false, message: "\(loadError); quarantine error: \(error)")
         }
     }
 

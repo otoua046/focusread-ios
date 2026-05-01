@@ -10,6 +10,7 @@ struct TextInputView: View {
     @StateObject private var documentImportViewModel = DocumentImportViewModel()
     @State private var showingTypographySettings = false
     @State private var isHistoryPresented = false
+    @State private var isHistorySidebarPersistent = false
     @FocusState private var isEditorFocused: Bool
 
     var body: some View {
@@ -72,17 +73,25 @@ struct TextInputView: View {
                 }
                 .animation(.smooth(duration: 0.28), value: isHistoryPresented)
                 .animation(.smooth(duration: 0.28), value: sidebarIsPersistent)
+                .onAppear {
+                    updateHistorySidebarPersistence(sidebarIsPersistent)
+                }
+                .onChange(of: sidebarIsPersistent) { _, newValue in
+                    updateHistorySidebarPersistence(newValue)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isHistoryPresented.toggle()
-                    } label: {
-                        Image(systemName: "sidebar.left")
+                if !isHistorySidebarPersistent {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            isHistoryPresented.toggle()
+                        } label: {
+                            Image(systemName: "sidebar.left")
+                        }
+                        .buttonStyle(.topReaderControl)
+                        .accessibilityLabel(isHistoryPresented ? "Hide reading history" : "Show reading history")
                     }
-                    .buttonStyle(.topReaderControl)
-                    .accessibilityLabel(isHistoryPresented ? "Hide reading history" : "Show reading history")
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -259,6 +268,13 @@ struct TextInputView: View {
     private func pasteFromClipboard() {
         if let string = UIPasteboard.general.string, !string.isEmpty {
             viewModel.text = string
+        }
+    }
+
+    private func updateHistorySidebarPersistence(_ isPersistent: Bool) {
+        isHistorySidebarPersistent = isPersistent
+        if isPersistent {
+            isHistoryPresented = false
         }
     }
 
