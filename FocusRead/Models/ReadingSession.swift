@@ -29,6 +29,8 @@ struct ReadingDocument: Identifiable, Equatable, Sendable {
             .pdf
         case .epub:
             .epub
+        case .image:
+            .image
         }
 
         self.init(
@@ -74,6 +76,7 @@ enum ReadingDocumentSourceType: Equatable, Sendable {
     case txt
     case pdf
     case epub
+    case image
 }
 
 struct ReadingDocumentSection: Identifiable, Equatable, Sendable {

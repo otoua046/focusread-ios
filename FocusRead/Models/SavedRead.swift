@@ -32,6 +32,7 @@ enum SavedReadSourceType: String, Codable, Equatable, Sendable {
     case txt
     case pdf
     case epub
+    case image
 }
 
 struct SavedReadSection: Identifiable, Codable, Equatable, Sendable {

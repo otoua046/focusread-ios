@@ -23,7 +23,7 @@ struct DocumentImportView: View {
                 }
                 .padding(22)
             }
-            .navigationTitle("Import File")
+            .navigationTitle("Import")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -63,7 +63,7 @@ struct DocumentImportView: View {
     private func previewView(_ document: ImportedDocument) -> some View {
         VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 8) {
-                Label(document.displayTitle, systemImage: "doc.text")
+                Label(document.displayTitle, systemImage: document.sourceType.previewSystemImageName)
                     .font(.headline)
                     .foregroundStyle(AppTheme.primaryText)
                     .lineLimit(2)
@@ -104,7 +104,7 @@ struct DocumentImportView: View {
             Button {
                 viewModel.chooseAnotherFile()
             } label: {
-                Label("Choose Another File", systemImage: "doc.badge.plus")
+                Label("Choose Another File", systemImage: "folder")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)
@@ -158,7 +158,7 @@ struct DocumentImportView: View {
                 Button {
                     viewModel.chooseAnotherFile()
                 } label: {
-                    Label("Choose Another File", systemImage: "doc.badge.plus")
+                    Label("Choose Another File", systemImage: "folder")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(AppTheme.primaryText)
                         .frame(maxWidth: .infinity)
@@ -173,5 +173,20 @@ struct DocumentImportView: View {
             .padding(.top, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private extension DocumentSourceType {
+    var previewSystemImageName: String {
+        switch self {
+        case .txt:
+            "doc.plaintext"
+        case .pdf:
+            "doc.richtext"
+        case .epub:
+            "book"
+        case .image:
+            "text.viewfinder"
+        }
     }
 }

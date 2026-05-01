@@ -101,6 +101,8 @@ enum SavedReadMapper {
             sourceType = .pdf
         case .epub:
             sourceType = .epub
+        case .image:
+            sourceType = .image
         case .pastedText:
             return nil
         }
@@ -188,6 +190,8 @@ enum SavedReadMapper {
             .pdf
         case .epub:
             .epub
+        case .image:
+            .image
         }
     }
 
@@ -201,6 +205,8 @@ enum SavedReadMapper {
             .pdf
         case .epub:
             .epub
+        case .image:
+            .image
         }
     }
 
@@ -214,6 +220,8 @@ enum SavedReadMapper {
             .pdf
         case .epub:
             .epub
+        case .image:
+            .image
         }
     }
 
