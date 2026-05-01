@@ -189,6 +189,8 @@ private extension SavedReadSourceType {
             "doc.richtext"
         case .epub:
             "book"
+        case .image:
+            "text.viewfinder"
         }
     }
 }
