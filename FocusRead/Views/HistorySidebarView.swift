@@ -471,6 +471,7 @@ struct LibraryItemMenu: View {
                 onDelete()
             } label: {
                 Label("Delete", systemImage: "trash")
+                    .foregroundStyle(.red)
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -691,6 +692,7 @@ struct HistoryItemRow: View {
                 onDelete()
             } label: {
                 Label("Delete", systemImage: "trash")
+                    .foregroundStyle(.red)
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -698,6 +700,7 @@ struct HistoryItemRow: View {
                 onDelete()
             } label: {
                 Label("Delete", systemImage: "trash")
+                    .foregroundStyle(.red)
             }
         }
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
@@ -810,8 +813,8 @@ struct LibraryListView: View {
     let onDelete: (SavedRead) -> Void
 
     var body: some View {
-        VStack(spacing: 16) {
-            ForEach(reads) { read in
+        VStack(spacing: 0) {
+            ForEach(Array(reads.enumerated()), id: \.element.id) { index, read in
                 LibraryListRow(
                     read: read,
                     isSelectMode: isSelectMode,
@@ -828,6 +831,12 @@ struct LibraryListView: View {
                     onRename: { onRename(read) },
                     onDelete: { onDelete(read) }
                 )
+
+                if index < reads.count - 1 {
+                    Divider()
+                        .padding(.leading, isSelectMode ? 96 : 64)
+                        .opacity(0.6)
+                }
             }
         }
     }
@@ -896,12 +905,9 @@ struct LibraryListRow: View {
                     )
                 }
             }
-            .padding(12)
-            .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(AppTheme.border, lineWidth: 1)
-            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .task(id: read.thumbnailPath ?? read.id.uuidString) {
