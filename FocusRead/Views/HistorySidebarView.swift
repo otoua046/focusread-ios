@@ -7,6 +7,7 @@ struct LibraryView: View {
     @State private var renameTarget: SavedRead?
     @State private var deleteTarget: SavedRead?
     @State private var isDeleteConfirmationPresented = false
+    @State private var isDeleteSelectedConfirmationPresented = false
 
     @AppStorage("library_view_mode") private var viewMode: LibraryViewMode = .grid
     @AppStorage("library_sort_mode") private var sortMode: LibrarySortMode = .recent
@@ -87,20 +88,26 @@ struct LibraryView: View {
                 } else {
                     if isSelectMode {
                         HStack {
+                            let allSelected = selection.count == store.savedReads.count && !store.savedReads.isEmpty
+                            Button(allSelected ? "Deselect All" : "Select All") {
+                                if allSelected {
+                                    selection.removeAll()
+                                } else {
+                                    selection = Set(store.savedReads.map(\.id))
+                                }
+                            }
+                            .font(.subheadline.weight(.semibold))
+
+                            Spacer()
+
                             Text("\(selection.count) Selected")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(AppTheme.secondaryText)
+                            
                             Spacer()
+                            
                             Button(role: .destructive) {
-                                let selectedIds = selection
-                                deleteTarget = nil
-                                selection.removeAll()
-                                isSelectMode = false
-                                for id in selectedIds {
-                                    if let read = store.read(withID: id) {
-                                        delete(read)
-                                    }
-                                }
+                                isDeleteSelectedConfirmationPresented = true
                             } label: {
                                 Image(systemName: "trash")
                                     .font(.headline)
@@ -180,6 +187,25 @@ struct LibraryView: View {
             Button("Cancel", role: .cancel) {}
         } message: { _ in
             Text("This removes the read and its local thumbnail.")
+        }
+        .alert(
+            selection.count == store.savedReads.count ? "Delete all reads from Library?" : "Delete selected reads?",
+            isPresented: $isDeleteSelectedConfirmationPresented
+        ) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                let selectedIds = selection
+                deleteTarget = nil
+                selection.removeAll()
+                isSelectMode = false
+                for id in selectedIds {
+                    if let read = store.savedReads.first(where: { $0.id == id }) {
+                        delete(read)
+                    }
+                }
+            }
+        } message: {
+            Text("This removes saved reads and local files from this device. This cannot be undone.")
         }
     }
 
@@ -429,16 +455,22 @@ struct LibraryItemMenu: View {
 
     var body: some View {
         Menu {
-            Button("Mark as Finished") {
+            Button {
                 onMarkFinished()
+            } label: {
+                Label("Mark as Finished", systemImage: "checkmark.circle")
             }
 
-            Button("Rename") {
+            Button {
                 onRename()
+            } label: {
+                Label("Rename", systemImage: "textformat")
             }
 
-            Button("Delete", role: .destructive) {
+            Button(role: .destructive) {
                 onDelete()
+            } label: {
+                Label("Delete", systemImage: "trash")
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -741,40 +773,21 @@ struct LibraryControlsMenu: View {
             }
 
             Section("View As") {
-                Button {
-                    viewMode = .grid
-                } label: {
-                    HStack {
-                        Text("Grid")
-                        Spacer()
-                        if viewMode == .grid {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                    // For the icon, use Label if preferred, but Menu supports systemImage correctly:
+                Picker("View As", selection: $viewMode) {
+                    Label("Grid", systemImage: "square.grid.2x2").tag(LibraryViewMode.grid)
+                    Label("List", systemImage: "list.bullet").tag(LibraryViewMode.list)
                 }
-                // Overriding to standard Label for checkmark + icon
-                Button(action: { viewMode = .grid }) {
-                    Label("Grid", systemImage: viewMode == .grid ? "checkmark" : "square.grid.2x2")
-                }
-                Button(action: { viewMode = .list }) {
-                    Label("List", systemImage: viewMode == .list ? "checkmark" : "list.bullet")
-                }
+                .pickerStyle(.inline)
             }
 
             Section("Sort By") {
-                Button(action: { sortMode = .recent }) {
-                    Label("Recent", systemImage: sortMode == .recent ? "checkmark" : "clock")
+                Picker("Sort By", selection: $sortMode) {
+                    Label("Recent", systemImage: "clock").tag(LibrarySortMode.recent)
+                    Label("Title", systemImage: "textformat").tag(LibrarySortMode.title)
+                    Label("Author", systemImage: "person").tag(LibrarySortMode.author)
+                    Label("Manual", systemImage: "line.3.horizontal").tag(LibrarySortMode.manual)
                 }
-                Button(action: { sortMode = .title }) {
-                    Label("Title", systemImage: sortMode == .title ? "checkmark" : "textformat")
-                }
-                Button(action: { sortMode = .author }) {
-                    Label("Author", systemImage: sortMode == .author ? "checkmark" : "person")
-                }
-                Button(action: { sortMode = .manual }) {
-                    Label("Manual", systemImage: sortMode == .manual ? "checkmark" : "line.3.horizontal")
-                }
+                .pickerStyle(.inline)
             }
         } label: {
             Image(systemName: "ellipsis.circle")
