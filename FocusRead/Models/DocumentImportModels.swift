@@ -131,7 +131,7 @@ struct ImportedDocumentSection: Equatable, Sendable {
     }
 }
 
-enum EPUBSectionRole: String, Equatable, Sendable {
+enum EPUBSectionRole: String, Codable, Equatable, Sendable {
     case body
     case chapter
     case part
@@ -141,7 +141,7 @@ enum EPUBSectionRole: String, Equatable, Sendable {
     case reference
 }
 
-enum EPUBStructureSource: String, Equatable, Sendable {
+enum EPUBStructureSource: String, Codable, Equatable, Sendable {
     case navigation
     case heading
     case spine

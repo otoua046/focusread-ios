@@ -11,6 +11,7 @@ struct ReaderView: View {
     @AppStorage(TypographySettingsKey.textColor) private var textColor: String = ReaderTextColor.primary.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var verticalDragStartWPM: Int?
     @State private var showingTypographySettings = false
@@ -56,6 +57,11 @@ struct ReaderView: View {
         .onChange(of: longWordDelayMode) {
             syncBehaviorSettings()
         }
+        .onChange(of: scenePhase) {
+            if scenePhase != .active {
+                viewModel.persistProgress(force: true, durability: .immediate)
+            }
+        }
         .onDisappear {
             viewModel.cleanup()
         }
@@ -68,16 +74,8 @@ struct ReaderView: View {
                 onClose()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.headline)
-                    .foregroundStyle(AppTheme.controlForeground)
-                    .frame(width: 48, height: 48)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .background(AppTheme.controlBackground, in: Circle())
-            .overlay {
-                Circle().strokeBorder(AppTheme.border, lineWidth: 1)
-            }
+            .buttonStyle(.topReaderControl)
             .accessibilityLabel("Close reader")
             .zIndex(1)
 
@@ -105,16 +103,8 @@ struct ReaderView: View {
                 showingTypographySettings = true
             } label: {
                 Image(systemName: "gearshape")
-                    .font(.headline)
-                    .foregroundStyle(AppTheme.controlForeground)
-                    .frame(width: 48, height: 48)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            .background(AppTheme.controlBackground, in: Circle())
-            .overlay {
-                Circle().strokeBorder(AppTheme.border, lineWidth: 1)
-            }
+            .buttonStyle(.topReaderControl)
             .accessibilityLabel("Typography settings")
             .zIndex(1)
         }

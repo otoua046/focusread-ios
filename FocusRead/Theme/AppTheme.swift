@@ -42,3 +42,24 @@ enum AppTheme {
         colorScheme == .dark ? Color(uiColor: .systemGray5) : Color(uiColor: .systemGray6)
     }
 }
+
+struct TopReaderButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(AppTheme.controlForeground)
+            .frame(width: 44, height: 44)
+            .background(.regularMaterial, in: Circle())
+            .overlay {
+                Circle().strokeBorder(AppTheme.border.opacity(0.72), lineWidth: 1)
+            }
+            .opacity(configuration.isPressed ? 0.72 : 1)
+            .scaleEffect(configuration.isPressed ? 0.96 : 1)
+            .frame(width: 56, height: 56)
+            .contentShape(Circle())
+    }
+}
+
+extension ButtonStyle where Self == TopReaderButtonStyle {
+    static var topReaderControl: TopReaderButtonStyle { TopReaderButtonStyle() }
+}

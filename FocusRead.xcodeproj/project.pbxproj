@@ -33,6 +33,11 @@
 		72000000000000000000000A /* DocumentImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010A /* DocumentImportView.swift */; };
 		72000000000000000000000B /* SmartCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010B /* SmartCleanupService.swift */; };
 		72000000000000000000000C /* DocumentStructureAnalyzerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010C /* DocumentStructureAnalyzerService.swift */; };
+		72000000000000000000000D /* SavedRead.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010D /* SavedRead.swift */; };
+		72000000000000000000000E /* ReadingHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010E /* ReadingHistoryStore.swift */; };
+		72000000000000000000000F /* LocalReadingHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000010F /* LocalReadingHistoryStore.swift */; };
+		720000000000000000000010 /* SavedReadMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000110 /* SavedReadMapper.swift */; };
+		720000000000000000000011 /* HistorySidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000111 /* HistorySidebarView.swift */; };
 		730000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 730000000000000000000101 /* ZIPFoundation */; };
 		740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000101 /* EPUBTextExtractorTests.swift */; };
 		740000000000000000000002 /* minimal.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000102 /* minimal.epub */; };
@@ -80,6 +85,11 @@
 		72000000000000000000010A /* DocumentImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportView.swift; sourceTree = "<group>"; };
 		72000000000000000000010B /* SmartCleanupService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartCleanupService.swift; sourceTree = "<group>"; };
 		72000000000000000000010C /* DocumentStructureAnalyzerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentStructureAnalyzerService.swift; sourceTree = "<group>"; };
+		72000000000000000000010D /* SavedRead.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedRead.swift; sourceTree = "<group>"; };
+		72000000000000000000010E /* ReadingHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingHistoryStore.swift; sourceTree = "<group>"; };
+		72000000000000000000010F /* LocalReadingHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalReadingHistoryStore.swift; sourceTree = "<group>"; };
+		720000000000000000000110 /* SavedReadMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedReadMapper.swift; sourceTree = "<group>"; };
+		720000000000000000000111 /* HistorySidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistorySidebarView.swift; sourceTree = "<group>"; };
 		740000000000000000000011 /* FocusReadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusReadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		740000000000000000000101 /* EPUBTextExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractorTests.swift; sourceTree = "<group>"; };
 		740000000000000000000102 /* minimal.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = minimal.epub; sourceTree = "<group>"; };
@@ -144,6 +154,7 @@
 			children = (
 				710000000000000000000106 /* ReadingToken.swift */,
 				710000000000000000000107 /* ReadingSession.swift */,
+				72000000000000000000010D /* SavedRead.swift */,
 				71000000000000000000010C /* TypographySettings.swift */,
 				720000000000000000000101 /* DocumentImportModels.swift */,
 			);
@@ -164,6 +175,9 @@
 				720000000000000000000108 /* DocumentImportService.swift */,
 				72000000000000000000010B /* SmartCleanupService.swift */,
 				72000000000000000000010C /* DocumentStructureAnalyzerService.swift */,
+				72000000000000000000010E /* ReadingHistoryStore.swift */,
+				72000000000000000000010F /* LocalReadingHistoryStore.swift */,
+				720000000000000000000110 /* SavedReadMapper.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -187,6 +201,7 @@
 				710000000000000000000105 /* ReaderControlsView.swift */,
 				71000000000000000000010D /* TypographySettingsView.swift */,
 				72000000000000000000010A /* DocumentImportView.swift */,
+				720000000000000000000111 /* HistorySidebarView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -345,6 +360,7 @@
 				710000000000000000000006 /* ReadingToken.swift in Sources */,
 				710000000000000000000007 /* ReadingSession.swift in Sources */,
 				720000000000000000000001 /* DocumentImportModels.swift in Sources */,
+				72000000000000000000000D /* SavedRead.swift in Sources */,
 				710000000000000000000008 /* TextTokenizer.swift in Sources */,
 				710000000000000000000009 /* RSVPReadingEngine.swift in Sources */,
 				71000000000000000000000A /* ReaderViewModel.swift in Sources */,
@@ -360,8 +376,12 @@
 				720000000000000000000008 /* DocumentImportService.swift in Sources */,
 				72000000000000000000000B /* SmartCleanupService.swift in Sources */,
 				72000000000000000000000C /* DocumentStructureAnalyzerService.swift in Sources */,
+				72000000000000000000000E /* ReadingHistoryStore.swift in Sources */,
+				72000000000000000000000F /* LocalReadingHistoryStore.swift in Sources */,
+				720000000000000000000010 /* SavedReadMapper.swift in Sources */,
 				71000000000000000000000D /* TypographySettingsView.swift in Sources */,
 				72000000000000000000000A /* DocumentImportView.swift in Sources */,
+				720000000000000000000011 /* HistorySidebarView.swift in Sources */,
 				71000000000000000000000E /* AppTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
