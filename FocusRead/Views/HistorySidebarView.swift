@@ -13,29 +13,30 @@ struct HistorySidebarView: View {
             if store.savedReads.isEmpty {
                 emptyState
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 8) {
-                        ForEach(store.savedReads) { read in
-                            HistoryItemRow(
-                                read: read,
-                                onResume: {
-                                    if !isPersistent {
-                                        isPresented = false
-                                    }
-                                    onResume(read)
-                                },
-                                onToggleFavorite: {
-                                    store.toggleFavorite(read)
-                                },
-                                onDelete: {
-                                    store.delete(read)
+                List {
+                    ForEach(store.savedReads) { read in
+                        HistoryItemRow(
+                            read: read,
+                            onResume: {
+                                if !isPersistent {
+                                    isPresented = false
                                 }
-                            )
-                        }
+                                onResume(read)
+                            },
+                            onToggleFavorite: {
+                                store.toggleFavorite(read)
+                            },
+                            onDelete: {
+                                store.delete(read)
+                            }
+                        )
+                        .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 18)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
         }
         .frame(maxHeight: .infinity, alignment: .top)

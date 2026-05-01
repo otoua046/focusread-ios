@@ -64,8 +64,12 @@ struct TextInputView: View {
                             .transition(.opacity)
                             .zIndex(1)
                     }
+
+                    if !sidebarIsPersistent && !isHistoryPresented {
+                        historyEdgeHandle
+                            .zIndex(3)
+                    }
                 }
-                .gesture(openHistoryGesture(isEnabled: !sidebarIsPersistent))
                 .animation(.smooth(duration: 0.28), value: isHistoryPresented)
                 .animation(.smooth(duration: 0.28), value: sidebarIsPersistent)
             }
@@ -258,18 +262,25 @@ struct TextInputView: View {
         }
     }
 
-    private func openHistoryGesture(isEnabled: Bool) -> some Gesture {
-        DragGesture(minimumDistance: 28)
+    private var historyEdgeHandle: some View {
+        HStack {
+            Color.clear
+                .frame(width: 24)
+                .contentShape(Rectangle())
+                .gesture(openHistoryGesture)
+                .accessibilityHidden(true)
+
+            Spacer(minLength: 0)
+        }
+        .ignoresSafeArea()
+    }
+
+    private var openHistoryGesture: some Gesture {
+        DragGesture(minimumDistance: 24)
             .onEnded { value in
-                guard isEnabled else { return }
-                if value.startLocation.x < 28,
-                   value.translation.width > 80,
+                if value.translation.width > 80,
                    abs(value.translation.height) < 60 {
                     isHistoryPresented = true
-                } else if isHistoryPresented,
-                          value.translation.width < -80,
-                          abs(value.translation.height) < 70 {
-                    isHistoryPresented = false
                 }
             }
     }
