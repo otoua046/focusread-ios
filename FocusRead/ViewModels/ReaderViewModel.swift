@@ -84,6 +84,10 @@ final class ReaderViewModel: ObservableObject {
         "Word \(currentWordNumber)/\(session.tokens.count)"
     }
 
+    var searchableTokens: [ReadingToken] {
+        session.tokens
+    }
+
     var locationIndicatorTitle: String {
         switch session.document.sourceType {
         case .pastedText:
@@ -227,8 +231,7 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func jumpToSection(index: Int) {
-        guard sectionNavigationAvailable,
-              let targetTokenIndex = firstReadableTokenIndex(in: index)
+        guard let targetTokenIndex = firstReadableTokenIndex(in: index)
                 ?? readableSectionIndex(after: index).flatMap({ firstReadableTokenIndex(in: $0) })
                 ?? readableSectionIndex(before: index).flatMap({ firstReadableTokenIndex(in: $0) }) else {
             return
@@ -240,6 +243,18 @@ final class ReaderViewModel: ObservableObject {
         }
         persistProgress(force: true)
         triggerHaptic(intensity: 0.6)
+    }
+
+    func canJumpToWordIndex(_ index: Int) -> Bool {
+        session.tokens.indices.contains(index)
+    }
+
+    func jumpToWordIndex(_ index: Int) {
+        guard canJumpToWordIndex(index) else {
+            return
+        }
+
+        jumpToTokenIndex(index)
     }
 
     func adjustSpeed(by delta: Int) {
@@ -256,6 +271,11 @@ final class ReaderViewModel: ObservableObject {
 
     func revealControls() {
         controlsVisible = true
+    }
+
+    func prepareForSearchNavigation() {
+        pause(showControls: true)
+        triggerHaptic(intensity: 0.45)
     }
 
     func updateBehaviorSettings(_ settings: ReaderBehaviorSettings) {
@@ -519,6 +539,15 @@ final class ReaderViewModel: ObservableObject {
 
     private func withAnimationStateChange(_ change: () -> Void) {
         change()
+    }
+
+    private func jumpToTokenIndex(_ index: Int) {
+        pause(showControls: true)
+        withAnimationStateChange {
+            session.currentIndex = index
+        }
+        persistProgress(force: true)
+        triggerHaptic(intensity: 0.6)
     }
 
     private var currentWordNumber: Int {

@@ -43,6 +43,9 @@
 		720000000000000000000014 /* ImageOCRImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000114 /* ImageOCRImportService.swift */; };
 		720000000000000000000015 /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000115 /* CameraCaptureView.swift */; };
 		720000000000000000000016 /* PhotoLibraryPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000116 /* PhotoLibraryPicker.swift */; };
+		720000000000000000000017 /* ReaderSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000117 /* ReaderSearchService.swift */; };
+		720000000000000000000018 /* GoToViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000118 /* GoToViewModel.swift */; };
+		720000000000000000000019 /* GoToNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000119 /* GoToNavigationView.swift */; };
 		730000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 730000000000000000000101 /* ZIPFoundation */; };
 		740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000101 /* EPUBTextExtractorTests.swift */; };
 		740000000000000000000002 /* minimal.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000102 /* minimal.epub */; };
@@ -50,6 +53,7 @@
 		740000000000000000000004 /* accessible_epub_3.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000104 /* accessible_epub_3.epub */; };
 		740000000000000000000005 /* pg1342-images-3.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000105 /* pg1342-images-3.epub */; };
 		740000000000000000000006 /* WordLookupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000106 /* WordLookupServiceTests.swift */; };
+		740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000107 /* ReaderSearchServiceTests.swift */; };
 	/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -101,6 +105,9 @@
 		720000000000000000000114 /* ImageOCRImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageOCRImportService.swift; sourceTree = "<group>"; };
 		720000000000000000000115 /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
 		720000000000000000000116 /* PhotoLibraryPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryPicker.swift; sourceTree = "<group>"; };
+		720000000000000000000117 /* ReaderSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSearchService.swift; sourceTree = "<group>"; };
+		720000000000000000000118 /* GoToViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToViewModel.swift; sourceTree = "<group>"; };
+		720000000000000000000119 /* GoToNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToNavigationView.swift; sourceTree = "<group>"; };
 		740000000000000000000011 /* FocusReadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusReadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		740000000000000000000101 /* EPUBTextExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractorTests.swift; sourceTree = "<group>"; };
 		740000000000000000000102 /* minimal.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = minimal.epub; sourceTree = "<group>"; };
@@ -108,6 +115,7 @@
 		740000000000000000000104 /* accessible_epub_3.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = accessible_epub_3.epub; sourceTree = "<group>"; };
 		740000000000000000000105 /* pg1342-images-3.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = "pg1342-images-3.epub"; sourceTree = "<group>"; };
 		740000000000000000000106 /* WordLookupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordLookupServiceTests.swift; sourceTree = "<group>"; };
+		740000000000000000000107 /* ReaderSearchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSearchServiceTests.swift; sourceTree = "<group>"; };
 	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -192,6 +200,7 @@
 				72000000000000000000010F /* LocalReadingHistoryStore.swift */,
 				720000000000000000000110 /* SavedReadMapper.swift */,
 				720000000000000000000112 /* WordLookupService.swift */,
+				720000000000000000000117 /* ReaderSearchService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -202,6 +211,7 @@
 				71000000000000000000010A /* ReaderViewModel.swift */,
 				71000000000000000000010B /* InputViewModel.swift */,
 				720000000000000000000109 /* DocumentImportViewModel.swift */,
+				720000000000000000000118 /* GoToViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -219,6 +229,7 @@
 				720000000000000000000116 /* PhotoLibraryPicker.swift */,
 				720000000000000000000111 /* HistorySidebarView.swift */,
 				720000000000000000000113 /* DictionaryLookupView.swift */,
+				720000000000000000000119 /* GoToNavigationView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -236,6 +247,7 @@
 			children = (
 				740000000000000000000101 /* EPUBTextExtractorTests.swift */,
 				740000000000000000000106 /* WordLookupServiceTests.swift */,
+				740000000000000000000107 /* ReaderSearchServiceTests.swift */,
 				740000000000000000000041 /* Fixtures */,
 			);
 			path = FocusReadTests;
@@ -399,12 +411,15 @@
 				72000000000000000000000F /* LocalReadingHistoryStore.swift in Sources */,
 				720000000000000000000010 /* SavedReadMapper.swift in Sources */,
 				720000000000000000000012 /* WordLookupService.swift in Sources */,
+				720000000000000000000017 /* ReaderSearchService.swift in Sources */,
 				71000000000000000000000D /* TypographySettingsView.swift in Sources */,
 				72000000000000000000000A /* DocumentImportView.swift in Sources */,
 				720000000000000000000015 /* CameraCaptureView.swift in Sources */,
 				720000000000000000000016 /* PhotoLibraryPicker.swift in Sources */,
 				720000000000000000000011 /* HistorySidebarView.swift in Sources */,
 				720000000000000000000013 /* DictionaryLookupView.swift in Sources */,
+				720000000000000000000018 /* GoToViewModel.swift in Sources */,
+				720000000000000000000019 /* GoToNavigationView.swift in Sources */,
 				71000000000000000000000E /* AppTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -415,6 +430,7 @@
 			files = (
 				740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */,
 				740000000000000000000006 /* WordLookupServiceTests.swift in Sources */,
+				740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

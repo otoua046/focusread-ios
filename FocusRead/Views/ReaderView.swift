@@ -15,6 +15,7 @@ struct ReaderView: View {
 
     @State private var verticalDragStartWPM: Int?
     @State private var showingTypographySettings = false
+    @State private var showingGoToNavigation = false
 
     var body: some View {
         ZStack {
@@ -47,6 +48,9 @@ struct ReaderView: View {
         .animation(.smooth(duration: 0.18), value: viewModel.currentWord)
         .sheet(isPresented: $showingTypographySettings) {
             TypographySettingsView()
+        }
+        .sheet(isPresented: $showingGoToNavigation) {
+            GoToNavigationView(readerViewModel: viewModel)
         }
         .sheet(item: $viewModel.lookupRequest) { request in
             DictionaryLookupView(term: request.term)
@@ -149,11 +153,24 @@ struct ReaderView: View {
                 viewModel.lookupCurrentWord()
             }
 
-            ProgressView(value: viewModel.progress)
-                .progressViewStyle(.linear)
-                .tint(AppTheme.primaryText)
-                .frame(maxWidth: 320)
-                .opacity(viewModel.controlsVisible ? 0.75 : 0.18)
+            Button {
+                viewModel.prepareForSearchNavigation()
+                showingGoToNavigation = true
+            } label: {
+                ProgressView(value: viewModel.progress)
+                    .progressViewStyle(.linear)
+                    .tint(AppTheme.primaryText)
+                    .frame(maxWidth: 320)
+                    .opacity(viewModel.controlsVisible ? 0.75 : 0.18)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Reading progress")
+            .accessibilityHint("Tap to search words")
+            .accessibilityAction(named: "Search Word") {
+                    viewModel.prepareForSearchNavigation()
+                    showingGoToNavigation = true
+            }
         }
         .padding(.horizontal, 8)
     }

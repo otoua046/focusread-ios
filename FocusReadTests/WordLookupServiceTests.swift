@@ -1,4 +1,4 @@
-import XCTest
+Onimport XCTest
 @testable import FocusRead
 
 final class WordLookupServiceTests: XCTestCase {
