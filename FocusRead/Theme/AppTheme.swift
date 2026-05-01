@@ -63,3 +63,25 @@ struct TopReaderButtonStyle: ButtonStyle {
 extension ButtonStyle where Self == TopReaderButtonStyle {
     static var topReaderControl: TopReaderButtonStyle { TopReaderButtonStyle() }
 }
+
+struct FocusReadPageHeader: View {
+    let title: String
+    var subtitle: String? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(.largeTitle, design: .serif, weight: .semibold))
+                .foregroundStyle(AppTheme.primaryText)
+
+            if let subtitle {
+                Text(subtitle)
+                    .font(.callout)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 2)
+    }
+}

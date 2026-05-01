@@ -1,9 +1,38 @@
 import SwiftUI
 
 struct RootView: View {
+    private enum MainTab: Hashable, CaseIterable {
+        case home
+        case library
+        case settings
+
+        var title: String {
+            switch self {
+            case .home:
+                return "Home"
+            case .library:
+                return "Library"
+            case .settings:
+                return "Settings"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .home:
+                return "house"
+            case .library:
+                return "books.vertical"
+            case .settings:
+                return "gearshape"
+            }
+        }
+    }
+
     @StateObject private var inputViewModel = InputViewModel()
     @StateObject private var readingHistoryStore = LocalReadingHistoryStore()
     @State private var readerViewModel: ReaderViewModel?
+    @State private var selectedTab: MainTab = .home
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
     private let tokenizer = TextTokenizer()
 
@@ -16,16 +45,38 @@ struct RootView: View {
                 }
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else {
-                TextInputView(
-                    viewModel: inputViewModel,
-                    historyStore: readingHistoryStore
-                ) {
-                    startReading()
-                } onStartImportedDocument: { document in
-                    startReading(importedDocument: document)
-                } onResumeSavedRead: { read in
-                    resume(read)
+                TabView(selection: $selectedTab) {
+                    TextInputView(
+                        viewModel: inputViewModel
+                    ) {
+                        startReading()
+                    } onStartImportedDocument: { document in
+                        startReading(importedDocument: document)
+                    }
+                    .tabItem {
+                        Label(MainTab.home.title, systemImage: MainTab.home.systemImage)
+                    }
+                    .tag(MainTab.home)
+
+                    LibraryView(store: readingHistoryStore) { read in
+                        resume(read)
+                    }
+                    .tabItem {
+                        Label(MainTab.library.title, systemImage: MainTab.library.systemImage)
+                    }
+                    .tag(MainTab.library)
+
+                    TypographySettingsView(
+                        showsDismissButton: false,
+                        showsPageHeader: true
+                    )
+                    .tabItem {
+                        Label(MainTab.settings.title, systemImage: MainTab.settings.systemImage)
+                    }
+                    .tag(MainTab.settings)
                 }
+                .tint(AppTheme.primaryText)
+                .tabViewStyle(.tabBarOnly)
                 .transition(.opacity)
             }
         }

@@ -3,104 +3,28 @@ import UIKit
 
 struct TextInputView: View {
     @ObservedObject var viewModel: InputViewModel
-    @ObservedObject var historyStore: LocalReadingHistoryStore
     let onStart: () -> Void
     let onStartImportedDocument: (ImportedDocument) -> Void
-    let onResumeSavedRead: (SavedRead) -> Void
     @StateObject private var documentImportViewModel = DocumentImportViewModel()
-    @State private var showingTypographySettings = false
-    @State private var isHistoryPresented = false
     @FocusState private var isEditorFocused: Bool
 
     var body: some View {
-        NavigationStack {
-            GeometryReader { proxy in
-                let sidebarIsPersistent = proxy.size.width >= 760
-
-                ZStack(alignment: .leading) {
-                    FocusReadBackground()
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            isEditorFocused = false
-                        }
-
-                    if sidebarIsPersistent {
-                        HStack(spacing: 0) {
-                            HistorySidebarView(
-                                store: historyStore,
-                                isPresented: $isHistoryPresented,
-                                isPersistent: sidebarIsPersistent,
-                                onResume: onResumeSavedRead
-                            )
-                            .frame(width: min(320, max(286, proxy.size.width * 0.36)))
-
-                            mainContent
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                    } else {
-                        mainContent
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        if isHistoryPresented {
-                            HistorySidebarView(
-                                store: historyStore,
-                                isPresented: $isHistoryPresented,
-                                isPersistent: false,
-                                onResume: onResumeSavedRead
-                            )
-                            .frame(width: min(320, max(286, proxy.size.width * 0.82)))
-                            .transition(.move(edge: .leading).combined(with: .opacity))
-                            .zIndex(2)
-                        }
-                    }
-
-                    if isHistoryPresented && !sidebarIsPersistent {
-                        Color.black.opacity(0.16)
-                            .ignoresSafeArea()
-                            .padding(.leading, min(320, max(286, proxy.size.width * 0.82)))
-                            .onTapGesture {
-                                isHistoryPresented = false
-                            }
-                            .transition(.opacity)
-                            .zIndex(1)
-                    }
+        GeometryReader { proxy in
+            ScrollView {
+                VStack {
+                    mainContent
                 }
-                .gesture(openHistoryGesture(isEnabled: !sidebarIsPersistent))
-                .animation(.smooth(duration: 0.28), value: isHistoryPresented)
-                .animation(.smooth(duration: 0.28), value: sidebarIsPersistent)
+                .frame(minHeight: proxy.size.height, alignment: .top)
+                .frame(maxWidth: .infinity)
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        isHistoryPresented.toggle()
-                    } label: {
-                        Image(systemName: "sidebar.left")
-                    }
-                    .buttonStyle(.topReaderControl)
-                    .accessibilityLabel(isHistoryPresented ? "Hide reading history" : "Show reading history")
-                }
-
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingTypographySettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                    }
-                    .buttonStyle(.topReaderControl)
-                    .accessibilityLabel("Typography settings")
-                }
-
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") {
+            .scrollIndicators(.hidden)
+            .background(
+                FocusReadBackground()
+                    .contentShape(Rectangle())
+                    .onTapGesture {
                         isEditorFocused = false
                     }
-                }
-            }
-            .sheet(isPresented: $showingTypographySettings) {
-                TypographySettingsView()
-            }
+            )
             .sheet(isPresented: $documentImportViewModel.isImportSheetPresented) {
                 DocumentImportView(viewModel: documentImportViewModel) { document in
                     documentImportViewModel.dismissImport()
@@ -129,22 +53,35 @@ struct TextInputView: View {
             ) { result in
                 documentImportViewModel.handleFileImporterResult(result)
             }
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        isEditorFocused = false
+                    }
+                }
+            }
         }
     }
 
     private var mainContent: some View {
-        VStack(spacing: 22) {
+        VStack(spacing: 24) {
             header
             editor
             actions
             aiCleanupFooter
         }
+        .frame(maxWidth: 680)
         .padding(.horizontal, 22)
-        .padding(.vertical, 18)
+        .padding(.top, 18)
+        .padding(.bottom, 28)
     }
 
     private var header: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 14) {
+            FocusReadPageHeader(title: "Home")
+                .padding(.bottom, 2)
+
             Text("Read faster with less motion.")
                 .font(.system(.largeTitle, design: .serif, weight: .semibold))
                 .foregroundStyle(AppTheme.primaryText)
@@ -157,7 +94,6 @@ struct TextInputView: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 420)
         }
-        .padding(.top, 24)
     }
 
     private var editor: some View {
@@ -277,22 +213,6 @@ struct TextInputView: View {
         if let string = UIPasteboard.general.string, !string.isEmpty {
             viewModel.text = string
         }
-    }
-
-    private func openHistoryGesture(isEnabled: Bool) -> some Gesture {
-        DragGesture(minimumDistance: 28)
-            .onEnded { value in
-                guard isEnabled else { return }
-                if value.startLocation.x < 28,
-                   value.translation.width > 80,
-                   abs(value.translation.height) < 60 {
-                    isHistoryPresented = true
-                } else if isHistoryPresented,
-                          value.translation.width < -80,
-                          abs(value.translation.height) < 70 {
-                    isHistoryPresented = false
-                }
-            }
     }
 }
 

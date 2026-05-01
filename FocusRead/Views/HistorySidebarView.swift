@@ -1,5 +1,72 @@
 import SwiftUI
 
+struct LibraryView: View {
+    @ObservedObject var store: LocalReadingHistoryStore
+    let onResume: (SavedRead) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                FocusReadPageHeader(title: "Library")
+
+                if store.savedReads.isEmpty {
+                    emptyState
+                } else {
+                    LazyVStack(spacing: 10) {
+                        ForEach(store.savedReads) { read in
+                            HistoryItemRow(
+                                read: read,
+                                onResume: {
+                                    onResume(read)
+                                },
+                                onToggleFavorite: {
+                                    store.toggleFavorite(read)
+                                },
+                                onDelete: {
+                                    store.delete(read)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, 22)
+            .padding(.top, 20)
+            .padding(.bottom, 24)
+        }
+        .background(FocusReadBackground())
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "books.vertical")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(AppTheme.secondaryText)
+                .frame(width: 54, height: 54)
+                .background(AppTheme.controlBackground, in: Circle())
+
+            Text("No reads yet")
+                .font(.headline)
+                .foregroundStyle(AppTheme.primaryText)
+
+            Text("Start something from Home and it will appear here for easy resuming.")
+                .font(.callout)
+                .foregroundStyle(AppTheme.secondaryText)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 320)
+        }
+        .frame(maxWidth: .infinity, minHeight: 320)
+        .padding(24)
+        .background(AppTheme.cardBackground.opacity(0.7), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .strokeBorder(AppTheme.border.opacity(0.8), lineWidth: 1)
+        }
+    }
+}
+
 struct HistorySidebarView: View {
     @ObservedObject var store: LocalReadingHistoryStore
     @Binding var isPresented: Bool
@@ -49,7 +116,7 @@ struct HistorySidebarView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Text("History")
+            Text("Library")
                 .font(.headline)
                 .foregroundStyle(AppTheme.primaryText)
 
@@ -66,7 +133,7 @@ struct HistorySidebarView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Close reading history")
+                .accessibilityLabel("Close library")
             }
         }
         .padding(.horizontal, 16)
@@ -82,7 +149,7 @@ struct HistorySidebarView: View {
                 .frame(width: 54, height: 54)
                 .background(AppTheme.controlBackground, in: Circle())
 
-            Text("No reading history yet")
+            Text("No reads yet")
                 .font(.callout.weight(.medium))
                 .foregroundStyle(AppTheme.secondaryText)
                 .multilineTextAlignment(.center)

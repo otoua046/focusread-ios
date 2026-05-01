@@ -4,6 +4,9 @@ struct TypographySettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
+    let showsDismissButton: Bool
+    let showsPageHeader: Bool
+
     @AppStorage(TypographySettingsKey.fontFamily) private var fontFamily: String = ReaderFontFamily.serif.rawValue
     @AppStorage(TypographySettingsKey.fontSize) private var fontSize: Double = FontStyle.defaultSize
     @AppStorage(TypographySettingsKey.fontWeight) private var fontWeight: String = ReaderFontWeight.regular.rawValue
@@ -16,227 +19,252 @@ struct TypographySettingsView: View {
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
 
+    init(
+        showsDismissButton: Bool = true,
+        showsPageHeader: Bool = false
+    ) {
+        self.showsDismissButton = showsDismissButton
+        self.showsPageHeader = showsPageHeader
+    }
+
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    settingsSection("App Appearance") {
-                        Picker("Appearance", selection: $appearance) {
-                            ForEach(AppAppearance.allCases) { mode in
+        Group {
+            if showsDismissButton {
+                NavigationStack {
+                    settingsContent
+                        .navigationTitle("Settings")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") {
+                                    dismiss()
+                                }
+                            }
+                        }
+                }
+            } else {
+                settingsContent
+            }
+        }
+        .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
+    }
+
+    private var settingsContent: some View {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        if showsPageHeader {
+                            FocusReadPageHeader(title: "Settings")
+                                .padding(.bottom, 4)
+                        }
+
+                settingsSection("App Appearance") {
+                    Picker("Appearance", selection: $appearance) {
+                        ForEach(AppAppearance.allCases) { mode in
+                            Text(mode.title).tag(mode.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                settingsSection("Typography") {
+                    settingsInlineRow("Font Family") {
+                        Picker("Font Family", selection: $fontFamily) {
+                            ForEach(ReaderFontFamily.allCases) { family in
+                                Text(family.title).tag(family.rawValue)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    settingsRow("Font Size") {
+                        HStack {
+                            Slider(value: $fontSize, in: 24...96, step: 1)
+                                .tint(AppTheme.primaryText)
+
+                            Text("\(Int(fontSize))")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(AppTheme.secondaryText)
+                                .monospacedDigit()
+                                .frame(width: 34, alignment: .trailing)
+                        }
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    settingsRow("Font Weight") {
+                        Picker("Font Weight", selection: $fontWeight) {
+                            ForEach(ReaderFontWeight.allCases) { weight in
+                                Text(weight.title).tag(weight.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle("Italic", isOn: $isItalic)
+                        .tint(AppTheme.primaryText)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    settingsRow("Text Color") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(ReaderTextColor.allCases) { color in
+                                    Button {
+                                        textColor = color.rawValue
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Circle()
+                                                .fill(color.color(for: colorScheme))
+                                                .frame(width: 10, height: 10)
+
+                                            Text(color.title)
+                                                .font(.footnote.weight(.medium))
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 9)
+                                        .foregroundStyle(textColor == color.rawValue ? AppTheme.primaryButtonForeground : AppTheme.controlForeground)
+                                        .background(textColor == color.rawValue ? AppTheme.primaryButtonBackground : AppTheme.controlBackground, in: Capsule())
+                                        .overlay {
+                                            Capsule()
+                                                .strokeBorder(textColor == color.rawValue ? AppTheme.primaryText.opacity(0.18) : AppTheme.border, lineWidth: 1)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Preview")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppTheme.secondaryText)
+
+                        Text("Focus")
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .minimumScaleFactor(0.5)
+                            .lineLimit(1)
+                            .padding(.vertical, 20)
+                            .padding(.horizontal, 12)
+                            .typographyStyle(currentStyle)
+                            .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .strokeBorder(AppTheme.border, lineWidth: 1)
+                            }
+                    }
+                }
+
+                settingsSection("Reader Behavior") {
+                    settingsRow("Default WPM") {
+                        HStack {
+                            Slider(value: defaultWPMBinding, in: 100...1_200, step: 25)
+                                .tint(AppTheme.primaryText)
+
+                            Text("\(defaultWPM)")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(AppTheme.secondaryText)
+                                .monospacedDigit()
+                                .frame(width: 54, alignment: .trailing)
+                        }
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle("Haptics", isOn: $hapticsEnabled)
+                        .tint(AppTheme.primaryText)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle("Punctuation Pauses", isOn: $punctuationPausesEnabled)
+                        .tint(AppTheme.primaryText)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    settingsRow("Long Word Delay") {
+                        Picker("Long Word Delay", selection: $longWordDelayMode) {
+                            ForEach(LongWordDelayMode.allCases) { mode in
                                 Text(mode.title).tag(mode.rawValue)
                             }
                         }
                         .pickerStyle(.segmented)
                     }
 
-                    settingsSection("Typography") {
-                        settingsInlineRow("Font Family") {
-                            Picker("Font Family", selection: $fontFamily) {
-                                ForEach(ReaderFontFamily.allCases) { family in
-                                    Text(family.title).tag(family.rawValue)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        }
+                    Divider().foregroundStyle(AppTheme.border)
 
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        settingsRow("Font Size") {
-                            HStack {
-                                Slider(value: $fontSize, in: 24...96, step: 1)
-                                    .tint(AppTheme.primaryText)
-
-                                Text("\(Int(fontSize))")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(AppTheme.secondaryText)
-                                    .monospacedDigit()
-                                    .frame(width: 34, alignment: .trailing)
-                            }
-                        }
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        settingsRow("Font Weight") {
-                            Picker("Font Weight", selection: $fontWeight) {
-                                ForEach(ReaderFontWeight.allCases) { weight in
-                                    Text(weight.title).tag(weight.rawValue)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                        }
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        Toggle("Italic", isOn: $isItalic)
-                            .tint(AppTheme.primaryText)
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        settingsRow("Text Color") {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(ReaderTextColor.allCases) { color in
-                                        Button {
-                                            textColor = color.rawValue
-                                        } label: {
-                                            HStack(spacing: 8) {
-                                                Circle()
-                                                    .fill(color.color(for: colorScheme))
-                                                    .frame(width: 10, height: 10)
-
-                                                Text(color.title)
-                                                    .font(.footnote.weight(.medium))
-                                            }
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 9)
-                                            .foregroundStyle(textColor == color.rawValue ? AppTheme.primaryButtonForeground : AppTheme.controlForeground)
-                                            .background(textColor == color.rawValue ? AppTheme.primaryButtonBackground : AppTheme.controlBackground, in: Capsule())
-                                            .overlay {
-                                                Capsule()
-                                                    .strokeBorder(textColor == color.rawValue ? AppTheme.primaryText.opacity(0.18) : AppTheme.border, lineWidth: 1)
-                                            }
-                                        }
-                                        .buttonStyle(.plain)
-                                    }
-                                }
-                                .padding(.vertical, 2)
-                            }
-                        }
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Preview")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(AppTheme.secondaryText)
-
-                            Text("Focus")
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .minimumScaleFactor(0.5)
-                                .lineLimit(1)
-                                .padding(.vertical, 20)
-                                .padding(.horizontal, 12)
-                                .typographyStyle(currentStyle)
-                                .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                        .strokeBorder(AppTheme.border, lineWidth: 1)
-                                }
-                        }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Punctuation pauses add natural reading pauses after commas, periods, and paragraph breaks.")
+                        Text("Long-word delay gives extra time for longer words, names, and numbers.")
                     }
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
 
-                    settingsSection("Reader Behavior") {
-                        settingsRow("Default WPM") {
-                            HStack {
-                                Slider(value: defaultWPMBinding, in: 100...1_200, step: 25)
-                                    .tint(AppTheme.primaryText)
-
-                                Text("\(defaultWPM)")
-                                    .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(AppTheme.secondaryText)
-                                    .monospacedDigit()
-                                    .frame(width: 54, alignment: .trailing)
-                            }
-                        }
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        Toggle("Haptics", isOn: $hapticsEnabled)
-                            .tint(AppTheme.primaryText)
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        Toggle("Punctuation Pauses", isOn: $punctuationPausesEnabled)
-                            .tint(AppTheme.primaryText)
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        settingsRow("Long Word Delay") {
-                            Picker("Long Word Delay", selection: $longWordDelayMode) {
-                                ForEach(LongWordDelayMode.allCases) { mode in
-                                    Text(mode.title).tag(mode.rawValue)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                        }
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Punctuation pauses add natural reading pauses after commas, periods, and paragraph breaks.")
-                            Text("Long-word delay gives extra time for longer words, names, and numbers.")
-                        }
-                        .font(.footnote)
-                        .foregroundStyle(AppTheme.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    settingsSection("Text Cleanup") {
-                        settingsRow("Imported Text") {
-                            Picker("Imported Text", selection: cleanupModeBinding) {
-                                ForEach(availableCleanupModes) { mode in
-                                    Text(mode.title).tag(mode.rawValue)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                        }
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        VStack(alignment: .leading, spacing: 8) {
+                settingsSection("Text Cleanup") {
+                    settingsRow("Imported Text") {
+                        Picker("Imported Text", selection: cleanupModeBinding) {
                             ForEach(availableCleanupModes) { mode in
-                                Text("\(mode.title): \(mode.description)")
+                                Text(mode.title).tag(mode.rawValue)
                             }
                         }
-                        .font(.footnote)
-                        .foregroundStyle(AppTheme.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .pickerStyle(.segmented)
                     }
 
-                    settingsSection("About / Reset") {
-                        settingsActionRow(
-                            title: "Reset Typography",
-                            systemImage: "textformat.size",
-                            action: resetTypography
-                        )
+                    Divider().foregroundStyle(AppTheme.border)
 
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        settingsActionRow(
-                            title: "Reset All Settings",
-                            systemImage: "arrow.counterclockwise",
-                            action: resetAllSettings
-                        )
-
-                        Divider().foregroundStyle(AppTheme.border)
-
-                        HStack {
-                            Text(appNameString)
-                            Spacer()
-                            Text(appVersionString)
-                                .foregroundStyle(AppTheme.secondaryText)
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(availableCleanupModes) { mode in
+                            Text("\(mode.title): \(mode.description)")
                         }
-                        .font(.footnote)
                     }
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 16)
-            }
-            .background(AppTheme.background.ignoresSafeArea())
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
+
+                settingsSection("About / Reset") {
+                    settingsActionRow(
+                        title: "Reset Typography",
+                        systemImage: "textformat.size",
+                        action: resetTypography
+                    )
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    settingsActionRow(
+                        title: "Reset All Settings",
+                        systemImage: "arrow.counterclockwise",
+                        action: resetAllSettings
+                    )
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    HStack {
+                        Text(appNameString)
+                        Spacer()
+                        Text(appVersionString)
+                            .foregroundStyle(AppTheme.secondaryText)
                     }
+                    .font(.footnote)
                 }
             }
-            .onAppear {
-                normalizeCleanupMode()
-            }
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
         }
-        .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
+        .background(AppTheme.background.ignoresSafeArea())
+        .onAppear {
+            normalizeCleanupMode()
+        }
     }
 
     private var currentStyle: FontStyle {
