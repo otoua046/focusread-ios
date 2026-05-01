@@ -873,7 +873,7 @@ struct LibraryListRow: View {
                 coverView
                     .frame(width: 50, height: 70)
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(read.displayTitle)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(AppTheme.primaryText)
@@ -881,19 +881,18 @@ struct LibraryListRow: View {
 
                     if let author = read.author, !author.isEmpty {
                         Text(author)
-                            .font(.caption)
-                            .foregroundStyle(AppTheme.secondaryText)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: read.sourceType.systemImageName)
-                            .font(.caption2)
-                            .foregroundStyle(AppTheme.secondaryText)
                         Text("\(Int(read.progressPercent.rounded()))%")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(AppTheme.secondaryText)
                     }
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
