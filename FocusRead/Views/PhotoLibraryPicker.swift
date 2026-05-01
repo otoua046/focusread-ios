@@ -3,6 +3,8 @@ import SwiftUI
 import UIKit
 
 struct PhotoLibraryPicker: UIViewControllerRepresentable {
+    static let maximumSelectionCount = 12
+
     let selectionLimit: Int
     let onImagesPicked: ([UIImage]) -> Void
     let onCancel: () -> Void
@@ -63,9 +65,9 @@ struct PhotoLibraryPicker: UIViewControllerRepresentable {
 
         private static func loadImages(from results: [PHPickerResult]) async throws -> [UIImage] {
             var images: [UIImage] = []
-            images.reserveCapacity(results.count)
+            images.reserveCapacity(min(results.count, PhotoLibraryPicker.maximumSelectionCount))
 
-            for result in results {
+            for result in results.prefix(PhotoLibraryPicker.maximumSelectionCount) {
                 try Task.checkCancellation()
                 let image = try await loadImage(from: result.itemProvider)
                 images.append(image)

@@ -295,13 +295,16 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func cleanup() {
-        persistProgress(force: true)
+        persistProgress(force: true, durability: .immediate)
         cleanupTask?.cancel()
         cleanupTask = nil
         Task { await engine.stop() }
     }
 
-    func persistProgress(force: Bool = false) {
+    func persistProgress(
+        force: Bool = false,
+        durability: ReadingHistoryPersistenceDurability = .normal
+    ) {
         guard let readingHistoryStore,
               let savedReadID,
               var read = readingHistoryStore.read(withID: savedReadID) else {
@@ -315,7 +318,7 @@ final class ReaderViewModel: ObservableObject {
         if let importedDocument {
             read.sections = SavedReadMapper.savedSections(from: importedDocument)
         }
-        readingHistoryStore.save(read)
+        readingHistoryStore.save(read, durability: durability)
         lastPersistedWordIndex = session.currentIndex
     }
 
