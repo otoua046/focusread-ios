@@ -59,7 +59,7 @@ struct ReaderView: View {
         }
         .onChange(of: scenePhase) {
             if scenePhase != .active {
-                viewModel.persistProgress(force: true)
+                viewModel.persistProgress(force: true, durability: .immediate)
             }
         }
         .onDisappear {

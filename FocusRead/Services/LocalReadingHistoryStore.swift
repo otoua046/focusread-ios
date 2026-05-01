@@ -43,19 +43,19 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
         }
     }
 
-    func save(_ read: SavedRead) {
+    func save(_ read: SavedRead, durability: ReadingHistoryPersistenceDurability = .normal) {
         if let index = savedReads.firstIndex(where: { $0.id == read.id }) {
             savedReads[index] = read
         } else {
             savedReads.append(read)
         }
         savedReads = savedReads.sortedByHistoryRecency()
-        persist()
+        persist(durability: durability)
     }
 
     func delete(_ read: SavedRead) {
         savedReads.removeAll { $0.id == read.id }
-        persist()
+        persist(durability: .normal)
     }
 
     func toggleFavorite(_ read: SavedRead) {
@@ -69,16 +69,18 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
         savedReads.first { $0.id == id }
     }
 
-    private func persist() {
+    private func persist(durability: ReadingHistoryPersistenceDurability) {
         guard !persistenceSuspended else { return }
 
         persistRevision += 1
         let revision = persistRevision
         let snapshot = savedReads
-        let writer = writer
 
-        Task(priority: .utility) {
-            await writer.persist(snapshot, revision: revision)
+        switch durability {
+        case .normal:
+            writer.persist(snapshot, revision: revision)
+        case .immediate:
+            writer.persistSynchronously(snapshot, revision: revision)
         }
     }
 
@@ -107,8 +109,9 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     }
 }
 
-private actor ReadingHistoryFileWriter {
+private final class ReadingHistoryFileWriter: @unchecked Sendable {
     private let fileURL: URL
+    private let queue = DispatchQueue(label: "FocusRead.ReadingHistoryFileWriter", qos: .utility)
     private var latestRevision = 0
 
     init(fileURL: URL) {
@@ -116,6 +119,18 @@ private actor ReadingHistoryFileWriter {
     }
 
     func persist(_ savedReads: [SavedRead], revision: Int) {
+        queue.async { [self] in
+            persistOnQueue(savedReads, revision: revision)
+        }
+    }
+
+    func persistSynchronously(_ savedReads: [SavedRead], revision: Int) {
+        queue.sync {
+            persistOnQueue(savedReads, revision: revision)
+        }
+    }
+
+    private func persistOnQueue(_ savedReads: [SavedRead], revision: Int) {
         guard revision >= latestRevision else { return }
         latestRevision = revision
 
