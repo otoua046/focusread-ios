@@ -20,7 +20,8 @@ struct TextFileExtractor: DocumentTextExtractor {
         return ImportedDocument(
             fileName: file.fileName,
             text: normalizedText,
-            sourceType: .txt
+            sourceType: .txt,
+            previewImageData: nil
         )
     }
 }

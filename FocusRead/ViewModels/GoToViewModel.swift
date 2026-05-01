@@ -43,7 +43,7 @@ final class GoToViewModel: ObservableObject {
         let tokens = reader.searchableTokens
         let searchService = searchService
 
-        searchTask = Task {
+        searchTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(180))
             guard !Task.isCancelled else { return }
 
@@ -52,8 +52,8 @@ final class GoToViewModel: ObservableObject {
             }.value
 
             guard !Task.isCancelled else { return }
-            searchResults = results
-            isSearching = false
+            self?.searchResults = results
+            self?.isSearching = false
         }
     }
 

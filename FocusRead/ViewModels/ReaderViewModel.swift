@@ -158,7 +158,7 @@ final class ReaderViewModel: ObservableObject {
         controlsVisible = false
         triggerHaptic(intensity: 0.75)
 
-        Task {
+        Task { [weak self, engine] in
             await engine.start(
                 sessionProvider: { [weak self] in
                     self?.session ?? ReadingSession(tokens: [])
@@ -182,7 +182,7 @@ final class ReaderViewModel: ObservableObject {
         isPlaying = false
         controlsVisible = showControls
         triggerHaptic(intensity: 0.55)
-        Task { await engine.stop() }
+        Task { [engine] in await engine.stop() }
     }
 
     func rewindWord() {
@@ -298,7 +298,7 @@ final class ReaderViewModel: ObservableObject {
         persistProgress(force: true, durability: .immediate)
         cleanupTask?.cancel()
         cleanupTask = nil
-        Task { await engine.stop() }
+        Task { [engine] in await engine.stop() }
     }
 
     func persistProgress(

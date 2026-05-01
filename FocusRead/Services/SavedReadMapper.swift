@@ -12,6 +12,7 @@ enum SavedReadMapper {
             displayTitle: title(forPastedText: text),
             originalFileName: nil,
             sourceType: .pastedText,
+            thumbnailPath: nil,
             createdAt: now,
             updatedAt: now,
             lastOpenedAt: now,
@@ -38,7 +39,9 @@ enum SavedReadMapper {
             ],
             cleanupModeUsed: cleanupMode.rawValue,
             isFavorite: false,
-            readingStats: SavedReadStats(totalTimeRead: 0, sessionsCount: 1)
+            readingStats: SavedReadStats(totalTimeRead: 0, sessionsCount: 1),
+            author: nil,
+            manualSortIndex: nil
         )
     }
 
@@ -53,6 +56,7 @@ enum SavedReadMapper {
             displayTitle: document.displayTitle,
             originalFileName: document.fileName,
             sourceType: savedSourceType(from: document.sourceType),
+            thumbnailPath: nil,
             createdAt: now,
             updatedAt: now,
             lastOpenedAt: now,
@@ -66,7 +70,9 @@ enum SavedReadMapper {
             sections: sections,
             cleanupModeUsed: document.cleanupMode.rawValue,
             isFavorite: false,
-            readingStats: SavedReadStats(totalTimeRead: 0, sessionsCount: 1)
+            readingStats: SavedReadStats(totalTimeRead: 0, sessionsCount: 1),
+            author: document.author,
+            manualSortIndex: nil
         )
     }
 
@@ -110,6 +116,7 @@ enum SavedReadMapper {
         return ImportedDocument(
             fileName: read.originalFileName ?? read.displayTitle,
             displayTitle: read.displayTitle,
+            author: read.author,
             sourceType: sourceType,
             sections: read.sections.map(importedSection),
             cleanupMode: SmartCleanupMode(rawValue: read.cleanupModeUsed) ?? .off

@@ -5,6 +5,7 @@ struct SavedRead: Identifiable, Codable, Equatable, Sendable {
     var displayTitle: String
     var originalFileName: String?
     var sourceType: SavedReadSourceType
+    var thumbnailPath: String?
     var createdAt: Date
     var updatedAt: Date
     var lastOpenedAt: Date
@@ -19,6 +20,8 @@ struct SavedRead: Identifiable, Codable, Equatable, Sendable {
     var cleanupModeUsed: String
     var isFavorite: Bool
     var readingStats: SavedReadStats
+    var author: String?
+    var manualSortIndex: Int?
 
     var documentText: String {
         sections.map(\.text)

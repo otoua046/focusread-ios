@@ -56,3 +56,82 @@ struct ReaderSearchServiceTests {
         )
     }
 }
+
+struct TextTokenizerTests {
+    @Test func paragraphBreakRetroactivelyAppliedToPreviousToken() {
+        let text = "Hello world.\n\nNew paragraph starts here."
+        let tokenizer = TextTokenizer()
+        let tokens = tokenizer.tokenize(text)
+
+        #expect(tokens.count == 6)
+        
+        let worldToken = tokens[1]
+        #expect(worldToken.text == "world.")
+        #expect(worldToken.pauseKind == ReadingToken.PauseKind.paragraphBreak)
+        #expect(worldToken.sentenceIndex == 0)
+
+        let newToken = tokens[2]
+        #expect(newToken.text == "New")
+        #expect(newToken.pauseKind == ReadingToken.PauseKind.none)
+        #expect(newToken.sentenceIndex == 1)
+
+        let paragraphToken = tokens[3]
+        #expect(paragraphToken.text == "paragraph")
+        #expect(paragraphToken.sentenceIndex == 1)
+        
+        let hereToken = tokens.last!
+        #expect(hereToken.text == "here.")
+        #expect(hereToken.pauseKind == ReadingToken.PauseKind.sentenceEnd)
+        #expect(hereToken.sentenceIndex == 1)
+    }
+
+    @Test func paragraphBreakUpgradesMinorPunctuation() {
+        let text = "Hello world,\n\nNew paragraph"
+        let tokenizer = TextTokenizer()
+        let tokens = tokenizer.tokenize(text)
+
+        #expect(tokens.count == 4)
+        let worldToken = tokens[1]
+        #expect(worldToken.text == "world,")
+        #expect(worldToken.pauseKind == ReadingToken.PauseKind.paragraphBreak)
+        #expect(worldToken.sentenceIndex == 0)
+
+        let newToken = tokens[2]
+        #expect(newToken.text == "New")
+        #expect(newToken.pauseKind == ReadingToken.PauseKind.none)
+        #expect(newToken.sentenceIndex == 1)
+    }
+
+    @Test func sectionBoundaryAppliesParagraphBreakToLastToken() {
+        let section1 = ImportedDocumentSection(index: 0, text: "End of chapter 1.", pageNumber: 1, chapterNumber: 1, chapterTitle: nil, wordRange: nil, epubNavigationLevel: nil, epubSectionRole: .chapter, epubStructureSource: nil, epubStructureConfidence: nil)
+        let section2 = ImportedDocumentSection(index: 1, text: "Chapter 2 begins here.", pageNumber: 2, chapterNumber: 2, chapterTitle: nil, wordRange: nil, epubNavigationLevel: nil, epubSectionRole: .chapter, epubStructureSource: nil, epubStructureConfidence: nil)
+        
+        let document = ImportedDocument(fileName: "Test.txt", displayTitle: "Test", sourceType: .txt, sections: [section1, section2], cleanupMode: .off)
+        let tokenizer = TextTokenizer()
+        let tokens = tokenizer.tokenize(document)
+
+        // "End", "of", "chapter", "1."
+        let lastOfSection1 = tokens[3]
+        #expect(lastOfSection1.text == "1.")
+        #expect(lastOfSection1.pauseKind == ReadingToken.PauseKind.paragraphBreak)
+        #expect(lastOfSection1.sentenceIndex == 0)
+
+        // "Chapter", "2", "begins", "here."
+        let firstOfSection2 = tokens[4]
+        #expect(firstOfSection2.text == "Chapter")
+        #expect(firstOfSection2.pauseKind == ReadingToken.PauseKind.none)
+        #expect(firstOfSection2.sentenceIndex == 1)
+    }
+    
+    @Test func rewindSentenceBehaviorDoesNotIsolateFirstWord() {
+        let text = "Hello world.\n\nNew paragraph starts here."
+        let tokenizer = TextTokenizer()
+        let tokens = tokenizer.tokenize(text)
+        
+        var session = ReadingSession(tokens: tokens)
+        session.currentIndex = 4 // "starts"
+        session.rewindSentence() // Should rewind to "New" which is index 2
+        #expect(session.currentIndex == 2)
+    }
+}
+

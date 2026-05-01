@@ -9,7 +9,9 @@ struct ImportedFile: Sendable {
 struct ImportedDocument: Equatable, Sendable {
     let fileName: String
     let displayTitle: String
+    let author: String?
     let sourceType: DocumentSourceType
+    let previewImageData: Data?
     let sections: [ImportedDocumentSection]
     let cleanupMode: SmartCleanupMode
     let cleanupChunks: [DocumentCleanupChunk]
@@ -17,14 +19,18 @@ struct ImportedDocument: Equatable, Sendable {
     init(
         fileName: String,
         displayTitle: String? = nil,
+        author: String? = nil,
         text: String,
         sourceType: DocumentSourceType,
+        previewImageData: Data? = nil,
         cleanupMode: SmartCleanupMode = .off,
         cleanupChunks: [DocumentCleanupChunk] = []
     ) {
         self.fileName = fileName
         self.displayTitle = displayTitle ?? fileName
+        self.author = author
         self.sourceType = sourceType
+        self.previewImageData = previewImageData
         self.cleanupMode = cleanupMode
         self.cleanupChunks = cleanupChunks
         self.sections = [
@@ -42,14 +48,18 @@ struct ImportedDocument: Equatable, Sendable {
     init(
         fileName: String,
         displayTitle: String? = nil,
+        author: String? = nil,
         sourceType: DocumentSourceType,
         sections: [ImportedDocumentSection],
+        previewImageData: Data? = nil,
         cleanupMode: SmartCleanupMode = .off,
         cleanupChunks: [DocumentCleanupChunk] = []
     ) {
         self.fileName = fileName
         self.displayTitle = displayTitle ?? fileName
+        self.author = author
         self.sourceType = sourceType
+        self.previewImageData = previewImageData
         self.sections = sections
         self.cleanupMode = cleanupMode
         self.cleanupChunks = cleanupChunks
@@ -64,8 +74,10 @@ struct ImportedDocument: Equatable, Sendable {
         ImportedDocument(
             fileName: fileName,
             displayTitle: displayTitle,
+            author: author,
             sourceType: sourceType,
             sections: sections,
+            previewImageData: previewImageData,
             cleanupMode: cleanupMode,
             cleanupChunks: cleanupChunks
         )

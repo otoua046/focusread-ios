@@ -24,6 +24,7 @@ struct OCRTextExtractor: DocumentTextExtractor {
         guard let document = PDFDocument(url: file.localURL) else {
             throw DocumentImportError.unreadablePDF
         }
+        let previewImageData = firstPagePreviewData(for: document)
 
         let pageCount = document.pageCount
         guard pageCount > 0 else {
@@ -82,7 +83,8 @@ struct OCRTextExtractor: DocumentTextExtractor {
         return ImportedDocument(
             fileName: file.fileName,
             sourceType: .pdf,
-            sections: sections
+            sections: sections,
+            previewImageData: previewImageData
         )
     }
 
@@ -95,6 +97,7 @@ struct OCRTextExtractor: DocumentTextExtractor {
         guard !images.isEmpty else {
             throw DocumentImportError.noReadableText
         }
+        let previewImageData = previewImageData(from: images.first)
 
         var sections = images.indices.map { imageIndex in
             ImportedDocumentSection(
@@ -146,7 +149,8 @@ struct OCRTextExtractor: DocumentTextExtractor {
             fileName: fileName,
             displayTitle: displayTitle,
             sourceType: .image,
-            sections: sections
+            sections: sections,
+            previewImageData: previewImageData
         )
     }
 
@@ -198,5 +202,45 @@ struct OCRTextExtractor: DocumentTextExtractor {
         return request.results?.compactMap { observation in
             observation.topCandidates(1).first?.string
         } ?? []
+    }
+
+    private func firstPagePreviewData(for document: PDFDocument) -> Data? {
+        guard let page = document.page(at: 0) else {
+            return nil
+        }
+
+        let thumbnail = page.thumbnail(of: CGSize(width: 480, height: 640), for: .cropBox)
+        return thumbnail.jpegData(compressionQuality: 0.88)
+    }
+
+    private func previewImageData(from image: OCRImagePage?) -> Data? {
+        guard let image else { return nil }
+        let uiImage = UIImage(cgImage: image.cgImage, scale: 1, orientation: image.orientation.uiImageOrientation)
+        return uiImage.jpegData(compressionQuality: 0.88)
+    }
+}
+
+private extension CGImagePropertyOrientation {
+    var uiImageOrientation: UIImage.Orientation {
+        switch self {
+        case .up:
+            return .up
+        case .down:
+            return .down
+        case .left:
+            return .left
+        case .right:
+            return .right
+        case .upMirrored:
+            return .upMirrored
+        case .downMirrored:
+            return .downMirrored
+        case .leftMirrored:
+            return .leftMirrored
+        case .rightMirrored:
+            return .rightMirrored
+        @unknown default:
+            return .up
+        }
     }
 }

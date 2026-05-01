@@ -4,6 +4,8 @@ import Foundation
 final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     @Published private(set) var savedReads: [SavedRead] = []
 
+    private let fileManager: FileManager
+    private let storageDirectory: URL
     private let fileURL: URL
     private let loader: ReadingHistoryFileLoader
     private let writer: ReadingHistoryFileWriter
@@ -12,10 +14,12 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     private var hasLocalMutations = false
 
     init(fileManager: FileManager = .default) {
+        self.fileManager = fileManager
         let supportDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
         let directory = supportDirectory.appendingPathComponent("FocusRead", isDirectory: true)
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        self.storageDirectory = directory
         self.fileURL = directory.appendingPathComponent("SavedReads.json")
         self.loader = ReadingHistoryFileLoader(fileURL: fileURL)
         self.writer = ReadingHistoryFileWriter(fileURL: fileURL)
@@ -45,6 +49,7 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
 
     func delete(_ read: SavedRead) {
         hasLocalMutations = true
+        removeAssociatedFiles(for: read)
         savedReads.removeAll { $0.id == read.id }
         persist(durability: .normal)
     }
@@ -92,6 +97,12 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
         }
     }
 
+    private func removeAssociatedFiles(for read: SavedRead) {
+        let folderURL = storageDirectory
+            .appendingPathComponent("SavedReads", isDirectory: true)
+            .appendingPathComponent(read.id.uuidString, isDirectory: true)
+        try? fileManager.removeItem(at: folderURL)
+    }
 }
 
 private enum ReadingHistoryLoadResult: Sendable {

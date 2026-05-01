@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import ZIPFoundation
 
 struct EPUBTextExtractor: DocumentTextExtractor {
@@ -18,6 +19,7 @@ struct EPUBTextExtractor: DocumentTextExtractor {
             let opfPath = try ContainerXMLParser.parse(containerData)
             let opfData = try data(for: opfPath, in: archive)
             let package = try EPUBPackageParser.parse(opfData, opfPath: opfPath)
+            let previewImageData = coverPreviewData(for: package, archive: archive)
 
             let spineItems = package.readableSpineItems()
             guard !spineItems.isEmpty else {
@@ -69,8 +71,10 @@ struct EPUBTextExtractor: DocumentTextExtractor {
             return ImportedDocument(
                 fileName: file.fileName,
                 displayTitle: package.metadataTitle,
+                author: package.metadataAuthor,
                 sourceType: .epub,
-                sections: sections
+                sections: sections,
+                previewImageData: previewImageData
             )
         } catch let error as DocumentImportError {
             throw error
@@ -95,6 +99,28 @@ struct EPUBTextExtractor: DocumentTextExtractor {
         }
 
         throw DocumentImportError.epubContentsNotFound
+    }
+
+    private func coverPreviewData(for package: EPUBPackage, archive: Archive) -> Data? {
+        if let coverItemID = package.coverItemID,
+           let coverItem = package.manifest[coverItemID],
+           coverItem.isImage {
+            let path = resolveArchivePath(baseDirectory: package.opfDirectory, href: coverItem.href)
+            if let data = try? data(for: path, in: archive),
+               UIImage(data: data) != nil {
+                return data
+            }
+        }
+
+        if let coverItem = package.manifest.values.first(where: { $0.isCoverImage }) {
+            let path = resolveArchivePath(baseDirectory: package.opfDirectory, href: coverItem.href)
+            if let data = try? data(for: path, in: archive),
+               UIImage(data: data) != nil {
+                return data
+            }
+        }
+
+        return nil
     }
 }
 
@@ -715,6 +741,8 @@ private struct EPUBPackage {
     let opfPath: String
     let opfDirectory: String
     let metadataTitle: String?
+    let metadataAuthor: String?
+    let coverItemID: String?
     let manifest: [String: ManifestItem]
     let spine: [String]
     let spineTOCID: String?
@@ -754,6 +782,14 @@ private struct ManifestItem {
 
     var isNavigationDocument: Bool {
         propertyValues.contains("nav")
+    }
+
+    var isCoverImage: Bool {
+        propertyValues.contains("cover-image")
+    }
+
+    var isImage: Bool {
+        mediaType.lowercased().hasPrefix("image/")
     }
 
     var isNCX: Bool {
@@ -857,6 +893,8 @@ private enum EPUBPackageParser {
             opfPath: opfPath,
             opfDirectory: opfPath.deletingLastPathComponent,
             metadataTitle: EPUBStructureBuilder.cleanedNavigationTitle(delegate.metadataTitle),
+            metadataAuthor: delegate.metadataAuthor,
+            coverItemID: delegate.coverItemID,
             manifest: delegate.manifest,
             spine: delegate.spine,
             spineTOCID: delegate.spineTOCID
@@ -1179,9 +1217,13 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
     var manifest: [String: ManifestItem] = [:]
     var spine: [String] = []
     var spineTOCID: String?
+    var coverItemID: String?
     var metadataTitle: String?
+    var metadataAuthor: String?
     private var capturingTitle = false
+    private var capturingAuthor = false
     private var titleText = ""
+    private var authorText = ""
 
     init(opfPath: String) {
         self.opfPath = opfPath
@@ -1199,6 +1241,16 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
             if metadataTitle == nil {
                 capturingTitle = true
                 titleText = ""
+            }
+        case "creator":
+            if metadataAuthor == nil {
+                capturingAuthor = true
+                authorText = ""
+            }
+        case "meta":
+            if coverItemID == nil,
+               attributeDict["name"]?.lowercased() == "cover" {
+                coverItemID = attributeDict["content"]
             }
         case "item":
             guard let id = attributeDict["id"],
@@ -1234,6 +1286,8 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
     func parser(_ parser: XMLParser, foundCharacters string: String) {
         if capturingTitle {
             titleText.append(string)
+        } else if capturingAuthor {
+            authorText.append(string)
         }
     }
 
@@ -1243,18 +1297,25 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
         namespaceURI: String?,
         qualifiedName qName: String?
     ) {
-        guard elementName.xmlLocalName == "title", capturingTitle else {
-            return
+        if elementName.xmlLocalName == "title" && capturingTitle {
+            let title = titleText
+                .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !title.isEmpty {
+                metadataTitle = title
+            }
+            capturingTitle = false
+            titleText = ""
+        } else if elementName.xmlLocalName == "creator" && capturingAuthor {
+            let author = authorText
+                .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !author.isEmpty {
+                metadataAuthor = author
+            }
+            capturingAuthor = false
+            authorText = ""
         }
-
-        let title = titleText
-            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if !title.isEmpty {
-            metadataTitle = title
-        }
-        capturingTitle = false
-        titleText = ""
     }
 }
 

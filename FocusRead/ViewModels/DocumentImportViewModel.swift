@@ -73,9 +73,9 @@ final class DocumentImportViewModel: ObservableObject {
         state = .idle
         isImportSheetPresented = false
 
-        Task { @MainActor in
+        Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(250))
-            presentImportSource(.files)
+            self?.presentImportSource(.files)
         }
     }
 

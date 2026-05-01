@@ -2,13 +2,15 @@ import Foundation
 
 struct TextTokenizer: Sendable {
     func tokenize(_ input: String) -> [ReadingToken] {
+        var tokens: [ReadingToken] = []
         var sentenceIndex = 0
-        return tokenize(
+        tokenize(
             input,
-            startingGlobalWordIndex: 0,
+            tokens: &tokens,
             startingSentenceIndex: &sentenceIndex,
             sourceSection: nil
         )
+        return tokens
     }
 
     func tokenize(_ document: ImportedDocument) -> [ReadingToken] {
@@ -16,14 +18,31 @@ struct TextTokenizer: Sendable {
         var sentenceIndex = 0
 
         for section in document.sections {
-            let sectionTokens = tokenize(
+            if let last = tokens.last, last.pauseKind != .paragraphBreak {
+                tokens[tokens.count - 1] = ReadingToken(
+                    id: last.id,
+                    text: last.text,
+                    rawText: last.rawText,
+                    globalWordIndex: last.globalWordIndex,
+                    sourcePageNumber: last.sourcePageNumber,
+                    sourceChapterNumber: last.sourceChapterNumber,
+                    sourceChapterTitle: last.sourceChapterTitle,
+                    sourceSectionIndex: last.sourceSectionIndex,
+                    pauseKind: .paragraphBreak,
+                    sentenceIndex: last.sentenceIndex,
+                    containsNumber: last.containsNumber
+                )
+                if last.pauseKind != .sentenceEnd {
+                    sentenceIndex += 1
+                }
+            }
+
+            tokenize(
                 section.text,
-                startingGlobalWordIndex: tokens.count,
+                tokens: &tokens,
                 startingSentenceIndex: &sentenceIndex,
-                sourceSection: section,
-                startsWithParagraphBreak: !tokens.isEmpty
+                sourceSection: section
             )
-            tokens.append(contentsOf: sectionTokens)
         }
 
         return tokens
@@ -31,22 +50,53 @@ struct TextTokenizer: Sendable {
 
     private func tokenize(
         _ input: String,
-        startingGlobalWordIndex: Int,
+        tokens: inout [ReadingToken],
         startingSentenceIndex: inout Int,
-        sourceSection: ImportedDocumentSection?,
-        startsWithParagraphBreak: Bool = false
-    ) -> [ReadingToken] {
+        sourceSection: ImportedDocumentSection?
+    ) {
         let normalized = input.replacingOccurrences(of: "\r\n", with: "\n")
         let scanner = Scanner(string: normalized)
         scanner.charactersToBeSkipped = nil
 
-        var tokens: [ReadingToken] = []
-        var pendingParagraphBreak = startsWithParagraphBreak
-
         while !scanner.isAtEnd {
             if let whitespace = scanner.scanCharacters(from: CharacterSet.whitespacesAndNewlines) {
                 if whitespace.contains("\n\n") {
-                    pendingParagraphBreak = true
+                    if let last = tokens.last, last.pauseKind != .paragraphBreak, last.sourceSectionIndex == sourceSection?.index {
+                        tokens[tokens.count - 1] = ReadingToken(
+                            id: last.id,
+                            text: last.text,
+                            rawText: last.rawText,
+                            globalWordIndex: last.globalWordIndex,
+                            sourcePageNumber: last.sourcePageNumber,
+                            sourceChapterNumber: last.sourceChapterNumber,
+                            sourceChapterTitle: last.sourceChapterTitle,
+                            sourceSectionIndex: last.sourceSectionIndex,
+                            pauseKind: .paragraphBreak,
+                            sentenceIndex: last.sentenceIndex,
+                            containsNumber: last.containsNumber
+                        )
+                        if last.pauseKind != .sentenceEnd {
+                            startingSentenceIndex += 1
+                        }
+                    } else if let last = tokens.last, last.pauseKind != .paragraphBreak {
+                        // For cross section whitespace or when no sourceSection provided
+                        tokens[tokens.count - 1] = ReadingToken(
+                            id: last.id,
+                            text: last.text,
+                            rawText: last.rawText,
+                            globalWordIndex: last.globalWordIndex,
+                            sourcePageNumber: last.sourcePageNumber,
+                            sourceChapterNumber: last.sourceChapterNumber,
+                            sourceChapterTitle: last.sourceChapterTitle,
+                            sourceSectionIndex: last.sourceSectionIndex,
+                            pauseKind: .paragraphBreak,
+                            sentenceIndex: last.sentenceIndex,
+                            containsNumber: last.containsNumber
+                        )
+                        if last.pauseKind != .sentenceEnd {
+                            startingSentenceIndex += 1
+                        }
+                    }
                 }
                 continue
             }
@@ -55,18 +105,17 @@ struct TextTokenizer: Sendable {
                 break
             }
 
-            let pause = pauseKind(for: rawWord, paragraphBreak: pendingParagraphBreak)
+            let pause = pauseKind(for: rawWord)
             let display = displayText(for: rawWord)
             guard !display.isEmpty else {
-                pendingParagraphBreak = false
                 continue
             }
 
             let token = ReadingToken(
-                id: startingGlobalWordIndex + tokens.count,
+                id: tokens.count,
                 text: display,
                 rawText: rawWord,
-                globalWordIndex: startingGlobalWordIndex + tokens.count,
+                globalWordIndex: tokens.count,
                 sourcePageNumber: sourceSection?.pageNumber,
                 sourceChapterNumber: sourceSection?.chapterNumber,
                 sourceChapterTitle: sourceSection?.chapterTitle,
@@ -77,24 +126,17 @@ struct TextTokenizer: Sendable {
             )
             tokens.append(token)
 
-            if pause == .sentenceEnd || pause == .paragraphBreak {
+            if pause == .sentenceEnd {
                 startingSentenceIndex += 1
             }
-            pendingParagraphBreak = false
         }
-
-        return tokens
     }
 
     private func displayText(for rawWord: String) -> String {
         rawWord.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”‘’()[]{}"))
     }
 
-    private func pauseKind(for rawWord: String, paragraphBreak: Bool) -> ReadingToken.PauseKind {
-        if paragraphBreak {
-            return .paragraphBreak
-        }
-
+    private func pauseKind(for rawWord: String) -> ReadingToken.PauseKind {
         let trimmed = rawWord.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”‘’()[]{}"))
         guard let last = trimmed.last else { return .none }
 
