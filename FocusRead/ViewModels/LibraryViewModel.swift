@@ -56,9 +56,9 @@ final class LibraryViewModel: ObservableObject {
     private func updateReads(_ reads: [SavedRead]) {
         allReads = reads
         isLibraryEmpty = reads.isEmpty
-        searchIndex = Dictionary(uniqueKeysWithValues: reads.map { read in
+        searchIndex = Dictionary(reads.map { read in
             (read.id, Self.searchableText(for: read))
-        })
+        }, uniquingKeysWith: { first, _ in first })
         applyFilterAndSort()
     }
 
