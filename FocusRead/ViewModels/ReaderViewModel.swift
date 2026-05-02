@@ -19,6 +19,8 @@ final class ReaderViewModel: ObservableObject {
     private let cleanupService: SmartCleanupService
     private let structureAnalyzerService: DocumentStructureAnalyzerService
     private let readingHistoryStore: ReadingHistoryStore?
+    private let readingStatsStore: ReadingStatsStore?
+    private let dateProvider: () -> Date
     private let haptics = UIImpactFeedbackGenerator(style: .light)
     private var behaviorSettings: ReaderBehaviorSettings
     private var importedDocument: ImportedDocument?
@@ -30,6 +32,10 @@ final class ReaderViewModel: ObservableObject {
     private var structureSummariesByChunkID: [UUID: ChunkStructureSummary] = [:]
     private var structureLabelBySectionIndex: [Int: String] = [:]
     private var cleanupTask: Task<Void, Never>?
+    private var readingStatsSessionStartedAt: Date?
+    private var readingStatsSessionWordsRead = 0
+    private var readingStatsSessionWeightedWPM = 0
+    private var hasMarkedCurrentReadCompleted = false
 
     @Published var isPlaying = false
     @Published var controlsVisible = true
@@ -45,7 +51,9 @@ final class ReaderViewModel: ObservableObject {
         cleanupService: SmartCleanupService = SmartCleanupService(),
         structureAnalyzerService: DocumentStructureAnalyzerService = DocumentStructureAnalyzerService(),
         readingHistoryStore: ReadingHistoryStore? = nil,
-        savedReadID: UUID? = nil
+        readingStatsStore: ReadingStatsStore? = nil,
+        savedReadID: UUID? = nil,
+        dateProvider: @escaping () -> Date = Date.init
     ) {
         self.session = session
         self.engine = engine
@@ -54,6 +62,8 @@ final class ReaderViewModel: ObservableObject {
         self.cleanupService = cleanupService
         self.structureAnalyzerService = structureAnalyzerService
         self.readingHistoryStore = readingHistoryStore
+        self.readingStatsStore = readingStatsStore
+        self.dateProvider = dateProvider
         self.behaviorSettings = Self.storedBehaviorSettings()
         self.importedDocument = importedDocument
         self.savedReadID = savedReadID
@@ -151,9 +161,12 @@ final class ReaderViewModel: ObservableObject {
 
     func play() {
         guard !session.tokens.isEmpty else { return }
+        guard !isPlaying else { return }
         if session.isAtEnd {
             session.currentIndex = 0
+            hasMarkedCurrentReadCompleted = false
         }
+        beginReadingStatsSessionIfNeeded()
         isPlaying = true
         controlsVisible = false
         triggerHaptic(intensity: 0.75)
@@ -179,6 +192,7 @@ final class ReaderViewModel: ObservableObject {
             controlsVisible = showControls
             return
         }
+        finishReadingStatsSession()
         isPlaying = false
         controlsVisible = showControls
         triggerHaptic(intensity: 0.55)
@@ -298,10 +312,22 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func cleanup() {
+        finishReadingStatsSession()
+        isPlaying = false
         persistProgress(force: true, durability: .immediate)
         cleanupTask?.cancel()
         cleanupTask = nil
         Task { [engine] in await engine.stop() }
+    }
+
+    func prepareForInactiveScene() {
+        if isPlaying {
+            finishReadingStatsSession()
+            isPlaying = false
+            controlsVisible = true
+            Task { [engine] in await engine.stop() }
+        }
+        persistProgress(force: true, durability: .immediate)
     }
 
     func persistProgress(
@@ -323,6 +349,10 @@ final class ReaderViewModel: ObservableObject {
         }
         readingHistoryStore.save(read, durability: durability)
         lastPersistedWordIndex = session.currentIndex
+
+        if session.isAtEnd {
+            markReadCompletedForStatsIfNeeded()
+        }
     }
 
     private func startBackgroundAICleanupIfNeeded() {
@@ -532,10 +562,12 @@ final class ReaderViewModel: ObservableObject {
 
     private func advanceFromEngine() -> Bool {
         guard isPlaying else { return false }
+        recordCurrentWordReadForStats()
         if session.isAtEnd {
             isPlaying = false
             controlsVisible = true
             persistProgress(force: true)
+            finishReadingStatsSession()
             return false
         }
 
@@ -697,6 +729,78 @@ final class ReaderViewModel: ObservableObject {
         }
         haptics.impactOccurred(intensity: intensity)
         haptics.prepare()
+    }
+
+    private func beginReadingStatsSessionIfNeeded() {
+        guard savedReadID != nil else { return }
+        guard readingStatsSessionStartedAt == nil else { return }
+
+        readingStatsSessionStartedAt = dateProvider()
+        readingStatsSessionWordsRead = 0
+        readingStatsSessionWeightedWPM = 0
+    }
+
+    private func recordCurrentWordReadForStats() {
+        guard readingStatsSessionStartedAt != nil else { return }
+
+        readingStatsSessionWordsRead += 1
+        readingStatsSessionWeightedWPM += session.wordsPerMinute
+    }
+
+    private func finishReadingStatsSession() {
+        guard let readID = savedReadID,
+              let startedAt = readingStatsSessionStartedAt else {
+            resetReadingStatsSession()
+            return
+        }
+
+        let endedAt = max(dateProvider(), startedAt)
+        let wordsRead = readingStatsSessionWordsRead
+        let averageWPM = wordsRead > 0
+            ? Int((Double(readingStatsSessionWeightedWPM) / Double(wordsRead)).rounded())
+            : session.wordsPerMinute
+        resetReadingStatsSession()
+
+        guard wordsRead > 0 else { return }
+
+        let event = ReadingSessionEvent(
+            readID: readID,
+            startedAt: startedAt,
+            endedAt: endedAt,
+            wordsRead: wordsRead,
+            averageWPM: averageWPM
+        )
+        readingStatsStore?.record(event)
+        addReadingTimeToSavedRead(event.readingSeconds)
+    }
+
+    private func resetReadingStatsSession() {
+        readingStatsSessionStartedAt = nil
+        readingStatsSessionWordsRead = 0
+        readingStatsSessionWeightedWPM = 0
+    }
+
+    private func addReadingTimeToSavedRead(_ seconds: TimeInterval) {
+        guard seconds > 0,
+              let readingHistoryStore,
+              let savedReadID,
+              var read = readingHistoryStore.read(withID: savedReadID) else {
+            return
+        }
+
+        read.readingStats.totalTimeRead += seconds
+        read.updatedAt = dateProvider()
+        readingHistoryStore.save(read)
+    }
+
+    private func markReadCompletedForStatsIfNeeded() {
+        guard !hasMarkedCurrentReadCompleted,
+              let savedReadID else {
+            return
+        }
+
+        hasMarkedCurrentReadCompleted = true
+        readingStatsStore?.markReadCompleted(readID: savedReadID, completedAt: dateProvider())
     }
 
     private static func storedBehaviorSettings() -> ReaderBehaviorSettings {

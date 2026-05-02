@@ -5,7 +5,7 @@ struct LibraryView: View {
     @ObservedObject var store: LocalReadingHistoryStore
     @StateObject private var viewModel: LibraryViewModel
     let onResume: (SavedRead) -> Void
-    
+    let onReadCompleted: (SavedRead) -> Void
     @State private var renameTarget: SavedRead?
     @State private var deleteTarget: SavedRead?
     @State private var isDeleteConfirmationPresented = false
@@ -17,9 +17,14 @@ struct LibraryView: View {
     @State private var selection = Set<UUID>()
     @Environment(\.colorScheme) private var colorScheme
 
-    init(store: LocalReadingHistoryStore, onResume: @escaping (SavedRead) -> Void) {
+    init(
+        store: LocalReadingHistoryStore,
+        onResume: @escaping (SavedRead) -> Void,
+        onReadCompleted: @escaping (SavedRead) -> Void = { _ in }
+    ) {
         self.store = store
         self.onResume = onResume
+        self.onReadCompleted = onReadCompleted
         _viewModel = StateObject(wrappedValue: LibraryViewModel(store: store))
     }
 
@@ -258,6 +263,7 @@ struct LibraryView: View {
         updated.updatedAt = Date()
         updated.lastOpenedAt = Date()
         store.save(updated)
+        onReadCompleted(updated)
     }
 
     private func rename(_ read: SavedRead, to title: String) {

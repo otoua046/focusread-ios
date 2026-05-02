@@ -50,6 +50,9 @@
 		72000000000000000000001A /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011A /* LibraryViewModel.swift */; };
 		72000000000000000000001B /* ThumbnailGeneratorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000120 /* ThumbnailGeneratorService.swift */; };
 		72000000000000000000001C /* NativeSearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011C /* NativeSearchBarView.swift */; };
+		750000000000000000000001 /* ReadingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000101 /* ReadingStats.swift */; };
+		750000000000000000000002 /* ReadingStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000102 /* ReadingStatsStore.swift */; };
+		750000000000000000000003 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000103 /* StatsView.swift */; };
 		730000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 730000000000000000000101 /* ZIPFoundation */; };
 		740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000101 /* EPUBTextExtractorTests.swift */; };
 		740000000000000000000002 /* minimal.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000102 /* minimal.epub */; };
@@ -58,7 +61,8 @@
 		740000000000000000000005 /* pg1342-images-3.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000105 /* pg1342-images-3.epub */; };
 		740000000000000000000006 /* WordLookupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000106 /* WordLookupServiceTests.swift */; };
 		740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000107 /* ReaderSearchServiceTests.swift */; };
-		740000000000000000000008 /* ReaderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000108 /* ReaderViewModelTests.swift */; };	/* End PBXBuildFile section */
+		740000000000000000000008 /* ReaderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000108 /* ReaderViewModelTests.swift */; };
+		750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000104 /* ReadingStatsStoreTests.swift */; };	/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		740000000000000000000201 /* PBXContainerItemProxy */ = {
@@ -116,6 +120,9 @@
 		72000000000000000000011A /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		720000000000000000000120 /* ThumbnailGeneratorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailGeneratorService.swift; sourceTree = "<group>"; };
 		72000000000000000000011C /* NativeSearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSearchBarView.swift; sourceTree = "<group>"; };
+		750000000000000000000101 /* ReadingStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStats.swift; sourceTree = "<group>"; };
+		750000000000000000000102 /* ReadingStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStore.swift; sourceTree = "<group>"; };
+		750000000000000000000103 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		740000000000000000000011 /* FocusReadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusReadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		740000000000000000000101 /* EPUBTextExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractorTests.swift; sourceTree = "<group>"; };
 		740000000000000000000102 /* minimal.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = minimal.epub; sourceTree = "<group>"; };
@@ -124,7 +131,8 @@
 		740000000000000000000105 /* pg1342-images-3.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = "pg1342-images-3.epub"; sourceTree = "<group>"; };
 		740000000000000000000106 /* WordLookupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordLookupServiceTests.swift; sourceTree = "<group>"; };
 		740000000000000000000107 /* ReaderSearchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSearchServiceTests.swift; sourceTree = "<group>"; };
-		740000000000000000000108 /* ReaderViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModelTests.swift; sourceTree = "<group>"; };	/* End PBXFileReference section */
+		740000000000000000000108 /* ReaderViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModelTests.swift; sourceTree = "<group>"; };
+		750000000000000000000104 /* ReadingStatsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStoreTests.swift; sourceTree = "<group>"; };	/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		710000000000000000000020 /* Frameworks */ = {
@@ -182,6 +190,7 @@
 			children = (
 				710000000000000000000106 /* ReadingToken.swift */,
 				710000000000000000000107 /* ReadingSession.swift */,
+				750000000000000000000101 /* ReadingStats.swift */,
 				72000000000000000000010D /* SavedRead.swift */,
 				71000000000000000000010C /* TypographySettings.swift */,
 				720000000000000000000101 /* DocumentImportModels.swift */,
@@ -206,6 +215,7 @@
 				72000000000000000000010C /* DocumentStructureAnalyzerService.swift */,
 				72000000000000000000010E /* ReadingHistoryStore.swift */,
 				72000000000000000000010F /* LocalReadingHistoryStore.swift */,
+				750000000000000000000102 /* ReadingStatsStore.swift */,
 				720000000000000000000110 /* SavedReadMapper.swift */,
 				720000000000000000000120 /* ThumbnailGeneratorService.swift */,
 				720000000000000000000112 /* WordLookupService.swift */,
@@ -242,6 +252,7 @@
 				720000000000000000000113 /* DictionaryLookupView.swift */,
 				720000000000000000000119 /* GoToNavigationView.swift */,
 				72000000000000000000011C /* NativeSearchBarView.swift */,
+				750000000000000000000103 /* StatsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -260,7 +271,9 @@
 				740000000000000000000101 /* EPUBTextExtractorTests.swift */,
 				740000000000000000000106 /* WordLookupServiceTests.swift */,
 				740000000000000000000107 /* ReaderSearchServiceTests.swift */,
-				740000000000000000000108 /* ReaderViewModelTests.swift */,				740000000000000000000041 /* Fixtures */,
+				740000000000000000000108 /* ReaderViewModelTests.swift */,
+				750000000000000000000104 /* ReadingStatsStoreTests.swift */,
+				740000000000000000000041 /* Fixtures */,
 			);
 			path = FocusReadTests;
 			sourceTree = "<group>";
@@ -403,6 +416,7 @@
 				710000000000000000000006 /* ReadingToken.swift in Sources */,
 				710000000000000000000007 /* ReadingSession.swift in Sources */,
 				720000000000000000000001 /* DocumentImportModels.swift in Sources */,
+				750000000000000000000001 /* ReadingStats.swift in Sources */,
 				72000000000000000000000D /* SavedRead.swift in Sources */,
 				710000000000000000000008 /* TextTokenizer.swift in Sources */,
 				710000000000000000000009 /* RSVPReadingEngine.swift in Sources */,
@@ -422,6 +436,7 @@
 				72000000000000000000000C /* DocumentStructureAnalyzerService.swift in Sources */,
 				72000000000000000000000E /* ReadingHistoryStore.swift in Sources */,
 				72000000000000000000000F /* LocalReadingHistoryStore.swift in Sources */,
+				750000000000000000000002 /* ReadingStatsStore.swift in Sources */,
 				720000000000000000000010 /* SavedReadMapper.swift in Sources */,
 				720000000000000000000012 /* WordLookupService.swift in Sources */,
 				720000000000000000000017 /* ReaderSearchService.swift in Sources */,
@@ -436,6 +451,7 @@
 				72000000000000000000001A /* LibraryViewModel.swift in Sources */,
 				72000000000000000000001B /* ThumbnailGeneratorService.swift in Sources */,
 				72000000000000000000001C /* NativeSearchBarView.swift in Sources */,
+				750000000000000000000003 /* StatsView.swift in Sources */,
 				71000000000000000000000E /* AppTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -447,7 +463,9 @@
 				740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */,
 				740000000000000000000006 /* WordLookupServiceTests.swift in Sources */,
 				740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */,
-				740000000000000000000008 /* ReaderViewModelTests.swift in Sources */,			);
+				740000000000000000000008 /* ReaderViewModelTests.swift in Sources */,
+				750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */,
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 	/* End PBXSourcesBuildPhase section */

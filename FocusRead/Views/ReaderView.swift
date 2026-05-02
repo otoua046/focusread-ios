@@ -12,6 +12,7 @@ struct ReaderView: View {
     @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
     @Environment(\.scenePhase) private var scenePhase
+    @EnvironmentObject private var readingStatsStore: LocalReadingStatsStore
 
     @State private var verticalDragStartWPM: Int?
     @State private var wpmDialInteractionActive = false
@@ -73,7 +74,7 @@ struct ReaderView: View {
         .animation(.smooth(duration: 0.25), value: viewModel.controlsVisible)
         .animation(.smooth(duration: 0.18), value: viewModel.currentWord)
         .sheet(isPresented: $showingTypographySettings) {
-            TypographySettingsView()
+            TypographySettingsView(readingStatsStore: readingStatsStore)
         }
         .sheet(isPresented: $showingGoToNavigation) {
             GoToNavigationView(readerViewModel: viewModel)
@@ -95,7 +96,7 @@ struct ReaderView: View {
         }
         .onChange(of: scenePhase) {
             if scenePhase != .active {
-                viewModel.persistProgress(force: true, durability: .immediate)
+                viewModel.prepareForInactiveScene()
             }
         }
         .onDisappear {

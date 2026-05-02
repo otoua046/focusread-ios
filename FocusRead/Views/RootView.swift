@@ -4,6 +4,7 @@ struct RootView: View {
     private enum MainTab: Hashable, CaseIterable {
         case home
         case library
+        case stats
         case settings
 
         var title: String {
@@ -12,6 +13,8 @@ struct RootView: View {
                 return "Home"
             case .library:
                 return "Library"
+            case .stats:
+                return "Stats"
             case .settings:
                 return "Settings"
             }
@@ -23,6 +26,8 @@ struct RootView: View {
                 return "house"
             case .library:
                 return "books.vertical"
+            case .stats:
+                return "chart.bar"
             case .settings:
                 return "gearshape"
             }
@@ -31,6 +36,7 @@ struct RootView: View {
 
     @StateObject private var inputViewModel = InputViewModel()
     @StateObject private var readingHistoryStore = LocalReadingHistoryStore()
+    @StateObject private var readingStatsStore = LocalReadingStatsStore()
     @State private var readerViewModel: ReaderViewModel?
     @State private var selectedTab: MainTab = .home
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
@@ -43,6 +49,7 @@ struct RootView: View {
                     readerViewModel.cleanup()
                     self.readerViewModel = nil
                 }
+                .environmentObject(readingStatsStore)
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else {
                 TabView(selection: $selectedTab) {
@@ -58,15 +65,31 @@ struct RootView: View {
                     }
                     .tag(MainTab.home)
 
-                    LibraryView(store: readingHistoryStore) { read in
-                        resume(read)
-                    }
+                    LibraryView(
+                        store: readingHistoryStore,
+                        onResume: { read in
+                            resume(read)
+                        },
+                        onReadCompleted: { read in
+                            readingStatsStore.markReadCompleted(readID: read.id, completedAt: read.updatedAt)
+                        }
+                    )
                     .tabItem {
                         Label(MainTab.library.title, systemImage: MainTab.library.systemImage)
                     }
                     .tag(MainTab.library)
 
+                    StatsView(
+                        statsStore: readingStatsStore,
+                        readingHistoryStore: readingHistoryStore
+                    )
+                    .tabItem {
+                        Label(MainTab.stats.title, systemImage: MainTab.stats.systemImage)
+                    }
+                    .tag(MainTab.stats)
+
                     TypographySettingsView(
+                        readingStatsStore: readingStatsStore,
                         showsDismissButton: false,
                         showsPageHeader: true
                     )
@@ -97,6 +120,7 @@ struct RootView: View {
         readerViewModel = ReaderViewModel(
             session: session,
             readingHistoryStore: readingHistoryStore,
+            readingStatsStore: readingStatsStore,
             savedReadID: savedRead.id
         )
     }
@@ -116,6 +140,7 @@ struct RootView: View {
             session: session,
             importedDocument: importedDocument,
             readingHistoryStore: readingHistoryStore,
+            readingStatsStore: readingStatsStore,
             savedReadID: savedRead.id
         )
     }
@@ -142,6 +167,7 @@ struct RootView: View {
             session: session,
             importedDocument: importedDocument,
             readingHistoryStore: readingHistoryStore,
+            readingStatsStore: readingStatsStore,
             savedReadID: updatedRead.id
         )
     }

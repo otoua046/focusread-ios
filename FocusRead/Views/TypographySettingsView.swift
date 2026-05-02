@@ -3,6 +3,7 @@ import SwiftUI
 struct TypographySettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject private var readingStatsStore: LocalReadingStatsStore
 
     let showsDismissButton: Bool
     let showsPageHeader: Bool
@@ -21,9 +22,11 @@ struct TypographySettingsView: View {
     @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
 
     init(
+        readingStatsStore: LocalReadingStatsStore,
         showsDismissButton: Bool = true,
         showsPageHeader: Bool = false
     ) {
+        _readingStatsStore = ObservedObject(wrappedValue: readingStatsStore)
         self.showsDismissButton = showsDismissButton
         self.showsPageHeader = showsPageHeader
     }
@@ -216,6 +219,27 @@ struct TypographySettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
 
+                settingsSection("Progress") {
+                    settingsRow("Daily Goal") {
+                        Stepper(
+                            value: dailyGoalBinding,
+                            in: 100...100_000,
+                            step: 100
+                        ) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text("\(readingStatsStore.snapshot.dailyGoalWords)")
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(AppTheme.primaryText)
+                                    .monospacedDigit()
+
+                                Text("words")
+                                    .font(.subheadline)
+                                    .foregroundStyle(AppTheme.secondaryText)
+                            }
+                        }
+                    }
+                }
+
                 settingsSection("Text Cleanup") {
                     settingsRow("Imported Text") {
                         Picker("Imported Text", selection: cleanupModeBinding) {
@@ -289,6 +313,13 @@ struct TypographySettingsView: View {
         Binding(
             get: { Double(defaultWPM) },
             set: { defaultWPM = Int($0.rounded()) }
+        )
+    }
+
+    private var dailyGoalBinding: Binding<Int> {
+        Binding(
+            get: { readingStatsStore.snapshot.dailyGoalWords },
+            set: { readingStatsStore.updateDailyGoalWords($0) }
         )
     }
 
