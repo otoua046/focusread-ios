@@ -893,7 +893,7 @@ private enum EPUBPackageParser {
             opfPath: opfPath,
             opfDirectory: opfPath.deletingLastPathComponent,
             metadataTitle: EPUBStructureBuilder.cleanedNavigationTitle(delegate.metadataTitle),
-            metadataAuthor: delegate.metadataAuthor,
+            metadataAuthor: EPUBStructureBuilder.cleanedNavigationTitle(delegate.metadataAuthor),
             coverItemID: delegate.coverItemID,
             manifest: delegate.manifest,
             spine: delegate.spine,
@@ -1297,25 +1297,32 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
         namespaceURI: String?,
         qualifiedName qName: String?
     ) {
-        if elementName.xmlLocalName == "title" && capturingTitle {
-            let title = titleText
-                .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+        switch elementName.xmlLocalName {
+        case "title":
+            guard capturingTitle else { return }
+            let title = cleanedMetadataText(titleText)
             if !title.isEmpty {
                 metadataTitle = title
             }
             capturingTitle = false
             titleText = ""
-        } else if elementName.xmlLocalName == "creator" && capturingAuthor {
-            let author = authorText
-                .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            if !author.isEmpty {
-                metadataAuthor = author
+        case "creator":
+            guard capturingAuthor else { return }
+            let creator = cleanedMetadataText(authorText)
+            if !creator.isEmpty {
+                metadataAuthor = creator
             }
             capturingAuthor = false
             authorText = ""
+        default:
+            return
         }
+    }
+
+    private func cleanedMetadataText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

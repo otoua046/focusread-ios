@@ -3,6 +3,7 @@ import Foundation
 struct SavedRead: Identifiable, Codable, Equatable, Sendable {
     var id: UUID
     var displayTitle: String
+    var authorName: String?
     var originalFileName: String?
     var sourceType: SavedReadSourceType
     var thumbnailPath: String?
