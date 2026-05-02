@@ -78,14 +78,12 @@ struct LibraryView: View {
             ) {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) {
-                    let selectedIds = selection
+                    let visibleSelectedReads = viewModel.reads.filter { selection.contains($0.id) }
                     deleteTarget = nil
                     selection.removeAll()
                     isSelectMode = false
-                    for id in selectedIds {
-                        if let read = store.savedReads.first(where: { $0.id == id }) {
-                            delete(read)
-                        }
+                    for read in visibleSelectedReads {
+                        delete(read)
                     }
                 }
             } message: {
