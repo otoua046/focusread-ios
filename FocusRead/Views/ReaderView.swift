@@ -1,6 +1,15 @@
 import SwiftUI
 import Translation
 
+extension HorizontalAlignment {
+    private enum AnchorCenter: AlignmentID {
+        static func defaultValue(in d: ViewDimensions) -> CGFloat {
+            d[HorizontalAlignment.center]
+        }
+    }
+    static let anchorCenter = HorizontalAlignment(AnchorCenter.self)
+}
+
 struct ReaderView: View {
     @ObservedObject var viewModel: ReaderViewModel
     let onClose: () -> Void
@@ -159,22 +168,37 @@ struct ReaderView: View {
 
     private var wordStage: some View {
         VStack(spacing: 28) {
+            let parts = viewModel.currentWordParts
+            
             ZStack {
-                Text(viewModel.currentAttributedWord)
+                if parts.isAnchorEnabled && !viewModel.isTwoWordMode {
+                    ViewThatFits(in: .horizontal) {
+                        anchoredLayout(parts: parts)
+                            .fixedSize(horizontal: true, vertical: false)
+                        
+                        Text(viewModel.currentAttributedWord)
+                            .minimumScaleFactor(0.4)
+                            .multilineTextAlignment(.center)
+                    }
                     .typographyStyle(currentStyle)
-                    .minimumScaleFactor(0.42)
                     .lineLimit(1)
-                    .contentTransition(.opacity)
-                    .id(viewModel.currentWord)
-                    .frame(maxWidth: .infinity, minHeight: 96)
-                    .multilineTextAlignment(.center)
+                } else {
+                    Text(viewModel.currentAttributedWord)
+                        .typographyStyle(currentStyle)
+                        .minimumScaleFactor(0.4)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                }
 
                 Rectangle()
                     .fill(AppTheme.border.opacity(0.25))
                     .frame(width: 1, height: 130)
                     .allowsHitTesting(false)
             }
-            .frame(maxWidth: .infinity)
+            .id(viewModel.currentWord)
+            .contentTransition(.opacity)
+            .frame(maxWidth: .infinity, minHeight: 96)
             .onLongPressGesture {
                 viewModel.lookupCurrentWord()
             }
@@ -199,6 +223,17 @@ struct ReaderView: View {
             }
         }
         .padding(.horizontal, 8)
+    }
+
+    private func anchoredLayout(parts: WordParts) -> some View {
+        HStack(spacing: 0) {
+            Text(parts.prefix)
+            Text(parts.anchor)
+                .foregroundStyle(AppTheme.accent)
+                .alignmentGuide(.anchorCenter) { d in d[HorizontalAlignment.center] }
+            Text(parts.suffix)
+        }
+        .alignmentGuide(HorizontalAlignment.center) { d in d[.anchorCenter] }
     }
 
     private var currentStyle: FontStyle {
