@@ -12,6 +12,7 @@
 		710000000000000000000003 /* TextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000103 /* TextInputView.swift */; };
 		710000000000000000000004 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000104 /* ReaderView.swift */; };
 		710000000000000000000005 /* ReaderControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000105 /* ReaderControlsView.swift */; };
+		710000000000000000000122 /* ReaderActionPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000121 /* ReaderActionPaletteView.swift */; };
 		710000000000000000000006 /* ReadingToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000106 /* ReadingToken.swift */; };
 		710000000000000000000007 /* ReadingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000107 /* ReadingSession.swift */; };
 		710000000000000000000008 /* TextTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000108 /* TextTokenizer.swift */; };
@@ -74,6 +75,7 @@
 		710000000000000000000103 /* TextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInputView.swift; sourceTree = "<group>"; };
 		710000000000000000000104 /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 		710000000000000000000105 /* ReaderControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderControlsView.swift; sourceTree = "<group>"; };
+		710000000000000000000121 /* ReaderActionPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderActionPaletteView.swift; sourceTree = "<group>"; };
 		710000000000000000000106 /* ReadingToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingToken.swift; sourceTree = "<group>"; };
 		710000000000000000000107 /* ReadingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingSession.swift; sourceTree = "<group>"; };
 		710000000000000000000108 /* TextTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTokenizer.swift; sourceTree = "<group>"; };
@@ -226,6 +228,7 @@
 				710000000000000000000103 /* TextInputView.swift */,
 				710000000000000000000104 /* ReaderView.swift */,
 				710000000000000000000105 /* ReaderControlsView.swift */,
+				710000000000000000000121 /* ReaderActionPaletteView.swift */,
 				71000000000000000000010D /* TypographySettingsView.swift */,
 				72000000000000000000010A /* DocumentImportView.swift */,
 				720000000000000000000115 /* CameraCaptureView.swift */,
@@ -390,6 +393,7 @@
 				710000000000000000000003 /* TextInputView.swift in Sources */,
 				710000000000000000000004 /* ReaderView.swift in Sources */,
 				710000000000000000000005 /* ReaderControlsView.swift in Sources */,
+				710000000000000000000122 /* ReaderActionPaletteView.swift in Sources */,
 				710000000000000000000006 /* ReadingToken.swift in Sources */,
 				710000000000000000000007 /* ReadingSession.swift in Sources */,
 				720000000000000000000001 /* DocumentImportModels.swift in Sources */,

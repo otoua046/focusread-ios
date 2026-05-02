@@ -8,25 +8,19 @@ struct WordLookupService: Sendable {
 
     @MainActor
     func hasDefinition(for term: String) -> Bool {
-        UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: term)
+        if UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: term) {
+            return true
+        }
+        let lowercased = term.lowercased()
+        if lowercased != term {
+            return UIReferenceLibraryViewController.dictionaryHasDefinition(forTerm: lowercased)
+        }
+        return false
     }
 
     static func sanitizedTerm(from text: String) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return nil }
-
-        let scalars = Array(trimmed.unicodeScalars)
-        guard let firstContentIndex = scalars.firstIndex(where: isLookupContent),
-              let lastContentIndex = scalars.lastIndex(where: isLookupContent),
-              firstContentIndex <= lastContentIndex else {
-            return nil
-        }
-
-        let term = String(String.UnicodeScalarView(scalars[firstContentIndex...lastContentIndex]))
-        return term.isEmpty ? nil : term
-    }
-
-    private static func isLookupContent(_ scalar: UnicodeScalar) -> Bool {
-        CharacterSet.alphanumerics.contains(scalar)
+        let cleaned = trimmed.trimmingCharacters(in: .punctuationCharacters)
+        return cleaned.isEmpty ? nil : cleaned
     }
 }

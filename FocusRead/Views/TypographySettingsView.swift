@@ -15,6 +15,7 @@ struct TypographySettingsView: View {
     @AppStorage(TypographySettingsKey.appearance) private var appearance: String = AppAppearance.system.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
     @AppStorage(ReaderBehaviorSettingsKey.hapticsEnabled) private var hapticsEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.reverseWPMDialDirection) private var reverseWPMDialDirection: Bool = false
     @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
@@ -163,6 +164,8 @@ struct TypographySettingsView: View {
                 }
 
                 settingsSection("Reader Behavior") {
+                    // Camera Control is intentionally absent: Apple's public capture-event APIs
+                    // are limited to active media-capture experiences, not reader controls.
                     settingsRow("Default WPM") {
                         HStack {
                             Slider(value: defaultWPMBinding, in: 100...1_200, step: 25)
@@ -179,6 +182,11 @@ struct TypographySettingsView: View {
                     Divider().foregroundStyle(AppTheme.border)
 
                     Toggle("Haptics", isOn: $hapticsEnabled)
+                        .tint(AppTheme.primaryText)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle("Reverse WPM Drag", isOn: $reverseWPMDialDirection)
                         .tint(AppTheme.primaryText)
 
                     Divider().foregroundStyle(AppTheme.border)
@@ -323,6 +331,7 @@ struct TypographySettingsView: View {
         appearance = AppAppearance.system.rawValue
         defaultWPM = ReadingSession.defaultWPM
         hapticsEnabled = true
+        reverseWPMDialDirection = false
         punctuationPausesEnabled = true
         longWordDelayMode = LongWordDelayMode.moderate.rawValue
         smartCleanupMode = SmartCleanupAvailability.defaultMode.rawValue
