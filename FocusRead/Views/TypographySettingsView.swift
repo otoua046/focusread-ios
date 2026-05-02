@@ -20,6 +20,8 @@ struct TypographySettingsView: View {
     @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
+    @AppStorage(ReaderBehaviorSettingsKey.anchorLetterEnabled) private var anchorLetterEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
 
     init(
         readingStatsStore: LocalReadingStatsStore,
@@ -181,6 +183,22 @@ struct TypographySettingsView: View {
                                 .frame(width: 54, alignment: .trailing)
                         }
                     }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    settingsRow("Display Mode") {
+                        Picker("Display Mode", selection: $displayMode) {
+                            ForEach(ReaderDisplayMode.allCases) { mode in
+                                Text(mode.title).tag(mode.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle("Anchor Letter", isOn: $anchorLetterEnabled)
+                        .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 
@@ -366,6 +384,8 @@ struct TypographySettingsView: View {
         punctuationPausesEnabled = true
         longWordDelayMode = LongWordDelayMode.moderate.rawValue
         smartCleanupMode = SmartCleanupAvailability.defaultMode.rawValue
+        anchorLetterEnabled = true
+        displayMode = ReaderDisplayMode.oneWord.rawValue
         resetTypography()
     }
 

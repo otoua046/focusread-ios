@@ -16,12 +16,13 @@ actor RSVPReadingEngine {
         task = Task {
             while !Task.isCancelled {
                 let session = await sessionProvider()
-                guard let token = session.currentToken else {
+                let tokens = session.currentTokens
+                guard !tokens.isEmpty else {
                     break
                 }
 
                 let behavior = await behaviorProvider()
-                let delay = Self.delay(for: token, wpm: session.wordsPerMinute, behavior: behavior)
+                let delay = Self.delay(for: tokens, wpm: session.wordsPerMinute, behavior: behavior)
                 try? await Task.sleep(for: .milliseconds(Int(delay * 1_000)))
                 guard !Task.isCancelled else { break }
 
@@ -39,15 +40,21 @@ actor RSVPReadingEngine {
     }
 
     static func delay(
-        for token: ReadingToken,
+        for tokens: [ReadingToken],
         wpm: Int,
         behavior: ReaderBehaviorSettings = .default
     ) -> TimeInterval {
+        guard !tokens.isEmpty else { return 0 }
+        
         let base = 60.0 / Double(ReadingSession.clampWPM(wpm))
-        var multiplier = 1.0
+        var multiplier = Double(tokens.count)
 
         if behavior.punctuationPausesEnabled {
-            switch token.pauseKind {
+            let maxPause = tokens.map(\.pauseKind).max { lhs, rhs in
+                pauseWeight(lhs) < pauseWeight(rhs)
+            } ?? .none
+            
+            switch maxPause {
             case .none:
                 break
             case .minorPunctuation:
@@ -59,8 +66,19 @@ actor RSVPReadingEngine {
             }
         }
 
-        multiplier += behavior.longWordDelayMode.extraMultiplier(for: token)
+        for token in tokens {
+            multiplier += behavior.longWordDelayMode.extraMultiplier(for: token)
+        }
 
         return base * multiplier
+    }
+    
+    private static func pauseWeight(_ kind: ReadingToken.PauseKind) -> Int {
+        switch kind {
+        case .none: return 0
+        case .minorPunctuation: return 1
+        case .sentenceEnd: return 2
+        case .paragraphBreak: return 3
+        }
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import Translation
 
 struct ReaderView: View {
     @ObservedObject var viewModel: ReaderViewModel
@@ -11,6 +12,8 @@ struct ReaderView: View {
     @AppStorage(TypographySettingsKey.textColor) private var textColor: String = ReaderTextColor.primary.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
+    @AppStorage(ReaderBehaviorSettingsKey.anchorLetterEnabled) private var anchorLetterEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var readingStatsStore: LocalReadingStatsStore
 
@@ -20,6 +23,7 @@ struct ReaderView: View {
     @State private var showingActionPalette = false
     @State private var showingTypographySettings = false
     @State private var showingGoToNavigation = false
+    @State private var showingTranslation = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -60,6 +64,10 @@ struct ReaderView: View {
                     viewModel.prepareForSearchNavigation()
                     showingGoToNavigation = true
                 },
+                onTranslate: {
+                    viewModel.pause(showControls: true)
+                    showingTranslation = true
+                },
                 onSettings: {
                     viewModel.pause(showControls: true)
                     showingTypographySettings = true
@@ -82,6 +90,7 @@ struct ReaderView: View {
         .sheet(item: $viewModel.lookupRequest) { request in
             DictionaryLookupView(term: request.term)
         }
+        .translationPresentation(isPresented: $showingTranslation, text: viewModel.currentWord)
         .alert("No definition found.", isPresented: $viewModel.noDefinitionFound) {
             Button("OK", role: .cancel) {}
         }
@@ -92,6 +101,12 @@ struct ReaderView: View {
             syncBehaviorSettings()
         }
         .onChange(of: longWordDelayMode) {
+            syncBehaviorSettings()
+        }
+        .onChange(of: anchorLetterEnabled) {
+            syncBehaviorSettings()
+        }
+        .onChange(of: displayMode) {
             syncBehaviorSettings()
         }
         .onChange(of: scenePhase) {
@@ -145,7 +160,7 @@ struct ReaderView: View {
     private var wordStage: some View {
         VStack(spacing: 28) {
             ZStack {
-                Text(viewModel.currentWord)
+                Text(viewModel.currentAttributedWord)
                     .typographyStyle(currentStyle)
                     .minimumScaleFactor(0.42)
                     .lineLimit(1)
@@ -199,7 +214,9 @@ struct ReaderView: View {
     private func syncBehaviorSettings() {
         viewModel.updateBehaviorSettings(ReaderBehaviorSettings(
             punctuationPausesEnabled: punctuationPausesEnabled,
-            longWordDelayMode: LongWordDelayMode(rawValue: longWordDelayMode) ?? .moderate
+            longWordDelayMode: LongWordDelayMode(rawValue: longWordDelayMode) ?? .moderate,
+            anchorLetterEnabled: anchorLetterEnabled,
+            displayMode: ReaderDisplayMode(rawValue: displayMode) ?? .oneWord
         ))
     }
 

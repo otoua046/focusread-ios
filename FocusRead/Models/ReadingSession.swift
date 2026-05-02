@@ -120,6 +120,7 @@ struct ReadingSession: Equatable, Sendable {
     var document: ReadingDocument
     var currentIndex: Int
     var wordsPerMinute: Int
+    var stepSize: Int
 
     static let minimumWPM = 100
     static let maximumWPM = 1_200
@@ -129,17 +130,25 @@ struct ReadingSession: Equatable, Sendable {
         tokens: [ReadingToken],
         document: ReadingDocument = .pastedText(),
         currentIndex: Int = 0,
-        wordsPerMinute: Int = Self.defaultWPM
+        wordsPerMinute: Int = Self.defaultWPM,
+        stepSize: Int = 1
     ) {
         self.tokens = tokens
         self.document = document
         self.currentIndex = min(max(currentIndex, 0), max(tokens.count - 1, 0))
         self.wordsPerMinute = Self.clampWPM(wordsPerMinute)
+        self.stepSize = max(1, stepSize)
     }
 
     var currentToken: ReadingToken? {
         guard tokens.indices.contains(currentIndex) else { return nil }
         return tokens[currentIndex]
+    }
+
+    var currentTokens: [ReadingToken] {
+        guard !tokens.isEmpty, tokens.indices.contains(currentIndex) else { return [] }
+        let endIndex = min(currentIndex + stepSize, tokens.count)
+        return Array(tokens[currentIndex..<endIndex])
     }
 
     var progress: Double {
@@ -153,11 +162,11 @@ struct ReadingSession: Equatable, Sendable {
 
     mutating func advance() {
         guard !tokens.isEmpty else { return }
-        currentIndex = min(currentIndex + 1, tokens.count - 1)
+        currentIndex = min(currentIndex + stepSize, tokens.count - 1)
     }
 
     mutating func rewindWord() {
-        currentIndex = max(currentIndex - 1, 0)
+        currentIndex = max(currentIndex - stepSize, 0)
     }
 
     mutating func skipWord() {

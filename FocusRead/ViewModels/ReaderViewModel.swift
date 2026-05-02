@@ -74,7 +74,27 @@ final class ReaderViewModel: ObservableObject {
     }
 
     var currentWord: String {
-        session.currentToken?.text ?? ""
+        session.currentTokens.map(\.text).joined(separator: " ")
+    }
+
+    var currentAttributedWord: AttributedString {
+        let text = currentWord
+        var attributed = AttributedString(text)
+        
+        if behaviorSettings.anchorLetterEnabled, !text.isEmpty {
+            let length = text.count
+            // Optimal anchor position: slightly left of center
+            let anchorOffset = Int(ceil(Double(length) / 2.0)) - 1
+            let validOffset = max(0, min(anchorOffset, length - 1))
+            
+            let stringIndex = text.index(text.startIndex, offsetBy: validOffset)
+            if let attrIndex = AttributedString.Index(stringIndex, within: attributed) {
+                let nextIndex = attributed.index(afterCharacter: attrIndex)
+                attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
+            }
+        }
+        
+        return attributed
     }
 
     var sanitizedCurrentWordForLookup: String? {
@@ -294,6 +314,7 @@ final class ReaderViewModel: ObservableObject {
 
     func updateBehaviorSettings(_ settings: ReaderBehaviorSettings) {
         behaviorSettings = settings
+        session.stepSize = settings.displayMode == .twoWords ? 2 : 1
     }
 
     func lookupCurrentWord() {
@@ -807,10 +828,14 @@ final class ReaderViewModel: ObservableObject {
         let defaults = UserDefaults.standard
         let punctuationPauses = defaults.object(forKey: ReaderBehaviorSettingsKey.punctuationPausesEnabled) as? Bool ?? true
         let rawLongWordMode = defaults.string(forKey: ReaderBehaviorSettingsKey.longWordDelayMode) ?? LongWordDelayMode.moderate.rawValue
+        let anchorLetterEnabled = defaults.object(forKey: ReaderBehaviorSettingsKey.anchorLetterEnabled) as? Bool ?? true
+        let rawDisplayMode = defaults.string(forKey: ReaderBehaviorSettingsKey.displayMode) ?? ReaderDisplayMode.oneWord.rawValue
 
         return ReaderBehaviorSettings(
             punctuationPausesEnabled: punctuationPauses,
-            longWordDelayMode: LongWordDelayMode(rawValue: rawLongWordMode) ?? .moderate
+            longWordDelayMode: LongWordDelayMode(rawValue: rawLongWordMode) ?? .moderate,
+            anchorLetterEnabled: anchorLetterEnabled,
+            displayMode: ReaderDisplayMode(rawValue: rawDisplayMode) ?? .oneWord
         )
     }
 }
