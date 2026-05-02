@@ -180,12 +180,12 @@ struct LibraryView: View {
 
     private var selectionToolbar: some View {
         HStack {
-            let allSelected = selection.count == store.savedReads.count && !store.savedReads.isEmpty
+            let allSelected = selection.count == viewModel.reads.count && !viewModel.reads.isEmpty
             Button(allSelected ? "Deselect All" : "Select All") {
                 if allSelected {
                     selection.removeAll()
                 } else {
-                    selection = Set(store.savedReads.map(\.id))
+                    selection = Set(viewModel.reads.map(\.id))
                 }
             }
             .font(.subheadline.weight(.semibold))
