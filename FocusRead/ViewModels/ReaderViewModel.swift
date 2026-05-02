@@ -82,15 +82,62 @@ final class ReaderViewModel: ObservableObject {
         var attributed = AttributedString(text)
         
         if behaviorSettings.anchorLetterEnabled, !text.isEmpty {
-            let length = text.count
-            // Optimal anchor position: slightly left of center
-            let anchorOffset = Int(ceil(Double(length) / 2.0)) - 1
-            let validOffset = max(0, min(anchorOffset, length - 1))
+            // Find bounds of actual word content (ignoring leading punctuation)
+            var startIndex = text.startIndex
+            var contentStartOffset = 0
             
-            let stringIndex = text.index(text.startIndex, offsetBy: validOffset)
-            if let attrIndex = AttributedString.Index(stringIndex, within: attributed) {
-                let nextIndex = attributed.index(afterCharacter: attrIndex)
-                attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
+            for (offset, scalar) in text.unicodeScalars.enumerated() {
+                if CharacterSet.alphanumerics.contains(scalar) {
+                    startIndex = text.index(text.startIndex, offsetBy: offset)
+                    contentStartOffset = offset
+                    break
+                }
+            }
+            
+            var endIndex = text.endIndex
+            for (offset, scalar) in text.unicodeScalars.enumerated().reversed() {
+                if CharacterSet.alphanumerics.contains(scalar) {
+                    endIndex = text.index(text.startIndex, offsetBy: offset + 1)
+                    break
+                }
+            }
+            
+            // If we found alphanumeric content, compute ORP on it
+            if startIndex < endIndex {
+                let contentString = text[startIndex..<endIndex]
+                let length = contentString.count
+                
+                let anchorOffset: Int
+                switch length {
+                case 0...2:
+                    anchorOffset = 0
+                case 3...4:
+                    anchorOffset = 1
+                case 5...6:
+                    anchorOffset = 1
+                case 7...9:
+                    anchorOffset = 2
+                default:
+                    anchorOffset = max(0, min(length - 1, Int(floor(Double(length) * 0.35))))
+                }
+                
+                let globalAnchorOffset = contentStartOffset + anchorOffset
+                let stringIndex = text.index(text.startIndex, offsetBy: globalAnchorOffset)
+                
+                if let attrIndex = AttributedString.Index(stringIndex, within: attributed) {
+                    let nextIndex = attributed.index(afterCharacter: attrIndex)
+                    attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
+                }
+            } else {
+                // Fallback for purely symbolic/punctuation words
+                let length = text.count
+                let anchorOffset = max(0, min(length - 1, Int(floor(Double(length) * 0.35))))
+                let stringIndex = text.index(text.startIndex, offsetBy: anchorOffset)
+                
+                if let attrIndex = AttributedString.Index(stringIndex, within: attributed) {
+                    let nextIndex = attributed.index(afterCharacter: attrIndex)
+                    attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
+                }
             }
         }
         
