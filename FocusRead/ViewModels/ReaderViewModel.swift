@@ -89,60 +89,51 @@ final class ReaderViewModel: ObservableObject {
         session.currentTokens.map(\.text).joined(separator: " ")
     }
 
-    var currentWordParts: WordParts {
-        let text = currentWord
-        guard behaviorSettings.anchorLetterEnabled, !text.isEmpty else {
-            return WordParts(prefix: "", anchor: "", suffix: "", isAnchorEnabled: false, fullWord: text)
+    var currentWordParts: WordParts? {
+        guard behaviorSettings.displayMode == .oneWord,
+              behaviorSettings.anchorLetterEnabled,
+              let token = session.currentToken else {
+            return nil
         }
+        
+        return parts(for: token.text)
+    }
 
-        // Find bounds of actual word content (ignoring leading punctuation)
-        var startIndex = text.startIndex
-        var contentStartOffset = 0
+    var currentAttributedWord: AttributedString {
+        let tokens = session.currentTokens
+        guard !tokens.isEmpty else { return AttributedString("") }
         
-        for (offset, scalar) in text.unicodeScalars.enumerated() {
-            if CharacterSet.alphanumerics.contains(scalar) {
-                startIndex = text.index(text.startIndex, offsetBy: offset)
-                contentStartOffset = offset
-                break
-            }
-        }
-        
-        var endIndex = text.endIndex
-        for (offset, scalar) in text.unicodeScalars.enumerated().reversed() {
-            if CharacterSet.alphanumerics.contains(scalar) {
-                endIndex = text.index(text.startIndex, offsetBy: offset + 1)
-                break
-            }
-        }
-        
-        let globalAnchorOffset: Int
-        if startIndex < endIndex {
-            let contentString = text[startIndex..<endIndex]
-            let length = contentString.count
-            
-            let anchorOffset: Int
-            switch length {
-            case 0...2:
-                anchorOffset = 0
-            case 3...4:
-                anchorOffset = 1
-            case 5...6:
-                anchorOffset = 1
-            case 7...9:
-                anchorOffset = 2
-            default:
-                anchorOffset = max(0, min(length - 1, Int(floor(Double(length) * 0.35))))
-            }
-            globalAnchorOffset = contentStartOffset + anchorOffset
+        if behaviorSettings.displayMode == .oneWord {
+            return attributedString(for: tokens[0].text)
         } else {
-            // Fallback for purely symbolic/punctuation words
-            let length = text.count
-            globalAnchorOffset = max(0, min(length - 1, Int(floor(Double(length) * 0.35))))
+            var result = AttributedString("")
+            for (index, token) in tokens.enumerated() {
+                if index > 0 {
+                    result.append(AttributedString(" "))
+                }
+                result.append(attributedString(for: token.text))
+            }
+            return result
         }
+    }
 
-        let anchorIndex = text.index(text.startIndex, offsetBy: globalAnchorOffset)
+    private func attributedString(for text: String) -> AttributedString {
+        var attributed = AttributedString(text)
+        guard behaviorSettings.anchorLetterEnabled else { return attributed }
+        
+        if let offset = anchorGlobalOffset(for: text),
+           let attrIndex = AttributedString.Index(text.index(text.startIndex, offsetBy: offset), within: attributed) {
+            let nextIndex = attributed.index(afterCharacter: attrIndex)
+            attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
+        }
+        return attributed
+    }
+
+    private func parts(for text: String) -> WordParts {
+        let offset = anchorGlobalOffset(for: text) ?? 0
+        let anchorIndex = text.index(text.startIndex, offsetBy: offset)
         let nextIndex = text.index(after: anchorIndex)
-
+        
         return WordParts(
             prefix: String(text[..<anchorIndex]),
             anchor: String(text[anchorIndex..<nextIndex]),
@@ -152,71 +143,45 @@ final class ReaderViewModel: ObservableObject {
         )
     }
 
-    var currentAttributedWord: AttributedString {
-        let text = currentWord
-        var attributed = AttributedString(text)
+    private func anchorGlobalOffset(for text: String) -> Int? {
+        var contentStartOffset = 0
+        var foundStart = false
         
-        if behaviorSettings.anchorLetterEnabled, !text.isEmpty {
-            // Find bounds of actual word content (ignoring leading punctuation)
-            var startIndex = text.startIndex
-            var contentStartOffset = 0
-            
-            for (offset, scalar) in text.unicodeScalars.enumerated() {
-                if CharacterSet.alphanumerics.contains(scalar) {
-                    startIndex = text.index(text.startIndex, offsetBy: offset)
-                    contentStartOffset = offset
-                    break
-                }
-            }
-            
-            var endIndex = text.endIndex
-            for (offset, scalar) in text.unicodeScalars.enumerated().reversed() {
-                if CharacterSet.alphanumerics.contains(scalar) {
-                    endIndex = text.index(text.startIndex, offsetBy: offset + 1)
-                    break
-                }
-            }
-            
-            // If we found alphanumeric content, compute ORP on it
-            if startIndex < endIndex {
-                let contentString = text[startIndex..<endIndex]
-                let length = contentString.count
-                
-                let anchorOffset: Int
-                switch length {
-                case 0...2:
-                    anchorOffset = 0
-                case 3...4:
-                    anchorOffset = 1
-                case 5...6:
-                    anchorOffset = 1
-                case 7...9:
-                    anchorOffset = 2
-                default:
-                    anchorOffset = max(0, min(length - 1, Int(floor(Double(length) * 0.35))))
-                }
-                
-                let globalAnchorOffset = contentStartOffset + anchorOffset
-                let stringIndex = text.index(text.startIndex, offsetBy: globalAnchorOffset)
-                
-                if let attrIndex = AttributedString.Index(stringIndex, within: attributed) {
-                    let nextIndex = attributed.index(afterCharacter: attrIndex)
-                    attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
-                }
-            } else {
-                // Fallback for purely symbolic/punctuation words
-                let length = text.count
-                let anchorOffset = max(0, min(length - 1, Int(floor(Double(length) * 0.35))))
-                let stringIndex = text.index(text.startIndex, offsetBy: anchorOffset)
-                
-                if let attrIndex = AttributedString.Index(stringIndex, within: attributed) {
-                    let nextIndex = attributed.index(afterCharacter: attrIndex)
-                    attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
-                }
+        let scalars = Array(text.unicodeScalars)
+        for (offset, scalar) in scalars.enumerated() {
+            if CharacterSet.alphanumerics.contains(scalar) {
+                contentStartOffset = offset
+                foundStart = true
+                break
             }
         }
         
-        return attributed
+        guard foundStart else { return nil }
+        
+        var contentEndOffset = scalars.count
+        for offset in (contentStartOffset..<scalars.count).reversed() {
+            if CharacterSet.alphanumerics.contains(scalars[offset]) {
+                contentEndOffset = offset + 1
+                break
+            }
+        }
+        
+        let length = contentEndOffset - contentStartOffset
+        let anchorOffset: Int
+        switch length {
+        case 0...2:
+            anchorOffset = 0
+        case 3...4:
+            anchorOffset = 1
+        case 5...6:
+            anchorOffset = 1
+        case 7...9:
+            anchorOffset = 2
+        default:
+            anchorOffset = Int(floor(Double(length) * 0.35))
+        }
+        
+        return contentStartOffset + anchorOffset
     }
 
     var sanitizedCurrentWordForLookup: String? {

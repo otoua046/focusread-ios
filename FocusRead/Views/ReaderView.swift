@@ -168,10 +168,9 @@ struct ReaderView: View {
 
     private var wordStage: some View {
         VStack(spacing: 28) {
-            let parts = viewModel.currentWordParts
-            
             ZStack {
-                if parts.isAnchorEnabled && !viewModel.isTwoWordMode {
+                if let parts = viewModel.currentWordParts {
+                    // One-word mode with fixed ORP anchor alignment
                     ViewThatFits(in: .horizontal) {
                         anchoredLayout(parts: parts)
                             .fixedSize(horizontal: true, vertical: false)
@@ -183,6 +182,7 @@ struct ReaderView: View {
                     .typographyStyle(currentStyle)
                     .lineLimit(1)
                 } else {
+                    // Two-word mode or anchor highlighting only (centered)
                     Text(viewModel.currentAttributedWord)
                         .typographyStyle(currentStyle)
                         .minimumScaleFactor(0.4)
