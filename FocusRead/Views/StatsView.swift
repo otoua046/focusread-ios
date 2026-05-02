@@ -346,7 +346,7 @@ private extension View {
 }
 
 private enum StatsWidgetStyle {
-    static let accent = Color.accentColor
+    static let accent = AppTheme.accent
     static let surface = Color(uiColor: .secondarySystemGroupedBackground)
     static let iconBackground = Color(uiColor: .systemGray5)
     static let ringTrack = Color(uiColor: .systemGray5)
