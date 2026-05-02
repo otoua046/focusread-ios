@@ -205,7 +205,6 @@ struct ReaderView: View {
     private var tapGesture: some Gesture {
         TapGesture()
             .onEnded {
-                guard !actionPaletteInteractionActive else { return }
                 guard !showingActionPalette else {
                     withAnimation(.smooth(duration: 0.18)) {
                         showingActionPalette = false
@@ -232,6 +231,7 @@ struct ReaderView: View {
     private var horizontalSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 32)
             .onEnded { value in
+                guard !showingActionPalette else { return }
                 guard !actionPaletteInteractionActive else { return }
                 guard !wpmDialInteractionActive else { return }
                 guard abs(value.translation.width) > abs(value.translation.height) else { return }
@@ -246,6 +246,7 @@ struct ReaderView: View {
     private var verticalSpeedGesture: some Gesture {
         DragGesture(minimumDistance: 28)
             .onChanged { value in
+                guard !showingActionPalette else { return }
                 guard !actionPaletteInteractionActive else { return }
                 guard abs(value.translation.height) > abs(value.translation.width) else { return }
                 if verticalDragStartWPM == nil {

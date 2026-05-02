@@ -30,7 +30,18 @@ struct WordLookupService: Sendable {
 
     static func sanitizedTerm(from text: String) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let cleaned = trimmed.trimmingCharacters(in: .punctuationCharacters)
-        return cleaned.isEmpty ? nil : cleaned
+        guard !trimmed.isEmpty else { return nil }
+
+        let scalars = Array(trimmed.unicodeScalars)
+        let alphanumerics = CharacterSet.alphanumerics
+        
+        guard let firstIndex = scalars.firstIndex(where: { alphanumerics.contains($0) }),
+              let lastIndex = scalars.lastIndex(where: { alphanumerics.contains($0) }),
+              firstIndex <= lastIndex else {
+            return nil
+        }
+
+        let term = String(String.UnicodeScalarView(scalars[firstIndex...lastIndex]))
+        return term.isEmpty ? nil : term
     }
 }
