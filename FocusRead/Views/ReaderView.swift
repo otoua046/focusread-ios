@@ -14,11 +14,14 @@ struct ReaderView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var verticalDragStartWPM: Int?
+    @State private var wpmDialInteractionActive = false
+    @State private var actionPaletteInteractionActive = false
+    @State private var showingActionPalette = false
     @State private var showingTypographySettings = false
     @State private var showingGoToNavigation = false
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottomTrailing) {
             FocusReadBackground()
 
             VStack {
@@ -32,13 +35,36 @@ struct ReaderView: View {
 
                 Spacer(minLength: 24)
 
-                ReaderControlsView(viewModel: viewModel)
+                ReaderControlsView(
+                    viewModel: viewModel,
+                    isWPMControlInteracting: $wpmDialInteractionActive
+                )
                     .opacity(viewModel.controlsVisible ? 1 : 0.08)
                     .offset(y: viewModel.controlsVisible ? 0 : 24)
                     .padding(.bottom, 18)
             }
             .padding(.horizontal, 18)
             .padding(.top, 14)
+
+            ReaderActionPaletteView(
+                isPresented: $showingActionPalette,
+                isInteracting: $actionPaletteInteractionActive,
+                isVisible: viewModel.controlsVisible || showingActionPalette,
+                currentWord: viewModel.currentWord,
+                onToggle: toggleActionPalette,
+                onDictionary: {
+                    viewModel.lookupCurrentWord()
+                },
+                onLookup: {
+                    viewModel.prepareForSearchNavigation()
+                    showingGoToNavigation = true
+                },
+                onSettings: {
+                    viewModel.pause(showControls: true)
+                    showingTypographySettings = true
+                }
+            )
+            .zIndex(2)
         }
         .contentShape(Rectangle())
         .gesture(tapGesture)
@@ -78,18 +104,20 @@ struct ReaderView: View {
     }
 
     private var topBar: some View {
-        HStack {
-            Button {
-                viewModel.cleanup()
-                onClose()
-            } label: {
-                Image(systemName: "xmark")
-            }
-            .buttonStyle(.topReaderControl)
-            .accessibilityLabel("Close reader")
-            .zIndex(1)
+        ZStack {
+            HStack {
+                Button {
+                    viewModel.cleanup()
+                    onClose()
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.topReaderControl)
+                .accessibilityLabel("Close reader")
+                .zIndex(1)
 
-            Spacer()
+                Spacer()
+            }
 
             VStack(spacing: 3) {
                 Text(viewModel.locationIndicatorTitle)
@@ -106,29 +134,11 @@ struct ReaderView: View {
             .monospacedDigit()
             .frame(maxWidth: .infinity)
             .frame(height: 38)
-
-            Spacer()
-
-            HStack(spacing: 10) {
-                Button {
-                    viewModel.lookupCurrentWord()
-                } label: {
-                    Image(systemName: "book")
-                }
-                .buttonStyle(.topReaderControl)
-                .accessibilityLabel("Look up current word")
-
-                Button {
-                    showingTypographySettings = true
-                } label: {
-                    Image(systemName: "gearshape")
-                }
-                .buttonStyle(.topReaderControl)
-                .accessibilityLabel("Typography settings")
-            }
-            .zIndex(1)
+            .padding(.horizontal, 58)
+            .allowsHitTesting(false)
         }
         .padding(.horizontal, 2)
+        .frame(height: 44)
     }
 
     private var wordStage: some View {
@@ -195,13 +205,35 @@ struct ReaderView: View {
     private var tapGesture: some Gesture {
         TapGesture()
             .onEnded {
+                guard !showingActionPalette else {
+                    withAnimation(.smooth(duration: 0.18)) {
+                        showingActionPalette = false
+                    }
+                    return
+                }
                 viewModel.togglePlayback()
             }
+    }
+
+    private func toggleActionPalette() {
+        withAnimation(.smooth(duration: 0.2)) {
+            if showingActionPalette {
+                showingActionPalette = false
+                return
+            }
+
+            showingActionPalette = true
+            viewModel.pause(showControls: true)
+            viewModel.revealControls()
+        }
     }
 
     private var horizontalSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 32)
             .onEnded { value in
+                guard !showingActionPalette else { return }
+                guard !actionPaletteInteractionActive else { return }
+                guard !wpmDialInteractionActive else { return }
                 guard abs(value.translation.width) > abs(value.translation.height) else { return }
                 if value.translation.width > 0 {
                     viewModel.rewindWord()
@@ -214,6 +246,9 @@ struct ReaderView: View {
     private var verticalSpeedGesture: some Gesture {
         DragGesture(minimumDistance: 28)
             .onChanged { value in
+                guard !showingActionPalette else { return }
+                guard !actionPaletteInteractionActive else { return }
+                guard !wpmDialInteractionActive else { return }
                 guard abs(value.translation.height) > abs(value.translation.width) else { return }
                 if verticalDragStartWPM == nil {
                     verticalDragStartWPM = viewModel.wordsPerMinute

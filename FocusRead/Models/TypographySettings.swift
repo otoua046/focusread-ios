@@ -12,6 +12,7 @@ enum TypographySettingsKey {
 enum ReaderBehaviorSettingsKey {
     static let defaultWPM = "defaultWPM"
     static let hapticsEnabled = "hapticsEnabled"
+    static let reverseWPMDialDirection = "reverseWPMDialDirection"
     static let punctuationPausesEnabled = "punctuationPausesEnabled"
     static let longWordDelayMode = "longWordDelayMode"
     static let smartCleanupMode = "smartCleanupMode"

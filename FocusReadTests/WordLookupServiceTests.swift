@@ -17,4 +17,10 @@ final class WordLookupServiceTests: XCTestCase {
         XCTAssertNil(WordLookupService.sanitizedTerm(from: "..."))
         XCTAssertNil(WordLookupService.sanitizedTerm(from: "   "))
     }
+
+    func testSanitizedTermCommonWords() {
+        XCTAssertEqual(WordLookupService.sanitizedTerm(from: "that"), "that")
+        XCTAssertEqual(WordLookupService.sanitizedTerm(from: "this"), "this")
+        XCTAssertEqual(WordLookupService.sanitizedTerm(from: "That"), "That")
+    }
 }
