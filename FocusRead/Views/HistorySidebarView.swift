@@ -15,6 +15,7 @@ struct LibraryView: View {
     @AppStorage("library_sort_mode") private var sortMode: LibrarySortMode = .recent
     @State private var isSelectMode = false
     @State private var selection = Set<UUID>()
+    @Environment(\.colorScheme) private var colorScheme
 
     init(store: LocalReadingHistoryStore, onResume: @escaping (SavedRead) -> Void) {
         self.store = store
@@ -32,13 +33,7 @@ struct LibraryView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 24)
             }
-            .navigationTitle("Library")
-            .navigationBarTitleDisplayMode(.inline)
-            .searchable(
-                text: $viewModel.searchText,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Search books or authors"
-            )
+            .navigationBarHidden(true)
             .background(FocusReadBackground())
             .task(id: store.savedReads.map(\.id)) {
                 await reconcileThumbnails()
@@ -103,6 +98,10 @@ struct LibraryView: View {
     private var mainContent: some View {
         VStack(alignment: .leading, spacing: 20) {
             headerRow
+
+            if !viewModel.isLibraryEmpty || !viewModel.searchText.isEmpty {
+                searchBar
+            }
 
             if viewModel.isLibraryEmpty {
                 emptyState
@@ -171,6 +170,12 @@ struct LibraryView: View {
                 .padding(.top, 4)
             }
         }
+    }
+
+    private var searchBar: some View {
+        NativeSearchBar(text: $viewModel.searchText, placeholder: "Search books or authors")
+            .frame(height: 40)
+            .padding(.horizontal, -8)
     }
 
     private var selectionToolbar: some View {
