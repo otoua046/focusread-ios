@@ -21,7 +21,7 @@ struct StatsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                FocusReadPageHeader(title: "Stats")
+                FocusReadPageHeader(title: "My Stats")
 
                 DailyGoalRingWidget(
                     wordsRead: statsStore.snapshot.todayWordsRead,

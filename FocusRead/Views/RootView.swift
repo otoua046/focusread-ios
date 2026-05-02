@@ -14,7 +14,7 @@ struct RootView: View {
             case .library:
                 return "Library"
             case .stats:
-                return "Stats"
+                return "My Stats"
             case .settings:
                 return "Settings"
             }

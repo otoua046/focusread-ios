@@ -109,7 +109,7 @@ struct TypographySettingsView: View {
                     Divider().foregroundStyle(AppTheme.border)
 
                     Toggle("Italic", isOn: $isItalic)
-                        .tint(AppTheme.primaryText)
+                        .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 
@@ -185,17 +185,17 @@ struct TypographySettingsView: View {
                     Divider().foregroundStyle(AppTheme.border)
 
                     Toggle("Haptics", isOn: $hapticsEnabled)
-                        .tint(AppTheme.primaryText)
+                        .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 
                     Toggle("Reverse WPM Drag", isOn: $reverseWPMDialDirection)
-                        .tint(AppTheme.primaryText)
+                        .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 
                     Toggle("Punctuation Pauses", isOn: $punctuationPausesEnabled)
-                        .tint(AppTheme.primaryText)
+                        .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 

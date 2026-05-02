@@ -2,11 +2,7 @@ import SwiftUI
 import UIKit
 
 enum AppTheme {
-    static let accent = Color(uiColor: UIColor { traits in
-        traits.userInterfaceStyle == .dark
-            ? UIColor(red: 240 / 255.0, green: 225 / 255.0, blue: 200 / 255.0, alpha: 1.0)
-            : UIColor(red: 190 / 255.0, green: 160 / 255.0, blue: 110 / 255.0, alpha: 1.0) // Darker warm tone for light mode contrast
-    })
+    static let accent = Color(red: 190 / 255.0, green: 160 / 255.0, blue: 110 / 255.0)
     static let background = Color(uiColor: .systemBackground)
     static let cardBackground = Color(uiColor: .secondarySystemBackground)
     static let controlBackground = Color(uiColor: .tertiarySystemBackground)
