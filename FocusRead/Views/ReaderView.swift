@@ -248,6 +248,7 @@ struct ReaderView: View {
             .onChanged { value in
                 guard !showingActionPalette else { return }
                 guard !actionPaletteInteractionActive else { return }
+                guard !wpmDialInteractionActive else { return }
                 guard abs(value.translation.height) > abs(value.translation.width) else { return }
                 if verticalDragStartWPM == nil {
                     verticalDragStartWPM = viewModel.wordsPerMinute
