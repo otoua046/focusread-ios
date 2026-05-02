@@ -181,12 +181,12 @@ private struct DailyGoalRingWidget: View {
         HStack(spacing: 18) {
             ZStack {
                 Circle()
-                    .stroke(Color.accentColor.opacity(0.16), lineWidth: 14)
+                    .stroke(StatsWidgetStyle.ringTrack, lineWidth: 14)
 
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(
-                        Color.accentColor,
+                        StatsWidgetStyle.accent,
                         style: StrokeStyle(lineWidth: 14, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
@@ -209,9 +209,9 @@ private struct DailyGoalRingWidget: View {
                 HStack(spacing: 8) {
                     Image(systemName: "target")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(StatsWidgetStyle.accent)
                         .frame(width: 28, height: 28)
-                        .background(Color.accentColor.opacity(0.13), in: Circle())
+                        .background(StatsWidgetStyle.iconBackground, in: Circle())
 
                     Text("Daily Goal")
                         .font(.headline)
@@ -249,9 +249,9 @@ private struct StatsMetricWidget: View {
         VStack(alignment: .leading, spacing: 0) {
             Image(systemName: symbolName)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(StatsWidgetStyle.accent)
                 .frame(width: 30, height: 30)
-                .background(Color.accentColor.opacity(0.12), in: Circle())
+                .background(StatsWidgetStyle.iconBackground, in: Circle())
 
             Spacer(minLength: 12)
 
@@ -309,10 +309,10 @@ private struct DailyStatsRow: View {
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
                         Capsule()
-                            .fill(AppTheme.controlBackground)
+                            .fill(StatsWidgetStyle.ringTrack)
 
                         Capsule()
-                            .fill(Color.accentColor)
+                            .fill(StatsWidgetStyle.accent)
                             .frame(width: proxy.size.width * barProgress)
                     }
                 }
@@ -341,10 +341,39 @@ private struct DailyStatsRow: View {
 
 private extension View {
     func widgetSurface(cornerRadius: CGFloat) -> some View {
-        background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        modifier(StatsWidgetSurface(cornerRadius: cornerRadius))
+    }
+}
+
+private enum StatsWidgetStyle {
+    static let accent = Color.accentColor
+    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
+    static let iconBackground = Color(uiColor: .systemGray5)
+    static let ringTrack = Color(uiColor: .systemGray5)
+    static let stroke = Color(uiColor: .separator)
+}
+
+private struct StatsWidgetSurface: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        content
+            .background(StatsWidgetStyle.surface, in: shape)
             .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(AppTheme.border.opacity(0.16), lineWidth: 1)
+                shape.strokeBorder(
+                    StatsWidgetStyle.stroke.opacity(colorScheme == .light ? 0.42 : 0.22),
+                    lineWidth: 0.75
+                )
             }
+            .shadow(
+                color: Color.black.opacity(colorScheme == .light ? 0.07 : 0),
+                radius: 6,
+                x: 0,
+                y: 3
+            )
     }
 }
