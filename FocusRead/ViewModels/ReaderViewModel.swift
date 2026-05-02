@@ -446,6 +446,7 @@ final class ReaderViewModel: ObservableObject {
         let updatedDocument = ImportedDocument(
             fileName: importedDocument.fileName,
             displayTitle: importedDocument.displayTitle,
+            author: importedDocument.author,
             sourceType: importedDocument.sourceType,
             sections: sections,
             cleanupMode: importedDocument.cleanupMode,
