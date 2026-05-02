@@ -173,7 +173,7 @@ struct LibraryView: View {
     }
 
     private var searchBar: some View {
-        NativeSearchBar(text: $viewModel.searchText, placeholder: "Search books or authors")
+        NativeSearchBarView(text: $viewModel.searchText, placeholder: "Search books or authors")
             .frame(height: 40)
             .padding(.horizontal, -8)
     }

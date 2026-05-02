@@ -49,7 +49,7 @@
 		720000000000000000000019 /* GoToNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000119 /* GoToNavigationView.swift */; };
 		72000000000000000000001A /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011A /* LibraryViewModel.swift */; };
 		72000000000000000000001B /* ThumbnailGeneratorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000120 /* ThumbnailGeneratorService.swift */; };
-		72000000000000000000001C /* NativeSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011C /* NativeSearchBar.swift */; };
+		72000000000000000000001C /* NativeSearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011C /* NativeSearchBarView.swift */; };
 		730000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 730000000000000000000101 /* ZIPFoundation */; };
 		740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000101 /* EPUBTextExtractorTests.swift */; };
 		740000000000000000000002 /* minimal.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000102 /* minimal.epub */; };
@@ -115,7 +115,7 @@
 		720000000000000000000119 /* GoToNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToNavigationView.swift; sourceTree = "<group>"; };
 		72000000000000000000011A /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		720000000000000000000120 /* ThumbnailGeneratorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailGeneratorService.swift; sourceTree = "<group>"; };
-		72000000000000000000011C /* NativeSearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSearchBar.swift; sourceTree = "<group>"; };
+		72000000000000000000011C /* NativeSearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSearchBarView.swift; sourceTree = "<group>"; };
 		740000000000000000000011 /* FocusReadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusReadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		740000000000000000000101 /* EPUBTextExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractorTests.swift; sourceTree = "<group>"; };
 		740000000000000000000102 /* minimal.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = minimal.epub; sourceTree = "<group>"; };
@@ -241,7 +241,7 @@
 				720000000000000000000111 /* HistorySidebarView.swift */,
 				720000000000000000000113 /* DictionaryLookupView.swift */,
 				720000000000000000000119 /* GoToNavigationView.swift */,
-				72000000000000000000011C /* NativeSearchBar.swift */,
+				72000000000000000000011C /* NativeSearchBarView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -435,7 +435,7 @@
 				720000000000000000000019 /* GoToNavigationView.swift in Sources */,
 				72000000000000000000001A /* LibraryViewModel.swift in Sources */,
 				72000000000000000000001B /* ThumbnailGeneratorService.swift in Sources */,
-				72000000000000000000001C /* NativeSearchBar.swift in Sources */,
+				72000000000000000000001C /* NativeSearchBarView.swift in Sources */,
 				71000000000000000000000E /* AppTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
