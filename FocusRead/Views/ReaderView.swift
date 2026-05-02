@@ -15,6 +15,7 @@ struct ReaderView: View {
 
     @State private var verticalDragStartWPM: Int?
     @State private var wpmDialInteractionActive = false
+    @State private var actionPaletteInteractionActive = false
     @State private var showingActionPalette = false
     @State private var showingTypographySettings = false
     @State private var showingGoToNavigation = false
@@ -47,6 +48,7 @@ struct ReaderView: View {
 
             ReaderActionPaletteView(
                 isPresented: $showingActionPalette,
+                isInteracting: $actionPaletteInteractionActive,
                 isVisible: viewModel.controlsVisible || showingActionPalette,
                 currentWord: viewModel.currentWord,
                 onToggle: toggleActionPalette,
@@ -62,8 +64,6 @@ struct ReaderView: View {
                     showingTypographySettings = true
                 }
             )
-            .safeAreaPadding(.trailing, 18)
-            .safeAreaPadding(.bottom, 126)
             .zIndex(2)
         }
         .contentShape(Rectangle())
@@ -205,6 +205,7 @@ struct ReaderView: View {
     private var tapGesture: some Gesture {
         TapGesture()
             .onEnded {
+                guard !actionPaletteInteractionActive else { return }
                 guard !showingActionPalette else {
                     withAnimation(.smooth(duration: 0.18)) {
                         showingActionPalette = false
@@ -231,6 +232,7 @@ struct ReaderView: View {
     private var horizontalSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 32)
             .onEnded { value in
+                guard !actionPaletteInteractionActive else { return }
                 guard !wpmDialInteractionActive else { return }
                 guard abs(value.translation.width) > abs(value.translation.height) else { return }
                 if value.translation.width > 0 {
@@ -244,6 +246,7 @@ struct ReaderView: View {
     private var verticalSpeedGesture: some Gesture {
         DragGesture(minimumDistance: 28)
             .onChanged { value in
+                guard !actionPaletteInteractionActive else { return }
                 guard abs(value.translation.height) > abs(value.translation.width) else { return }
                 if verticalDragStartWPM == nil {
                     verticalDragStartWPM = viewModel.wordsPerMinute
