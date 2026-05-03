@@ -45,7 +45,7 @@ struct ReaderControlsView: View {
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(AppTheme.primaryButtonForeground)
                         .frame(width: 62, height: 62)
-                        .background(AppTheme.primaryButtonBackground, in: Circle())
+                        .background(AppTheme.accent, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")

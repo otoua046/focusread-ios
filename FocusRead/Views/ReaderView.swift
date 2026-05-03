@@ -170,7 +170,7 @@ struct ReaderView: View {
             } label: {
                 ProgressView(value: viewModel.progress)
                     .progressViewStyle(.linear)
-                    .tint(AppTheme.primaryText)
+                    .tint(AppTheme.accent)
                     .frame(maxWidth: 320)
                     .opacity(viewModel.controlsVisible ? 0.75 : 0.18)
                     .contentShape(Rectangle())

@@ -410,7 +410,7 @@ struct LibraryBookCard: View {
             if isSelectMode {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(isSelected ? Color.blue : Color.white)
+                    .foregroundStyle(isSelected ? AppTheme.accent : Color.white)
                     .background(Circle().fill(isSelected ? Color.white : Color.black.opacity(0.4)))
                     .padding(8)
             }
@@ -633,7 +633,7 @@ struct LibraryListRow: View {
                 if isSelectMode {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .font(.title2)
-                        .foregroundStyle(isSelected ? Color.blue : AppTheme.secondaryText)
+                        .foregroundStyle(isSelected ? AppTheme.accent : AppTheme.secondaryText)
                 }
 
                 coverView

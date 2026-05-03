@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 enum AppTheme {
+    static let accent = Color(red: 190 / 255.0, green: 160 / 255.0, blue: 110 / 255.0)
     static let background = Color(uiColor: .systemBackground)
     static let cardBackground = Color(uiColor: .secondarySystemBackground)
     static let controlBackground = Color(uiColor: .tertiarySystemBackground)
