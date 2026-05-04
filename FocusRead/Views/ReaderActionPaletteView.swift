@@ -4,6 +4,7 @@ struct ReaderActionPaletteView: View {
     @Binding var isPresented: Bool
     @Binding var isInteracting: Bool
     let isVisible: Bool
+    let isTranslateSupported: Bool
     let currentWord: String
     let onToggle: () -> Void
     let onDictionary: () -> Void
@@ -43,13 +44,15 @@ struct ReaderActionPaletteView: View {
         if isPresented {
             VStack(alignment: .trailing, spacing: spacing) {
                 HStack(spacing: spacing) {
-                    ReaderActionItem(
-                        title: "Translate",
-                        systemImage: "translate",
-                        size: actionSize,
-                        onPressedChange: updateInteractionState
-                    ) {
-                        runAndClose(onTranslate)
+                    if isTranslateSupported {
+                        ReaderActionItem(
+                            title: "Translate",
+                            systemImage: "translate",
+                            size: actionSize,
+                            onPressedChange: updateInteractionState
+                        ) {
+                            runAndClose(onTranslate)
+                        }
                     }
                     
                     ReaderActionItem(

@@ -81,6 +81,13 @@ final class ReaderViewModel: ObservableObject {
         startBackgroundAICleanupIfNeeded()
     }
 
+    var isTranslationAvailable: Bool {
+        if #available(iOS 17.4, *) {
+            return true
+        }
+        return false
+    }
+
     var isTwoWordMode: Bool {
         behaviorSettings.displayMode == .twoWords
     }
@@ -144,28 +151,13 @@ final class ReaderViewModel: ObservableObject {
     }
 
     private func anchorGlobalOffset(for text: String) -> Int? {
-        var contentStartOffset = 0
-        var foundStart = false
-        
-        let scalars = Array(text.unicodeScalars)
-        for (offset, scalar) in scalars.enumerated() {
-            if CharacterSet.alphanumerics.contains(scalar) {
-                contentStartOffset = offset
-                foundStart = true
-                break
-            }
+        let characters = Array(text)
+        guard let contentStartOffset = characters.firstIndex(where: Self.isAlphanumeric),
+              let contentEndInclusiveOffset = characters.indices.reversed().first(where: { Self.isAlphanumeric(characters[$0]) }) else {
+            return nil
         }
-        
-        guard foundStart else { return nil }
-        
-        var contentEndOffset = scalars.count
-        for offset in (contentStartOffset..<scalars.count).reversed() {
-            if CharacterSet.alphanumerics.contains(scalars[offset]) {
-                contentEndOffset = offset + 1
-                break
-            }
-        }
-        
+
+        let contentEndOffset = contentEndInclusiveOffset + 1
         let length = contentEndOffset - contentStartOffset
         let anchorOffset: Int
         switch length {
@@ -182,6 +174,10 @@ final class ReaderViewModel: ObservableObject {
         }
         
         return contentStartOffset + anchorOffset
+    }
+
+    private static func isAlphanumeric(_ character: Character) -> Bool {
+        character.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
     }
 
     var sanitizedCurrentWordForLookup: String? {

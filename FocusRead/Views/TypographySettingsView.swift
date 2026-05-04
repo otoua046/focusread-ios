@@ -229,6 +229,8 @@ struct TypographySettingsView: View {
                     Divider().foregroundStyle(AppTheme.border)
 
                     VStack(alignment: .leading, spacing: 8) {
+                        Text("Display Mode controls how many words are shown at a time.")
+                        Text("Anchor Letter highlights an optical fixation point to help your eyes stay focused.")
                         Text("Punctuation pauses add natural reading pauses after commas, periods, and paragraph breaks.")
                         Text("Long-word delay gives extra time for longer words, names, and numbers.")
                     }
