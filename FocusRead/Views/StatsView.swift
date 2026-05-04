@@ -23,19 +23,17 @@ struct StatsView: View {
             VStack(alignment: .leading, spacing: 18) {
                 FocusReadPageHeader(title: "My Stats")
 
-                DailyGoalRingWidget(
-                    wordsRead: statsStore.snapshot.todayWordsRead,
-                    goalWords: statsStore.snapshot.dailyGoalWords,
-                    progress: dailyGoalProgress,
-                    formattedWords: formattedInteger(statsStore.snapshot.todayWordsRead),
-                    formattedGoal: formattedInteger(statsStore.snapshot.dailyGoalWords)
+                ReadingActivityWidget(
+                    activities: readingActivityDays
                 )
 
                 LazyVGrid(columns: widgetColumns, spacing: 12) {
-                    StatsMetricWidget(
-                        title: "Total Words",
-                        value: formattedInteger(statsStore.snapshot.totalWordsRead),
-                        symbolName: "text.word.spacing"
+                    DailyProgressMetricWidget(
+                        wordsRead: statsStore.snapshot.todayWordsRead,
+                        goalWords: statsStore.snapshot.dailyGoalWords,
+                        progress: dailyGoalProgress,
+                        formattedWords: formattedInteger(statsStore.snapshot.todayWordsRead),
+                        formattedGoal: formattedInteger(statsStore.snapshot.dailyGoalWords)
                     )
 
                     StatsMetricWidget(
@@ -136,6 +134,13 @@ struct StatsView: View {
         max(recentDailyStats.map(\.wordsRead).max() ?? 0, statsStore.snapshot.dailyGoalWords)
     }
 
+    private var readingActivityDays: [ReadingDayActivity] {
+        ReadingDayActivity.recentDays(
+            from: statsStore.dailyStats,
+            dailyGoalWords: statsStore.snapshot.dailyGoalWords
+        )
+    }
+
     private var dailyGoalProgress: Double {
         guard statsStore.snapshot.dailyGoalWords > 0 else { return 0 }
         return min(Double(statsStore.snapshot.todayWordsRead) / Double(statsStore.snapshot.dailyGoalWords), 1)
@@ -170,7 +175,105 @@ struct StatsView: View {
     }
 }
 
-private struct DailyGoalRingWidget: View {
+private struct ReadingActivityWidget: View {
+    let activities: [ReadingDayActivity]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Reading Activity")
+                    .font(.headline)
+                    .foregroundStyle(AppTheme.primaryText)
+
+                Text("Daily words read")
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.secondaryText)
+            }
+
+            ReadingContributionGrid(activities: activities)
+                .frame(maxWidth: .infinity)
+                .frame(height: 124)
+
+            HStack(spacing: 6) {
+                Text("Less")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(AppTheme.tertiaryText)
+
+                ForEach(0...4, id: \.self) { level in
+                    RoundedRectangle(cornerRadius: 3, style: .continuous)
+                        .fill(StatsWidgetStyle.contributionColor(for: level))
+                        .frame(width: 11, height: 11)
+                }
+
+                Text("More")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(AppTheme.tertiaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, minHeight: 218)
+        .widgetSurface(cornerRadius: 24)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Reading Activity, daily words read contribution grid")
+    }
+}
+
+struct ReadingContributionGrid: View {
+    let activities: [ReadingDayActivity]
+
+    private let rows = 7
+    private let spacing: CGFloat = 4
+    private let maximumSquareSize: CGFloat = 14
+
+    var body: some View {
+        GeometryReader { proxy in
+            let columns = activityColumns
+            let squareSize = squareSize(
+                availableWidth: proxy.size.width,
+                availableHeight: proxy.size.height,
+                columnCount: columns.count
+            )
+            let gridHeight = CGFloat(rows) * squareSize + CGFloat(rows - 1) * spacing
+
+            HStack(alignment: .top, spacing: spacing) {
+                ForEach(columns.indices, id: \.self) { columnIndex in
+                    VStack(spacing: spacing) {
+                        ForEach(columns[columnIndex]) { activity in
+                            RoundedRectangle(cornerRadius: max(squareSize * 0.26, 2), style: .continuous)
+                                .fill(StatsWidgetStyle.contributionColor(for: activity.intensityLevel))
+                                .frame(width: squareSize, height: squareSize)
+                                .accessibilityLabel(accessibilityLabel(for: activity))
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: gridHeight, alignment: .center)
+            .frame(maxHeight: .infinity, alignment: .center)
+        }
+    }
+
+    private var activityColumns: [[ReadingDayActivity]] {
+        stride(from: 0, to: activities.count, by: rows).map { startIndex in
+            let endIndex = min(startIndex + rows, activities.count)
+            return Array(activities[startIndex..<endIndex])
+        }
+    }
+
+    private func squareSize(availableWidth: CGFloat, availableHeight: CGFloat, columnCount: Int) -> CGFloat {
+        let safeColumnCount = max(columnCount, 1)
+        let widthDrivenSize = (availableWidth - CGFloat(safeColumnCount - 1) * spacing) / CGFloat(safeColumnCount)
+        let heightDrivenSize = (availableHeight - CGFloat(rows - 1) * spacing) / CGFloat(rows)
+        return max(6, min(maximumSquareSize, floor(min(widthDrivenSize, heightDrivenSize))))
+    }
+
+    private func accessibilityLabel(for activity: ReadingDayActivity) -> String {
+        let formattedDate = activity.date.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        return "\(formattedDate), \(activity.wordsRead) words read"
+    }
+}
+
+private struct DailyProgressMetricWidget: View {
     let wordsRead: Int
     let goalWords: Int
     let progress: Double
@@ -178,64 +281,45 @@ private struct DailyGoalRingWidget: View {
     let formattedGoal: String
 
     var body: some View {
-        HStack(spacing: 18) {
+        VStack(spacing: 7) {
             ZStack {
                 Circle()
-                    .stroke(StatsWidgetStyle.ringTrack, lineWidth: 14)
+                    .stroke(StatsWidgetStyle.ringTrack, lineWidth: 8)
 
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(
                         StatsWidgetStyle.accent,
-                        style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
 
-                VStack(spacing: 2) {
-                    Text("\(Int((progress * 100).rounded()))%")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(AppTheme.primaryText)
-                        .monospacedDigit()
-
-                    Text("today")
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(AppTheme.secondaryText)
-                }
+                Text("\(Int((progress * 100).rounded()))%")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryText)
+                    .monospacedDigit()
             }
-            .frame(width: 112, height: 112)
+            .frame(width: 58, height: 58)
             .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 7) {
-                HStack(spacing: 8) {
-                    Image(systemName: "target")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(StatsWidgetStyle.accent)
-                        .frame(width: 28, height: 28)
-                        .background(StatsWidgetStyle.iconBackground, in: Circle())
+            Text("\(formattedWords) / \(formattedGoal)")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.primaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.66)
+                .monospacedDigit()
 
-                    Text("Daily Goal")
-                        .font(.headline)
-                        .foregroundStyle(AppTheme.primaryText)
-                }
-
-                Text("\(formattedWords) / \(formattedGoal)")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryText)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                    .monospacedDigit()
-
-                Text("words read")
-                    .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondaryText)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text("Daily Progress")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppTheme.secondaryText)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, minHeight: 148)
-        .widgetSurface(cornerRadius: 24)
+        .frame(maxWidth: .infinity, minHeight: 132, maxHeight: 132, alignment: .center)
+        .padding(14)
+        .widgetSurface(cornerRadius: 22)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Daily Goal, \(wordsRead) of \(goalWords) words")
+        .accessibilityLabel("Daily Progress, \(wordsRead) of \(goalWords) words")
     }
 }
 
@@ -351,6 +435,21 @@ private enum StatsWidgetStyle {
     static let iconBackground = Color(uiColor: .systemGray5)
     static let ringTrack = Color(uiColor: .systemGray5)
     static let stroke = Color(uiColor: .separator)
+
+    static func contributionColor(for level: Int) -> Color {
+        switch level {
+        case 1:
+            return accent.opacity(0.28)
+        case 2:
+            return accent.opacity(0.46)
+        case 3:
+            return accent.opacity(0.68)
+        case 4:
+            return accent
+        default:
+            return Color(uiColor: .systemGray5)
+        }
+    }
 }
 
 private struct StatsWidgetSurface: ViewModifier {
@@ -377,3 +476,70 @@ private struct StatsWidgetSurface: ViewModifier {
             )
     }
 }
+
+#if DEBUG
+private extension ReadingDayActivity {
+    static func previewActivities(dayCount: Int = 91, dailyGoalWords: Int = 2_200) -> [ReadingDayActivity] {
+        let calendar = Calendar(identifier: .gregorian)
+        let today = Date()
+
+        return (0..<dayCount).reversed().compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else {
+                return nil
+            }
+
+            let wordsRead: Int
+            switch offset % 11 {
+            case 0:
+                wordsRead = 2_500
+            case 1, 5:
+                wordsRead = 1_500
+            case 2, 6, 9:
+                wordsRead = 760
+            case 3, 8:
+                wordsRead = 240
+            default:
+                wordsRead = 0
+            }
+
+            return ReadingDayActivity(
+                date: date,
+                wordsRead: wordsRead,
+                dailyGoalWords: dailyGoalWords,
+                calendar: calendar
+            )
+        }
+    }
+}
+
+#Preview("Reading Activity - No Data") {
+    ReadingActivityWidget(
+        activities: ReadingDayActivity.previewActivities().map {
+            ReadingDayActivity(date: $0.date, wordsRead: 0, dailyGoalWords: 2_200)
+        }
+    )
+    .padding(20)
+    .background(FocusReadBackground())
+}
+
+#Preview("Reading Activity - 90 Days") {
+    ReadingActivityWidget(
+        activities: ReadingDayActivity.previewActivities()
+    )
+    .padding(20)
+    .background(FocusReadBackground())
+}
+
+#Preview("Daily Progress Card") {
+    DailyProgressMetricWidget(
+        wordsRead: 400,
+        goalWords: 2_200,
+        progress: 400.0 / 2_200.0,
+        formattedWords: "400",
+        formattedGoal: "2,200"
+    )
+    .frame(width: 160)
+    .padding(20)
+    .background(FocusReadBackground())
+}
+#endif

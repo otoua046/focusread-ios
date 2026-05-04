@@ -2,6 +2,43 @@ import XCTest
 @testable import FocusRead
 
 final class ReadingStatsStoreTests: XCTestCase {
+    func testReadingDayActivityIntensityUsesDailyGoalThresholds() {
+        XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 0, dailyGoalWords: 2_000), 0)
+        XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 1, dailyGoalWords: 2_000), 1)
+        XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 499, dailyGoalWords: 2_000), 1)
+        XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 500, dailyGoalWords: 2_000), 2)
+        XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 1_000, dailyGoalWords: 2_000), 3)
+        XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 2_000, dailyGoalWords: 2_000), 4)
+        XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 2_400, dailyGoalWords: 2_000), 4)
+    }
+
+    func testReadingDayActivityRecentDaysBackfillsEmptyDays() {
+        let calendar = gregorianUTC()
+        let today = date("2026-05-04T12:00:00Z")
+        let yesterday = date("2026-05-03T12:00:00Z")
+
+        let activities = ReadingDayActivity.recentDays(
+            from: [
+                DailyReadingStats(
+                    date: yesterday,
+                    wordsRead: 500,
+                    readingSeconds: 60,
+                    sessionsCount: 1,
+                    completedBooksCount: 0
+                )
+            ],
+            dailyGoalWords: 1_000,
+            dayCount: 3,
+            endingAt: today,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(activities.map(\.wordsRead), [0, 500, 0])
+        XCTAssertEqual(activities.map(\.intensityLevel), [0, 3, 0])
+        XCTAssertEqual(activities.first?.date, date("2026-05-02T00:00:00Z"))
+        XCTAssertEqual(activities.last?.date, date("2026-05-04T00:00:00Z"))
+    }
+
     @MainActor
     func testRecordingSessionUpdatesSnapshotAndDailyStats() {
         let directory = temporaryDirectory()
