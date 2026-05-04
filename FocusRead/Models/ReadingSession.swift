@@ -159,14 +159,12 @@ struct ReadingSession: Equatable, Sendable {
 
     var isAtEnd: Bool {
         guard !tokens.isEmpty else { return true }
-        return currentIndex + stepSize >= tokens.count
+        return currentIndex >= tokens.count
     }
 
     mutating func advance() {
         guard !tokens.isEmpty else { return }
-        if currentIndex + stepSize < tokens.count {
-            currentIndex += stepSize
-        }
+        currentIndex = min(currentIndex + stepSize, tokens.count)
     }
 
     mutating func rewindWord() {

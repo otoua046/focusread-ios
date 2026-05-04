@@ -667,6 +667,8 @@ final class ReaderViewModel: ObservableObject {
         guard isPlaying else { return false }
         recordCurrentWordReadForStats()
 
+        let willBeAtEnd = session.currentIndex + session.stepSize >= session.tokens.count
+
         if session.isAtEnd {
             isPlaying = false
             controlsVisible = true
@@ -677,6 +679,14 @@ final class ReaderViewModel: ObservableObject {
 
         session.advance()
         persistProgress()
+
+        if willBeAtEnd {
+            isPlaying = false
+            controlsVisible = true
+            persistProgress(force: true)
+            finishReadingStatsSession()
+            return false
+        }
 
         return true
     }
