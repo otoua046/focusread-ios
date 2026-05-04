@@ -667,6 +667,9 @@ final class ReaderViewModel: ObservableObject {
     private func advanceFromEngine() -> Bool {
         guard isPlaying else { return false }
         recordCurrentWordReadForStats()
+        
+        let willBeAtEnd = session.currentIndex + session.stepSize >= session.tokens.count
+
         if session.isAtEnd {
             isPlaying = false
             controlsVisible = true
@@ -677,6 +680,15 @@ final class ReaderViewModel: ObservableObject {
 
         session.advance()
         persistProgress()
+        
+        if willBeAtEnd {
+            isPlaying = false
+            controlsVisible = true
+            persistProgress(force: true)
+            finishReadingStatsSession()
+            return false
+        }
+
         return true
     }
 
@@ -847,8 +859,9 @@ final class ReaderViewModel: ObservableObject {
     private func recordCurrentWordReadForStats() {
         guard readingStatsSessionStartedAt != nil else { return }
 
-        readingStatsSessionWordsRead += 1
-        readingStatsSessionWeightedWPM += session.wordsPerMinute
+        let wordsInStep = session.currentTokens.count
+        readingStatsSessionWordsRead += wordsInStep
+        readingStatsSessionWeightedWPM += session.wordsPerMinute * wordsInStep
     }
 
     private func finishReadingStatsSession() {
