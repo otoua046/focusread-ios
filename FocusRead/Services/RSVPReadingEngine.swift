@@ -49,24 +49,19 @@ actor RSVPReadingEngine {
         let base = 60.0 / Double(ReadingSession.clampWPM(wpm))
         var multiplier = Double(tokens.count)
 
-        if behavior.punctuationPausesEnabled {
-            let maxPause = tokens.map(\.pauseKind).max { lhs, rhs in
-                pauseWeight(lhs) < pauseWeight(rhs)
-            } ?? .none
-            
-            switch maxPause {
-            case .none:
-                break
-            case .minorPunctuation:
-                multiplier += 0.45
-            case .sentenceEnd:
-                multiplier += 0.9
-            case .paragraphBreak:
-                multiplier += 1.35
-            }
-        }
-
         for token in tokens {
+            if behavior.punctuationPausesEnabled {
+                switch token.pauseKind {
+                case .none:
+                    break
+                case .minorPunctuation:
+                    multiplier += 0.45
+                case .sentenceEnd:
+                    multiplier += 0.9
+                case .paragraphBreak:
+                    multiplier += 1.35
+                }
+            }
             multiplier += behavior.longWordDelayMode.extraMultiplier(for: token)
         }
 
