@@ -402,17 +402,15 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func lookupCurrentWord() {
-        let visibleWord = currentWord
         pause(showControls: true)
 
-        guard let term = wordLookupService.sanitizedTerm(from: visibleWord),
+        guard let term = sanitizedCurrentWordForLookup,
               wordLookupService.hasDefinition(for: term) else {
             lookupRequest = nil
             noDefinitionFound = true
             return
         }
 
-        noDefinitionFound = false
         lookupRequest = WordLookupRequest(term: term)
     }
 
