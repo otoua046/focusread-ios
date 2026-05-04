@@ -181,7 +181,8 @@ final class ReaderViewModel: ObservableObject {
     }
 
     var sanitizedCurrentWordForLookup: String? {
-        wordLookupService.sanitizedTerm(from: currentWord)
+        guard let firstToken = session.currentTokens.first else { return nil }
+        return wordLookupService.sanitizedTerm(from: firstToken.text)
     }
 
     var wordsPerMinute: Int {
@@ -667,8 +668,6 @@ final class ReaderViewModel: ObservableObject {
     private func advanceFromEngine() -> Bool {
         guard isPlaying else { return false }
         recordCurrentWordReadForStats()
-        
-        let willBeAtEnd = session.currentIndex + session.stepSize >= session.tokens.count
 
         if session.isAtEnd {
             isPlaying = false
@@ -680,18 +679,9 @@ final class ReaderViewModel: ObservableObject {
 
         session.advance()
         persistProgress()
-        
-        if willBeAtEnd {
-            isPlaying = false
-            controlsVisible = true
-            persistProgress(force: true)
-            finishReadingStatsSession()
-            return false
-        }
 
         return true
     }
-
     private func withAnimationStateChange(_ change: () -> Void) {
         change()
     }
@@ -707,7 +697,7 @@ final class ReaderViewModel: ObservableObject {
 
     private var currentWordNumber: Int {
         guard !session.tokens.isEmpty else { return 0 }
-        return session.currentIndex + 1
+        return min(session.currentIndex + session.stepSize, session.tokens.count)
     }
 
     private func currentTokenLocation() -> TokenLocation? {

@@ -153,16 +153,20 @@ struct ReadingSession: Equatable, Sendable {
 
     var progress: Double {
         guard !tokens.isEmpty else { return 0 }
-        return Double(currentIndex + 1) / Double(tokens.count)
+        let readCount = min(currentIndex + stepSize, tokens.count)
+        return Double(readCount) / Double(tokens.count)
     }
 
     var isAtEnd: Bool {
-        currentIndex >= max(tokens.count - 1, 0)
+        guard !tokens.isEmpty else { return true }
+        return currentIndex + stepSize >= tokens.count
     }
 
     mutating func advance() {
         guard !tokens.isEmpty else { return }
-        currentIndex = min(currentIndex + stepSize, tokens.count - 1)
+        if currentIndex + stepSize < tokens.count {
+            currentIndex += stepSize
+        }
     }
 
     mutating func rewindWord() {
