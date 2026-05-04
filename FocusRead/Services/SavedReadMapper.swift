@@ -82,7 +82,7 @@ enum SavedReadMapper {
         updated.updatedAt = now
         updated.lastOpenedAt = now
         updated.totalWordCount = session.tokens.count
-        updated.currentWordIndex = session.currentIndex
+        updated.currentWordIndex = session.isAtEnd ? max(session.tokens.count - 1, 0) : session.currentIndex
         updated.progressPercent = session.isAtEnd ? 100 : progressPercent(
             currentIndex: session.currentIndex,
             stepSize: session.stepSize,
