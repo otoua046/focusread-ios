@@ -141,9 +141,8 @@ struct ReadingSession: Equatable, Sendable {
     }
 
     var currentToken: ReadingToken? {
-        guard !tokens.isEmpty else { return nil }
-        let validIndex = min(currentIndex, tokens.count - 1)
-        return tokens[validIndex]
+        guard tokens.indices.contains(currentIndex) else { return nil }
+        return tokens[currentIndex]
     }
 
     var currentTokens: [ReadingToken] {
@@ -160,12 +159,12 @@ struct ReadingSession: Equatable, Sendable {
 
     var isAtEnd: Bool {
         guard !tokens.isEmpty else { return true }
-        return currentIndex >= tokens.count
+        return currentIndex >= max(tokens.count - 1, 0)
     }
 
     mutating func advance() {
         guard !tokens.isEmpty else { return }
-        currentIndex = min(currentIndex + stepSize, tokens.count)
+        currentIndex = min(currentIndex + stepSize, max(tokens.count - 1, 0))
     }
 
     mutating func rewindWord() {
