@@ -141,8 +141,9 @@ struct ReadingSession: Equatable, Sendable {
     }
 
     var currentToken: ReadingToken? {
-        guard tokens.indices.contains(currentIndex) else { return nil }
-        return tokens[currentIndex]
+        guard !tokens.isEmpty else { return nil }
+        let validIndex = min(currentIndex, tokens.count - 1)
+        return tokens[validIndex]
     }
 
     var currentTokens: [ReadingToken] {
