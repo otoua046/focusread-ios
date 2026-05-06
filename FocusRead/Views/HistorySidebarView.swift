@@ -318,6 +318,14 @@ struct LibraryView: View {
     }
 }
 
+private enum LibraryCoverLayout {
+    static let gridMinimumWidth: CGFloat = 156
+    static let gridMaximumWidth: CGFloat = 220
+    static let gridAspectRatio: CGFloat = 0.72
+    static let listWidth: CGFloat = 50
+    static let listHeight: CGFloat = 70
+}
+
 struct LibraryGridView: View {
     let reads: [SavedRead]
     let isSelectMode: Bool
@@ -328,7 +336,14 @@ struct LibraryGridView: View {
     let onDelete: (SavedRead) -> Void
 
     private let columns = [
-        GridItem(.adaptive(minimum: 156, maximum: 220), spacing: 18, alignment: .top)
+        GridItem(
+            .adaptive(
+                minimum: LibraryCoverLayout.gridMinimumWidth,
+                maximum: LibraryCoverLayout.gridMaximumWidth
+            ),
+            spacing: 18,
+            alignment: .top
+        )
     ]
 
     var body: some View {
@@ -409,24 +424,15 @@ struct LibraryBookCard: View {
     }
 
     private var coverView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(theme.controlBackground)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(theme.border.opacity(0.24), lineWidth: 1)
-                }
-
-            if let thumbnailData, let thumbnailImage = UIImage(data: thumbnailData) {
-                Image(uiImage: thumbnailImage)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                placeholderView
-            }
-        }
-        .aspectRatio(0.72, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        LibraryCoverThumbnail(
+            read: read,
+            thumbnailData: thumbnailData,
+            imageCornerRadius: 6,
+            placeholderCornerRadius: 14,
+            placeholderIconSize: 26,
+            showsPlaceholderLabel: true
+        )
+        .aspectRatio(LibraryCoverLayout.gridAspectRatio, contentMode: .fit)
         .overlay(alignment: .bottomTrailing) {
             if isSelectMode {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
@@ -436,25 +442,70 @@ struct LibraryBookCard: View {
                     .padding(8)
             }
         }
-        .shadow(
-            color: theme.colorScheme == .dark ? theme.deepOverlayShadow : theme.overlayShadow,
-            radius: 12,
-            x: 0,
-            y: 6
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .frame(maxWidth: .infinity, alignment: .center)
+        .contentShape(Rectangle())
+    }
+
+    private func loadThumbnail() async {
+        thumbnailData = await ThumbnailGeneratorService.shared.thumbnailData(for: read)
+    }
+}
+
+private struct LibraryCoverThumbnail: View {
+    let read: SavedRead
+    let thumbnailData: Data?
+    let imageCornerRadius: CGFloat
+    let placeholderCornerRadius: CGFloat
+    let placeholderIconSize: CGFloat
+    let showsPlaceholderLabel: Bool
+
+    @Environment(\.focusReadTheme) private var theme
+
+    var body: some View {
+        ZStack {
+            Color.clear
+
+            if let thumbnailData, let thumbnailImage = UIImage(data: thumbnailData) {
+                Image(uiImage: thumbnailImage)
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(RoundedRectangle(cornerRadius: imageCornerRadius, style: .continuous))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .shadow(
+                        color: theme.colorScheme == .dark ? theme.deepOverlayShadow : theme.overlayShadow,
+                        radius: 12,
+                        x: 0,
+                        y: 6
+                    )
+            } else {
+                placeholderView
+                    .clipShape(RoundedRectangle(cornerRadius: placeholderCornerRadius, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: placeholderCornerRadius, style: .continuous)
+                            .strokeBorder(theme.border.opacity(0.24), lineWidth: 1)
+                    }
+                    .shadow(
+                        color: theme.colorScheme == .dark ? theme.deepOverlayShadow : theme.overlayShadow,
+                        radius: 12,
+                        x: 0,
+                        y: 6
+                    )
+            }
+        }
     }
 
     private var placeholderView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: showsPlaceholderLabel ? 12 : 0) {
             Image(systemName: read.sourceType.systemImageName)
-                .font(.system(size: 26, weight: .semibold))
+                .font(.system(size: placeholderIconSize, weight: .semibold))
                 .foregroundStyle(theme.coverText)
 
-            Text(read.sourceType.libraryLabel)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(theme.coverSecondaryText)
-                .multilineTextAlignment(.center)
+            if showsPlaceholderLabel {
+                Text(read.sourceType.libraryLabel)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(theme.coverSecondaryText)
+                    .multilineTextAlignment(.center)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -467,10 +518,6 @@ struct LibraryBookCard: View {
                 endPoint: .bottomTrailing
             )
         )
-    }
-
-    private func loadThumbnail() async {
-        thumbnailData = await ThumbnailGeneratorService.shared.thumbnailData(for: read)
     }
 }
 
@@ -615,7 +662,6 @@ struct LibraryListRow: View {
     let onRename: () -> Void
     let onDelete: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.focusReadTheme) private var theme
     @State private var thumbnailData: Data?
 
@@ -635,7 +681,7 @@ struct LibraryListRow: View {
                 }
 
                 coverView
-                    .frame(width: 50, height: 70)
+                    .frame(width: LibraryCoverLayout.listWidth, height: LibraryCoverLayout.listHeight)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(read.displayTitle)
@@ -679,36 +725,15 @@ struct LibraryListRow: View {
     }
 
     private var coverView: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(theme.controlBackground)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.border.opacity(0.24), lineWidth: 1)
-                }
-
-            if let thumbnailData, let thumbnailImage = UIImage(data: thumbnailData) {
-                Image(uiImage: thumbnailImage)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image(systemName: read.sourceType.systemImageName)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(theme.coverText)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(
-                        LinearGradient(
-                            colors: [
-                                theme.coverPlaceholderTop,
-                                theme.coverPlaceholderBottom
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        LibraryCoverThumbnail(
+            read: read,
+            thumbnailData: thumbnailData,
+            imageCornerRadius: 3,
+            placeholderCornerRadius: 8,
+            placeholderIconSize: 16,
+            showsPlaceholderLabel: false
+        )
+        .contentShape(Rectangle())
     }
 }
 
