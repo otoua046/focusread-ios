@@ -16,6 +16,123 @@ struct WordParts: Equatable {
     let fullWord: String
 }
 
+struct CurrentLocationPreview: Equatable, Sendable {
+    let title: String
+    let subtitle: String
+    let parts: [CurrentLocationPreviewPart]
+
+    init(session: ReadingSession, currentSection: ReadingDocumentSection?) {
+        title = "Current Location"
+
+        let totalWordCount = session.tokens.count
+        let wordNumber = totalWordCount == 0 ? 0 : min(session.currentIndex + 1, totalWordCount)
+        let wordLocation = "Word \(wordNumber) of \(totalWordCount)"
+        subtitle = Self.subtitle(
+            for: session,
+            currentSection: currentSection,
+            wordLocation: wordLocation
+        )
+        parts = Self.previewParts(for: session)
+    }
+
+    private static func subtitle(
+        for session: ReadingSession,
+        currentSection: ReadingDocumentSection?,
+        wordLocation: String
+    ) -> String {
+        let currentToken = session.currentToken
+
+        switch session.document.sourceType {
+        case .pdf, .image:
+            guard let pageNumber = currentSection?.pageNumber ?? currentToken?.sourcePageNumber else {
+                return wordLocation
+            }
+            return "Page \(pageNumber) · \(wordLocation)"
+        case .epub:
+            let chapterNumber = currentSection?.chapterNumber ?? currentToken?.sourceChapterNumber
+            let chapterTitle = Self.trimmedNonEmpty(currentSection?.title)
+                ?? Self.trimmedNonEmpty(currentToken?.sourceChapterTitle)
+            let chapterLocation: String?
+
+            if let chapterNumber, let chapterTitle {
+                chapterLocation = "Chapter \(chapterNumber): \(chapterTitle)"
+            } else if let chapterNumber {
+                chapterLocation = "Chapter \(chapterNumber)"
+            } else {
+                chapterLocation = chapterTitle
+            }
+
+            guard let chapterLocation else {
+                return wordLocation
+            }
+            return "\(chapterLocation) · \(wordLocation)"
+        case .pastedText, .txt:
+            return wordLocation
+        }
+    }
+
+    private static func previewParts(for session: ReadingSession) -> [CurrentLocationPreviewPart] {
+        guard !session.tokens.isEmpty,
+              session.tokens.indices.contains(session.currentIndex) else {
+            return []
+        }
+
+        let wordsBefore = 60
+        let wordsAfter = 70
+        let targetWordCount = wordsBefore + wordsAfter + 1
+        let currentIndex = session.currentIndex
+
+        var lowerBound = max(session.tokens.startIndex, currentIndex - wordsBefore)
+        var upperBound = min(session.tokens.endIndex, currentIndex + wordsAfter + 1)
+
+        let missingBefore = wordsBefore - (currentIndex - lowerBound)
+        if missingBefore > 0 {
+            upperBound = min(session.tokens.endIndex, upperBound + missingBefore)
+        }
+
+        let visibleWordCount = upperBound - lowerBound
+        if visibleWordCount < targetWordCount {
+            lowerBound = max(session.tokens.startIndex, lowerBound - (targetWordCount - visibleWordCount))
+        }
+
+        return session.tokens[lowerBound..<upperBound].enumerated().map { offset, token in
+            let index = lowerBound + offset
+            let role: CurrentLocationPreviewPart.Role
+            if index < currentIndex {
+                role = .read
+            } else if index == currentIndex {
+                role = .current
+            } else {
+                role = .unread
+            }
+
+            return CurrentLocationPreviewPart(
+                text: token.rawText.isEmpty ? token.text : token.rawText,
+                role: role
+            )
+        }
+    }
+
+    private static func trimmedNonEmpty(_ text: String?) -> String? {
+        guard let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+}
+
+struct CurrentLocationPreviewPart: Equatable, Sendable {
+    enum Role: Equatable, Sendable {
+        case read
+        case current
+        case unread
+    }
+
+    let text: String
+    let role: Role
+}
+
 @MainActor
 final class ReaderViewModel: ObservableObject {
     @Published private(set) var session: ReadingSession
@@ -206,6 +323,13 @@ final class ReaderViewModel: ObservableObject {
 
     var progressLabel: String {
         "Word \(currentWordNumber)/\(session.tokens.count)"
+    }
+
+    var currentLocationPreview: CurrentLocationPreview {
+        CurrentLocationPreview(
+            session: session,
+            currentSection: currentSectionMetadata
+        )
     }
 
     var searchableTokens: [ReadingToken] {

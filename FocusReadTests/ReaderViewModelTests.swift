@@ -145,16 +145,152 @@ final class ReaderViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.currentWordParts?.suffix, "rd")
     }
 
-    private static func token(_ text: String, id: Int = 0) -> ReadingToken {
+    @MainActor
+    func testCurrentLocationPreviewBuildsTXTSnippetWithoutMutatingPosition() {
+        let tokens = Self.tokens(count: 160)
+        let session = ReadingSession(
+            tokens: tokens,
+            document: ReadingDocument(
+                title: "Sample",
+                fileName: "sample.txt",
+                sourceType: .txt,
+                sections: [
+                    ReadingDocumentSection(index: 0, title: nil, pageNumber: nil, chapterNumber: nil, wordRange: nil)
+                ]
+            ),
+            currentIndex: 75
+        )
+        let viewModel = ReaderViewModel(session: session)
+
+        let preview = viewModel.currentLocationPreview
+
+        XCTAssertEqual(preview.title, "Current Location")
+        XCTAssertEqual(preview.subtitle, "Word 76 of 160")
+        XCTAssertEqual(preview.parts.count, 131)
+        XCTAssertEqual(preview.parts[0], CurrentLocationPreviewPart(text: "word15", role: .read))
+        XCTAssertEqual(preview.parts[60], CurrentLocationPreviewPart(text: "word75", role: .current))
+        XCTAssertEqual(preview.parts[130], CurrentLocationPreviewPart(text: "word145", role: .unread))
+        XCTAssertEqual(viewModel.session.currentIndex, 75)
+    }
+
+    @MainActor
+    func testCurrentLocationPreviewAdjustsAtFirstAndLastWord() {
+        let tokens = Self.tokens(count: 10)
+
+        let firstWordPreview = ReaderViewModel(
+            session: ReadingSession(tokens: tokens, currentIndex: 0)
+        ).currentLocationPreview
+        XCTAssertEqual(firstWordPreview.subtitle, "Word 1 of 10")
+        XCTAssertEqual(firstWordPreview.parts.count, 10)
+        XCTAssertEqual(firstWordPreview.parts.first?.role, .current)
+        XCTAssertEqual(firstWordPreview.parts.dropFirst().map(\.role), Array(repeating: .unread, count: 9))
+
+        let lastWordPreview = ReaderViewModel(
+            session: ReadingSession(tokens: tokens, currentIndex: 9)
+        ).currentLocationPreview
+        XCTAssertEqual(lastWordPreview.subtitle, "Word 10 of 10")
+        XCTAssertEqual(lastWordPreview.parts.count, 10)
+        XCTAssertEqual(lastWordPreview.parts.last?.role, .current)
+        XCTAssertEqual(lastWordPreview.parts.dropLast().map(\.role), Array(repeating: .read, count: 9))
+    }
+
+    @MainActor
+    func testCurrentLocationPreviewUsesPDFPageLocation() {
+        let tokens = (0..<10).map { index in
+            Self.token(
+                "word\(index)",
+                id: index,
+                pageNumber: index < 3 ? 1 : 2,
+                sourceSectionIndex: index < 3 ? 0 : 1
+            )
+        }
+        let document = ReadingDocument(
+            title: "PDF",
+            fileName: "sample.pdf",
+            sourceType: .pdf,
+            sections: [
+                ReadingDocumentSection(index: 0, title: nil, pageNumber: 1, chapterNumber: nil, wordRange: nil),
+                ReadingDocumentSection(index: 1, title: nil, pageNumber: 2, chapterNumber: nil, wordRange: nil)
+            ]
+        )
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, document: document, currentIndex: 3))
+
+        XCTAssertEqual(viewModel.currentLocationPreview.subtitle, "Page 2 · Word 4 of 10")
+    }
+
+    @MainActor
+    func testCurrentLocationPreviewUsesEPUBChapterLocation() {
+        let tokens = [
+            Self.token("before", id: 0, chapterNumber: 1, chapterTitle: "Opening", sourceSectionIndex: 0),
+            Self.token("current", id: 1, chapterNumber: 2, chapterTitle: "A Clean Door", sourceSectionIndex: 1),
+            Self.token("after", id: 2, chapterNumber: 2, chapterTitle: "A Clean Door", sourceSectionIndex: 1)
+        ]
+        let document = ReadingDocument(
+            title: "Book",
+            fileName: "book.epub",
+            sourceType: .epub,
+            sections: [
+                ReadingDocumentSection(index: 0, title: "Opening", pageNumber: nil, chapterNumber: 1, wordRange: nil, epubSectionRole: .chapter),
+                ReadingDocumentSection(index: 1, title: "A Clean Door", pageNumber: nil, chapterNumber: 2, wordRange: nil, epubSectionRole: .chapter)
+            ]
+        )
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, document: document, currentIndex: 1))
+
+        XCTAssertEqual(viewModel.currentLocationPreview.subtitle, "Chapter 2: A Clean Door · Word 2 of 3")
+    }
+
+    @MainActor
+    func testCurrentLocationPreviewPreservesRawPunctuation() {
+        let tokens = [
+            Self.token("Hello,", rawText: "\"Hello,\"", id: 0),
+            Self.token("word.", rawText: "(word.)", id: 1),
+            Self.token("next", id: 2)
+        ]
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, currentIndex: 1))
+
+        let preview = viewModel.currentLocationPreview
+
+        XCTAssertEqual(preview.parts.map(\.text), ["\"Hello,\"", "(word.)", "next"])
+        XCTAssertEqual(preview.parts[1].role, .current)
+    }
+
+    @MainActor
+    func testCurrentLocationPreviewLimitsLargeBooksToVisibleSnippet() {
+        let tokens = Self.tokens(count: 20_000)
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, currentIndex: 10_000))
+
+        let preview = viewModel.currentLocationPreview
+
+        XCTAssertEqual(preview.parts.count, 131)
+        XCTAssertEqual(preview.parts.first?.text, "word9940")
+        XCTAssertEqual(preview.parts[60], CurrentLocationPreviewPart(text: "word10000", role: .current))
+        XCTAssertEqual(preview.parts.last?.text, "word10070")
+    }
+
+    private static func tokens(count: Int) -> [ReadingToken] {
+        (0..<count).map { index in
+            Self.token("word\(index)", id: index)
+        }
+    }
+
+    private static func token(
+        _ text: String,
+        rawText: String? = nil,
+        id: Int = 0,
+        pageNumber: Int? = nil,
+        chapterNumber: Int? = nil,
+        chapterTitle: String? = nil,
+        sourceSectionIndex: Int? = 0
+    ) -> ReadingToken {
         ReadingToken(
             id: id,
             text: text,
-            rawText: text,
+            rawText: rawText ?? text,
             globalWordIndex: id,
-            sourcePageNumber: nil,
-            sourceChapterNumber: nil,
-            sourceChapterTitle: nil,
-            sourceSectionIndex: 0,
+            sourcePageNumber: pageNumber,
+            sourceChapterNumber: chapterNumber,
+            sourceChapterTitle: chapterTitle,
+            sourceSectionIndex: sourceSectionIndex,
             pauseKind: .none,
             sentenceIndex: 0,
             containsNumber: false

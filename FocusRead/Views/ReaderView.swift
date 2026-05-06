@@ -24,6 +24,7 @@ struct ReaderView: View {
     @State private var showingActionPalette = false
     @State private var showingTypographySettings = false
     @State private var showingGoToNavigation = false
+    @State private var showingCurrentLocationPreview = false
     @State private var showingTranslation = false
 
     var body: some View {
@@ -88,6 +89,9 @@ struct ReaderView: View {
         .sheet(isPresented: $showingGoToNavigation) {
             GoToNavigationView(readerViewModel: viewModel)
         }
+        .sheet(isPresented: $showingCurrentLocationPreview) {
+            CurrentLocationPreviewView(preview: viewModel.currentLocationPreview)
+        }
         .sheet(item: $viewModel.lookupRequest) { request in
             DictionaryLookupView(term: request.term)
         }
@@ -134,6 +138,16 @@ struct ReaderView: View {
                 .zIndex(1)
 
                 Spacer()
+
+                Button {
+                    presentCurrentLocationPreview()
+                } label: {
+                    Image(systemName: "doc.text.magnifyingglass")
+                }
+                .buttonStyle(.topReaderControl)
+                .accessibilityLabel("Current location")
+                .accessibilityHint("Shows nearby text around the current word")
+                .zIndex(1)
             }
 
             VStack(spacing: 3) {
@@ -252,6 +266,13 @@ struct ReaderView: View {
         }
     }
 
+    private func presentCurrentLocationPreview() {
+        showingActionPalette = false
+        viewModel.pause(showControls: true)
+        viewModel.revealControls()
+        showingCurrentLocationPreview = true
+    }
+
     private var horizontalSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 32)
             .onEnded { value in
@@ -285,6 +306,88 @@ struct ReaderView: View {
             .onEnded { _ in
                 verticalDragStartWPM = nil
             }
+    }
+}
+
+struct CurrentLocationPreviewView: View {
+    let preview: CurrentLocationPreview
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text(preview.subtitle)
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 4)
+
+                    previewContainer
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 18)
+            }
+            .background(FocusReadBackground())
+            .navigationTitle(preview.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var previewContainer: some View {
+        Text(attributedPreviewText)
+            .font(.body)
+            .lineSpacing(7)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(AppTheme.border.opacity(0.45), lineWidth: 1)
+            }
+            .accessibilityLabel(accessibilityPreviewText)
+    }
+
+    private var attributedPreviewText: AttributedString {
+        var result = AttributedString()
+
+        for (index, part) in preview.parts.enumerated() {
+            if index > 0 {
+                result.append(AttributedString(" "))
+            }
+
+            var text = AttributedString(part.text)
+            switch part.role {
+            case .read:
+                text.foregroundColor = AppTheme.primaryText
+            case .current:
+                text.foregroundColor = AppTheme.primaryText
+                text.backgroundColor = AppTheme.accent.opacity(0.28)
+                text.font = .body.weight(.semibold)
+            case .unread:
+                text.foregroundColor = AppTheme.secondaryText
+            }
+            result.append(text)
+        }
+
+        return result
+    }
+
+    private var accessibilityPreviewText: String {
+        preview.parts
+            .map(\.text)
+            .joined(separator: " ")
     }
 }
 
