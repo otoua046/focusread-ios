@@ -252,7 +252,7 @@ final class ReaderViewModel: ObservableObject {
         if let offset = anchorGlobalOffset(for: text),
            let attrIndex = AttributedString.Index(text.index(text.startIndex, offsetBy: offset), within: attributed) {
             let nextIndex = attributed.index(afterCharacter: attrIndex)
-            attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
+            attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.orpHighlight
         }
         return attributed
     }

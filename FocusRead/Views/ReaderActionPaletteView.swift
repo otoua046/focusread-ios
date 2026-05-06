@@ -20,7 +20,7 @@ struct ReaderActionPaletteView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             if isPresented {
-                Color.black.opacity(0.001)
+                AppTheme.transparentHitTarget
                     .ignoresSafeArea()
                     .onTapGesture {
                         closePalette()
@@ -104,13 +104,13 @@ struct ReaderActionPaletteView: View {
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay {
                     Circle()
-                        .strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
+                        .strokeBorder(AppTheme.materialHighlightStroke, lineWidth: 1)
                 }
                 .overlay {
                     Circle()
-                        .strokeBorder(Color.black.opacity(0.08), lineWidth: 0.5)
+                        .strokeBorder(AppTheme.materialLowlightStroke, lineWidth: 0.5)
                 }
-                .shadow(color: .black.opacity(isPresented ? 0.14 : 0.08), radius: 14, x: 0, y: 8)
+                .shadow(color: AppTheme.overlayShadow.opacity(isPresented ? 1 : 0.58), radius: 14, x: 0, y: 8)
         }
         .buttonStyle(ReaderPaletteButtonStyle(onPressedChange: updateInteractionState))
         .accessibilityLabel(isPresented ? "Close quick actions" : "Quick actions")
@@ -166,13 +166,13 @@ private struct ReaderActionItem: View {
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay {
                     Circle()
-                        .strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
+                        .strokeBorder(AppTheme.materialHighlightStroke, lineWidth: 1)
                 }
                 .overlay {
                     Circle()
-                        .strokeBorder(Color.black.opacity(0.08), lineWidth: 0.5)
+                        .strokeBorder(AppTheme.materialLowlightStroke, lineWidth: 0.5)
                 }
-                .shadow(color: .black.opacity(0.12), radius: 10, x: 0, y: 5)
+                .shadow(color: AppTheme.overlayShadow.opacity(0.86), radius: 10, x: 0, y: 5)
         }
         .buttonStyle(ReaderPaletteButtonStyle(onPressedChange: onPressedChange))
         .accessibilityLabel(title)

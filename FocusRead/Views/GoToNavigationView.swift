@@ -85,8 +85,8 @@ struct GoToNavigationView: View {
 
             var text = AttributedString(part.text)
             if part.isMatch {
-                text.backgroundColor = .yellow
-                text.foregroundColor = .black
+                text.backgroundColor = AppTheme.searchHighlightBackground
+                text.foregroundColor = AppTheme.searchHighlightForeground
             } else {
                 text.foregroundColor = AppTheme.primaryText
             }

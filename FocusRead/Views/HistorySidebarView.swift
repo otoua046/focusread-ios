@@ -234,7 +234,7 @@ struct LibraryView: View {
             } label: {
                 Image(systemName: "trash")
                     .font(.headline)
-                    .foregroundStyle(selection.isEmpty ? AppTheme.secondaryText.opacity(0.5) : .red)
+                    .foregroundStyle(selection.isEmpty ? AppTheme.secondaryText.opacity(0.5) : AppTheme.destructive)
             }
             .disabled(selection.isEmpty)
         }
@@ -431,13 +431,13 @@ struct LibraryBookCard: View {
             if isSelectMode {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(isSelected ? AppTheme.accent : Color.white)
-                    .background(Circle().fill(isSelected ? Color.white : Color.black.opacity(0.4)))
+                    .foregroundStyle(isSelected ? AppTheme.coverSelectionForeground : AppTheme.coverUnselectedForeground)
+                    .background(Circle().fill(isSelected ? AppTheme.coverSelectionBackground : AppTheme.coverUnselectedBackground))
                     .padding(8)
             }
         }
         .shadow(
-            color: Color.black.opacity(colorScheme == .dark ? 0.35 : 0.14),
+            color: colorScheme == .dark ? AppTheme.deepOverlayShadow : AppTheme.overlayShadow,
             radius: 12,
             x: 0,
             y: 6
@@ -449,11 +449,11 @@ struct LibraryBookCard: View {
         VStack(spacing: 12) {
             Image(systemName: read.sourceType.systemImageName)
                 .font(.system(size: 26, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.96))
+                .foregroundStyle(AppTheme.coverText)
 
             Text(read.sourceType.libraryLabel)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(AppTheme.coverSecondaryText)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -527,7 +527,7 @@ struct LibraryItemMenu: View {
                 onDelete()
             } label: {
                 Label("Delete", systemImage: "trash")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(AppTheme.destructive)
             }
         } label: {
             Image(systemName: "ellipsis")
@@ -669,7 +669,7 @@ struct LibraryListRow: View {
                     if let author = read.author, !author.isEmpty {
                         Text(author)
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(AppTheme.secondaryText)
                             .lineLimit(1)
                     }
 
@@ -678,7 +678,7 @@ struct LibraryListRow: View {
                         Text("\(Int(read.progressPercent.rounded()))%")
                     }
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.secondaryText)
                     .padding(.top, 2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -717,7 +717,7 @@ struct LibraryListRow: View {
             } else {
                 Image(systemName: read.sourceType.systemImageName)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.96))
+                    .foregroundStyle(AppTheme.coverText)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(
                         LinearGradient(

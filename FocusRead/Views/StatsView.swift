@@ -590,25 +590,14 @@ private extension View {
 }
 
 private enum StatsWidgetStyle {
-    static let accent = AppTheme.accent
-    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
-    static let iconBackground = Color(uiColor: .systemGray5)
-    static let ringTrack = Color(uiColor: .systemGray5)
-    static let stroke = Color(uiColor: .separator)
+    static var accent: Color { AppTheme.progressIndicator }
+    static var surface: Color { AppTheme.cardBackground }
+    static var iconBackground: Color { AppTheme.iconBackground }
+    static var ringTrack: Color { AppTheme.ringTrack }
+    static var stroke: Color { AppTheme.border }
 
     static func contributionColor(for level: Int) -> Color {
-        switch level {
-        case 1:
-            return accent.opacity(0.28)
-        case 2:
-            return accent.opacity(0.46)
-        case 3:
-            return accent.opacity(0.68)
-        case 4:
-            return accent
-        default:
-            return Color(uiColor: .systemGray5)
-        }
+        AppTheme.contributionColor(for: level)
     }
 }
 
@@ -629,7 +618,7 @@ private struct StatsWidgetSurface: ViewModifier {
                 )
             }
             .shadow(
-                color: Color.black.opacity(colorScheme == .light ? 0.07 : 0),
+                color: AppTheme.subtleShadow.opacity(colorScheme == .light ? 1 : 0),
                 radius: 6,
                 x: 0,
                 y: 3

@@ -3,6 +3,7 @@ import SwiftUI
 struct TypographySettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var themeManager: FocusReadThemeManager
     @ObservedObject private var readingStatsStore: LocalReadingStatsStore
 
     let showsDismissButton: Bool
@@ -70,6 +71,10 @@ struct TypographySettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                }
+
+                settingsSection("Theme") {
+                    themeSelectionSection
                 }
 
                 settingsSection("Typography") {
@@ -329,6 +334,37 @@ struct TypographySettingsView: View {
         )
     }
 
+    private var themeSelectionSection: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            ForEach(FocusReadThemeCategory.allCases) { category in
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(category.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppTheme.primaryText)
+
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.adaptive(minimum: 148, maximum: 210), spacing: 10)
+                        ],
+                        spacing: 10
+                    ) {
+                        ForEach(FocusReadThemeCatalog.themes(in: category)) { theme in
+                            ThemePreviewCard(
+                                theme: theme,
+                                isSelected: themeManager.selectedThemeID == theme.id,
+                                colorScheme: colorScheme
+                            ) {
+                                withAnimation(.smooth(duration: 0.18)) {
+                                    themeManager.select(theme)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private var defaultWPMBinding: Binding<Double> {
         Binding(
             get: { Double(defaultWPM) },
@@ -380,6 +416,7 @@ struct TypographySettingsView: View {
 
     private func resetAllSettings() {
         appearance = AppAppearance.system.rawValue
+        themeManager.reset()
         defaultWPM = ReadingSession.defaultWPM
         hapticsEnabled = true
         reverseWPMDialDirection = false
@@ -455,5 +492,109 @@ struct TypographySettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct ThemePreviewCard: View {
+    let theme: FocusReadTheme
+    let isSelected: Bool
+    let colorScheme: ColorScheme
+    let action: () -> Void
+
+    private var palette: FocusReadThemePalette {
+        theme.palette(for: colorScheme == .dark ? .dark : .light)
+    }
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                previewSurface
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(theme.name)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(AppTheme.primaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+
+                        Spacer(minLength: 4)
+
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppTheme.accent)
+                        }
+                    }
+
+                    Text(theme.description)
+                        .font(.caption2)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
+            .background(AppTheme.controlBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(isSelected ? AppTheme.accent : AppTheme.border, lineWidth: isSelected ? 1.4 : 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(theme.name)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+    }
+
+    private var previewSurface: some View {
+        ZStack(alignment: .bottomLeading) {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(uiColor: palette.primaryBackground))
+
+            HStack(spacing: 7) {
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(Color(uiColor: palette.cardSurface))
+                    .overlay(alignment: .topLeading) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Capsule()
+                                .fill(Color(uiColor: palette.primaryText))
+                                .frame(width: 36, height: 4)
+
+                            Capsule()
+                                .fill(Color(uiColor: palette.secondaryText))
+                                .frame(width: 48, height: 3)
+
+                            Spacer(minLength: 0)
+
+                            HStack(spacing: 3) {
+                                ForEach(0..<5, id: \.self) { level in
+                                    RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                                        .fill(Color(uiColor: palette.contributionLevels[level]))
+                                        .frame(width: 8, height: 8)
+                                }
+                            }
+                        }
+                        .padding(8)
+                    }
+
+                VStack(spacing: 6) {
+                    Circle()
+                        .fill(Color(uiColor: palette.accent))
+                        .frame(width: 22, height: 22)
+
+                    Capsule()
+                        .fill(Color(uiColor: palette.progressIndicator))
+                        .frame(width: 30, height: 5)
+                }
+                .frame(width: 34)
+            }
+            .padding(8)
+        }
+        .frame(height: 62)
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color(uiColor: palette.separator), lineWidth: 1)
+        }
     }
 }

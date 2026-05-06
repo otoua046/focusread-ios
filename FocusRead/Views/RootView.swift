@@ -41,9 +41,12 @@ struct RootView: View {
     @State private var readerViewModel: ReaderViewModel?
     @State private var selectedTab: MainTab = .home
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
+    @EnvironmentObject private var themeManager: FocusReadThemeManager
     private let tokenizer = TextTokenizer()
 
     var body: some View {
+        let _ = themeManager.selectedThemeID
+
         Group {
             if let readerViewModel {
                 ReaderView(viewModel: readerViewModel) {
@@ -102,7 +105,7 @@ struct RootView: View {
                     }
                     .tag(MainTab.settings)
                 }
-                .tint(AppTheme.primaryText)
+                .tint(AppTheme.accent)
                 .tabViewStyle(.tabBarOnly)
                 .transition(.opacity)
             }

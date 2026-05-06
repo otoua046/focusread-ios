@@ -205,7 +205,7 @@ struct ReaderView: View {
             } label: {
                 ProgressView(value: viewModel.progress)
                     .progressViewStyle(.linear)
-                    .tint(AppTheme.accent)
+                    .tint(AppTheme.progressIndicator)
                     .frame(maxWidth: 320)
                     .opacity(viewModel.controlsVisible ? 0.75 : 0.18)
                     .contentShape(Rectangle())
@@ -373,7 +373,7 @@ struct CurrentLocationPreviewView: View {
                 text.foregroundColor = AppTheme.primaryText
             case .current:
                 text.foregroundColor = AppTheme.primaryText
-                text.backgroundColor = AppTheme.accent.opacity(0.28)
+                text.backgroundColor = AppTheme.searchHighlightBackground
                 text.font = .body.weight(.semibold)
             case .unread:
                 text.foregroundColor = AppTheme.secondaryText
@@ -426,7 +426,7 @@ private struct ORPTextView: View {
             HStack(spacing: 0) {
                 Text(parts.prefix)
                 Text(parts.anchor)
-                    .foregroundStyle(AppTheme.accent)
+                    .foregroundStyle(AppTheme.orpHighlight)
                 Text(parts.suffix)
             }
             .typographyStyle(style)
