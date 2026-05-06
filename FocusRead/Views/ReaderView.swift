@@ -91,7 +91,7 @@ struct ReaderView: View {
         .sheet(item: $viewModel.lookupRequest) { request in
             DictionaryLookupView(term: request.term)
         }
-        .translationPresentation(isPresented: $showingTranslation, text: viewModel.currentWord)
+        .translationPresentation(isPresented: $showingTranslation, text: viewModel.currentWordForTranslation)
         .alert("No definition found.", isPresented: $viewModel.noDefinitionFound) {
             Button("OK", role: .cancel) {}
         }

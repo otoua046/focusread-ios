@@ -82,6 +82,50 @@ final class ReaderViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testCurrentWordForTranslationStripsEdgeCommasDotsAndDashes() {
+        XCTAssertEqual(
+            ReaderViewModel(session: ReadingSession(tokens: [Self.token("word,")])).currentWordForTranslation,
+            "word"
+        )
+        XCTAssertEqual(
+            ReaderViewModel(session: ReadingSession(tokens: [Self.token("word.")])).currentWordForTranslation,
+            "word"
+        )
+        XCTAssertEqual(
+            ReaderViewModel(session: ReadingSession(tokens: [Self.token("-word")])).currentWordForTranslation,
+            "word"
+        )
+        XCTAssertEqual(
+            ReaderViewModel(session: ReadingSession(tokens: [Self.token("word-")])).currentWordForTranslation,
+            "word"
+        )
+        XCTAssertEqual(
+            ReaderViewModel(session: ReadingSession(tokens: [Self.token("—word—")])).currentWordForTranslation,
+            "word"
+        )
+    }
+
+    @MainActor
+    func testCurrentWordForTranslationPreservesNormalWordsAndInternalPunctuation() {
+        XCTAssertEqual(
+            ReaderViewModel(session: ReadingSession(tokens: [Self.token("word")])).currentWordForTranslation,
+            "word"
+        )
+        XCTAssertEqual(
+            ReaderViewModel(session: ReadingSession(tokens: [Self.token("well-being")])).currentWordForTranslation,
+            "well-being"
+        )
+    }
+
+    @MainActor
+    func testCurrentWordForTranslationDoesNotMutateReaderDisplayText() {
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: [Self.token("-word,")]))
+
+        XCTAssertEqual(viewModel.currentWordForTranslation, "word")
+        XCTAssertEqual(viewModel.currentWord, "-word,")
+    }
+
+    @MainActor
     func testCurrentWordPartsKeepsAnchorInsidePunctuation() {
         let viewModel = ReaderViewModel(session: ReadingSession(tokens: [Self.token("\"word,\"")]))
         viewModel.updateBehaviorSettings(.default)
