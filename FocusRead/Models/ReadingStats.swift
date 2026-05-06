@@ -98,6 +98,111 @@ struct ReadingDayActivity: Identifiable, Equatable, Sendable {
     }
 }
 
+struct ReadingContributionGridDay: Identifiable, Equatable, Sendable {
+    var id: Date { date }
+
+    var date: Date
+    var activity: ReadingDayActivity?
+}
+
+struct ReadingContributionGridWeek: Identifiable, Equatable, Sendable {
+    var id: Date { weekStart }
+
+    var weekStart: Date
+    var days: [ReadingContributionGridDay]
+}
+
+struct ReadingContributionMonthMarker: Identifiable, Equatable, Sendable {
+    var id: Date { date }
+
+    var date: Date
+    var columnIndex: Int
+}
+
+struct ReadingContributionCalendar: Equatable, Sendable {
+    static let rowsPerWeek = 7
+
+    var calendar: Calendar
+
+    init(calendar: Calendar = .autoupdatingCurrent) {
+        self.calendar = calendar
+    }
+
+    func weeks(
+        activities: [ReadingDayActivity],
+        visibleWeekCount: Int,
+        endingAt endDate: Date? = nil
+    ) -> [ReadingContributionGridWeek] {
+        let safeWeekCount = max(visibleWeekCount, 1)
+        let normalizedEndDate = calendar.startOfDay(for: endDate ?? activities.last?.date ?? Date())
+        let latestWeekStart = weekStart(containing: normalizedEndDate)
+        let firstVisibleWeekStart = calendar.date(
+            byAdding: .day,
+            value: -(safeWeekCount - 1) * Self.rowsPerWeek,
+            to: latestWeekStart
+        ) ?? latestWeekStart
+        let activityByDay = Dictionary(
+            activities.map { (calendar.startOfDay(for: $0.date), $0) },
+            uniquingKeysWith: { _, latest in latest }
+        )
+
+        return (0..<safeWeekCount).map { weekIndex in
+            let weekStart = calendar.date(
+                byAdding: .day,
+                value: weekIndex * Self.rowsPerWeek,
+                to: firstVisibleWeekStart
+            ) ?? firstVisibleWeekStart
+
+            let days = (0..<Self.rowsPerWeek).map { dayIndex in
+                let date = calendar.date(byAdding: .day, value: dayIndex, to: weekStart) ?? weekStart
+                let normalizedDate = calendar.startOfDay(for: date)
+                return ReadingContributionGridDay(
+                    date: normalizedDate,
+                    activity: activityByDay[normalizedDate]
+                )
+            }
+
+            return ReadingContributionGridWeek(
+                weekStart: weekStart,
+                days: days
+            )
+        }
+    }
+
+    func monthMarkers(for weeks: [ReadingContributionGridWeek]) -> [ReadingContributionMonthMarker] {
+        weeks.enumerated().compactMap { columnIndex, week in
+            guard let monthStart = week.days.first(where: { calendar.component(.day, from: $0.date) == 1 })?.date else {
+                return nil
+            }
+
+            return ReadingContributionMonthMarker(
+                date: monthStart,
+                columnIndex: columnIndex
+            )
+        }
+    }
+
+    func weekStart(containing date: Date) -> Date {
+        let normalizedDate = calendar.startOfDay(for: date)
+        let weekday = calendar.component(.weekday, from: normalizedDate)
+        let daysFromSunday = weekday - 1
+        return calendar.date(byAdding: .day, value: -daysFromSunday, to: normalizedDate) ?? normalizedDate
+    }
+
+    func weekdayLabel(for row: Int) -> String {
+        switch row {
+        case 1:
+            return "Mon"
+        case 3:
+            return "Wed"
+        case 5:
+            return "Fri"
+        default:
+            return ""
+        }
+    }
+}
+
 struct ReadingSessionEvent: Identifiable, Codable, Equatable, Sendable {
     var id: UUID
     var readID: UUID

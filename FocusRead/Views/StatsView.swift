@@ -127,7 +127,14 @@ struct StatsView: View {
     }
 
     private var recentDailyStats: [DailyReadingStats] {
-        Array(statsStore.dailyStats.prefix(7))
+        let calendar = Calendar.autoupdatingCurrent
+        let today = calendar.startOfDay(for: Date())
+        let sevenDayStart = calendar.date(byAdding: .day, value: -6, to: today) ?? today
+
+        return statsStore.dailyStats.filter { stat in
+            let day = calendar.startOfDay(for: stat.date)
+            return day >= sevenDayStart && day <= today
+        }
     }
 
     private var maxRecentWords: Int {
@@ -137,7 +144,8 @@ struct StatsView: View {
     private var readingActivityDays: [ReadingDayActivity] {
         ReadingDayActivity.recentDays(
             from: statsStore.dailyStats,
-            dailyGoalWords: statsStore.snapshot.dailyGoalWords
+            dailyGoalWords: statsStore.snapshot.dailyGoalWords,
+            dayCount: 366
         )
     }
 
@@ -179,98 +187,250 @@ private struct ReadingActivityWidget: View {
     let activities: [ReadingDayActivity]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text("Reading Activity")
                     .font(.headline)
                     .foregroundStyle(AppTheme.primaryText)
 
-                Text("Daily words read")
-                    .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondaryText)
+                Spacer(minLength: 8)
+
+                ContributionLegend()
             }
 
-            ReadingContributionGrid(activities: activities)
+            ReadingContributionGrid(
+                activities: activities,
+                compactMode: true,
+                showsMonthLabels: true,
+                showsWeekdayLabels: true
+            )
                 .frame(maxWidth: .infinity)
-                .frame(height: 124)
-
-            HStack(spacing: 6) {
-                Text("Less")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(AppTheme.tertiaryText)
-
-                ForEach(0...4, id: \.self) { level in
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(StatsWidgetStyle.contributionColor(for: level))
-                        .frame(width: 11, height: 11)
-                }
-
-                Text("More")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(AppTheme.tertiaryText)
-            }
-            .frame(maxWidth: .infinity, alignment: .trailing)
+                .frame(height: 106)
         }
-        .padding(18)
-        .frame(maxWidth: .infinity, minHeight: 218)
-        .widgetSurface(cornerRadius: 24)
+        .frame(maxWidth: .infinity, minHeight: 132, maxHeight: 132, alignment: .topLeading)
+        .padding(14)
+        .widgetSurface(cornerRadius: 22)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Reading Activity, daily words read contribution grid")
     }
 }
 
+private struct ContributionLegend: View {
+    var body: some View {
+        HStack(spacing: 3) {
+            Text("Less")
+
+            ForEach(0...4, id: \.self) { level in
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(StatsWidgetStyle.contributionColor(for: level))
+                    .frame(width: 7, height: 7)
+            }
+
+            Text("More")
+        }
+        .font(.caption2.weight(.medium))
+        .foregroundStyle(AppTheme.tertiaryText)
+        .lineLimit(1)
+    }
+}
+
 struct ReadingContributionGrid: View {
     let activities: [ReadingDayActivity]
+    var compactMode = false
+    var showsMonthLabels = false
+    var showsWeekdayLabels = false
 
     private let rows = 7
-    private let spacing: CGFloat = 4
-    private let maximumSquareSize: CGFloat = 14
 
     var body: some View {
         GeometryReader { proxy in
-            let columns = activityColumns
-            let squareSize = squareSize(
-                availableWidth: proxy.size.width,
-                availableHeight: proxy.size.height,
-                columnCount: columns.count
+            let layout = contributionLayout(
+                availableSize: proxy.size
             )
-            let gridHeight = CGFloat(rows) * squareSize + CGFloat(rows - 1) * spacing
 
-            HStack(alignment: .top, spacing: spacing) {
-                ForEach(columns.indices, id: \.self) { columnIndex in
-                    VStack(spacing: spacing) {
-                        ForEach(columns[columnIndex]) { activity in
-                            RoundedRectangle(cornerRadius: max(squareSize * 0.26, 2), style: .continuous)
-                                .fill(StatsWidgetStyle.contributionColor(for: activity.intensityLevel))
-                                .frame(width: squareSize, height: squareSize)
-                                .accessibilityLabel(accessibilityLabel(for: activity))
+            VStack(alignment: .leading, spacing: layout.labelGap) {
+                if showsMonthLabels {
+                    monthLabels(layout: layout)
+                }
+
+                HStack(alignment: .top, spacing: layout.weekdayLabelGap) {
+                    if showsWeekdayLabels {
+                        weekdayLabels(cellSize: layout.cellSize, spacing: layout.cellSpacing)
+                    }
+
+                    HStack(alignment: .top, spacing: layout.cellSpacing) {
+                        ForEach(layout.columns) { column in
+                            VStack(spacing: layout.cellSpacing) {
+                                ForEach(column.days) { cell in
+                                    RoundedRectangle(
+                                        cornerRadius: max(layout.cellSize * 0.24, 1.75),
+                                        style: .continuous
+                                    )
+                                    .fill(StatsWidgetStyle.contributionColor(for: cell.activity?.intensityLevel ?? 0))
+                                    .frame(width: layout.cellSize, height: layout.cellSize)
+                                    .accessibilityLabel(accessibilityLabel(for: cell))
+                                }
+                            }
                         }
                     }
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: gridHeight, alignment: .center)
-            .frame(maxHeight: .infinity, alignment: .center)
+            .frame(
+                width: layout.totalWidth,
+                height: layout.totalHeight,
+                alignment: .topLeading
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
     }
 
-    private var activityColumns: [[ReadingDayActivity]] {
-        stride(from: 0, to: activities.count, by: rows).map { startIndex in
-            let endIndex = min(startIndex + rows, activities.count)
-            return Array(activities[startIndex..<endIndex])
+    private func monthLabels(layout: ContributionGridLayout) -> some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(layout.monthLabels) { label in
+                Text(label.text)
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundStyle(AppTheme.tertiaryText)
+                    .fixedSize()
+                    .offset(x: label.xOffset)
+            }
+        }
+        .frame(
+            width: layout.gridWidth,
+            height: layout.monthLabelHeight,
+            alignment: .topLeading
+        )
+        .padding(.leading, showsWeekdayLabels ? layout.weekdayLabelWidth + layout.weekdayLabelGap : 0)
+    }
+
+    private func weekdayLabels(cellSize: CGFloat, spacing: CGFloat) -> some View {
+        VStack(alignment: .trailing, spacing: spacing) {
+            ForEach(0..<rows, id: \.self) { row in
+                Text(weekdayLabel(for: row))
+                    .font(.system(size: 8, weight: .medium))
+                    .foregroundStyle(AppTheme.tertiaryText)
+                    .lineLimit(1)
+                    .frame(width: 22, height: cellSize, alignment: .trailing)
+            }
         }
     }
 
-    private func squareSize(availableWidth: CGFloat, availableHeight: CGFloat, columnCount: Int) -> CGFloat {
-        let safeColumnCount = max(columnCount, 1)
-        let widthDrivenSize = (availableWidth - CGFloat(safeColumnCount - 1) * spacing) / CGFloat(safeColumnCount)
-        let heightDrivenSize = (availableHeight - CGFloat(rows - 1) * spacing) / CGFloat(rows)
-        return max(6, min(maximumSquareSize, floor(min(widthDrivenSize, heightDrivenSize))))
+    private func contributionLayout(availableSize: CGSize) -> ContributionGridLayout {
+        let calendar = Calendar.autoupdatingCurrent
+        let contributionCalendar = ReadingContributionCalendar(calendar: calendar)
+        let cellSpacing: CGFloat = compactMode ? (availableSize.width < 340 ? 2.5 : 3.0) : 4.0
+        let maximumCellSize: CGFloat = compactMode ? 11.0 : 14.0
+        let minimumCellSize: CGFloat = compactMode ? 7.0 : 6.0
+        let weekdayLabelWidth: CGFloat = showsWeekdayLabels ? 24.0 : 0.0
+        let weekdayLabelGap: CGFloat = showsWeekdayLabels ? 5.0 : 0.0
+        let monthLabelHeight: CGFloat = showsMonthLabels ? 11.0 : 0.0
+        let labelGap: CGFloat = showsMonthLabels ? 3.0 : 0.0
+        let gridWidth = max(availableSize.width - weekdayLabelWidth - weekdayLabelGap, 1)
+        let gridHeight = max(availableSize.height - monthLabelHeight - labelGap, 1)
+        let endDate = activities.last?.date ?? Date()
+        let latestWeekStart = contributionCalendar.weekStart(containing: endDate)
+        let earliestDate = activities.first?.date ?? endDate
+        let earliestWeekStart = contributionCalendar.weekStart(containing: earliestDate)
+        let availableDaySpan = max(calendar.dateComponents([.day], from: earliestWeekStart, to: latestWeekStart).day ?? 0, 0)
+        let availableWeekCount = availableDaySpan / rows + 1
+        let heightDrivenCellSize = normalizedCellSize(
+            (gridHeight - CGFloat(rows - 1) * cellSpacing) / CGFloat(rows),
+            maximumCellSize: maximumCellSize,
+            minimumCellSize: minimumCellSize
+        )
+        let widthDrivenWeekCount = Int((gridWidth + cellSpacing) / (heightDrivenCellSize + cellSpacing))
+        let maximumVisibleWeeks = max(widthDrivenWeekCount, 1)
+        var visibleWeeks = min(availableWeekCount, maximumVisibleWeeks)
+
+        func resolvedCellSize(weekCount: Int) -> CGFloat {
+            let widthDrivenSize = (gridWidth - CGFloat(weekCount - 1) * cellSpacing) / CGFloat(weekCount)
+            let heightDrivenSize = (gridHeight - CGFloat(rows - 1) * cellSpacing) / CGFloat(rows)
+            return normalizedCellSize(
+                min(widthDrivenSize, heightDrivenSize),
+                maximumCellSize: maximumCellSize,
+                minimumCellSize: minimumCellSize
+            )
+        }
+
+        var cellSize = resolvedCellSize(weekCount: visibleWeeks)
+        while cellSize < minimumCellSize, visibleWeeks > 1 {
+            visibleWeeks -= 1
+            cellSize = resolvedCellSize(weekCount: visibleWeeks)
+        }
+        cellSize = max(minimumCellSize, cellSize)
+
+        let columns = contributionCalendar.weeks(
+            activities: activities,
+            visibleWeekCount: visibleWeeks,
+            endingAt: endDate
+        )
+
+        let monthLabels = contributionCalendar.monthMarkers(for: columns).map { marker in
+            ContributionMonthLayoutLabel(
+                id: marker.date,
+                text: marker.date.formatted(.dateTime.month(.abbreviated)),
+                xOffset: CGFloat(marker.columnIndex) * (cellSize + cellSpacing)
+            )
+        }
+
+        let resolvedGridWidth = CGFloat(visibleWeeks) * cellSize + CGFloat(visibleWeeks - 1) * cellSpacing
+        let resolvedGridHeight = CGFloat(rows) * cellSize + CGFloat(rows - 1) * cellSpacing
+        let totalWidth = resolvedGridWidth + weekdayLabelWidth + weekdayLabelGap
+        let totalHeight = resolvedGridHeight + monthLabelHeight + labelGap
+
+        return ContributionGridLayout(
+            columns: columns,
+            monthLabels: monthLabels,
+            cellSize: cellSize,
+            cellSpacing: cellSpacing,
+            weekdayLabelWidth: weekdayLabelWidth,
+            weekdayLabelGap: weekdayLabelGap,
+            monthLabelHeight: monthLabelHeight,
+            labelGap: labelGap,
+            gridWidth: resolvedGridWidth,
+            totalWidth: totalWidth,
+            totalHeight: totalHeight
+        )
     }
 
-    private func accessibilityLabel(for activity: ReadingDayActivity) -> String {
-        let formattedDate = activity.date.formatted(.dateTime.weekday(.wide).month(.wide).day())
-        return "\(formattedDate), \(activity.wordsRead) words read"
+    private func weekdayLabel(for row: Int) -> String {
+        ReadingContributionCalendar().weekdayLabel(for: row)
     }
+
+    private func normalizedCellSize(
+        _ value: CGFloat,
+        maximumCellSize: CGFloat,
+        minimumCellSize: CGFloat
+    ) -> CGFloat {
+        let clampedValue = min(maximumCellSize, value)
+        let halfPointValue = floor(clampedValue * 2) / 2
+        return max(minimumCellSize, halfPointValue)
+    }
+
+    private func accessibilityLabel(for cell: ReadingContributionGridDay) -> String {
+        let formattedDate = cell.date.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        let wordsRead = cell.activity?.wordsRead ?? 0
+        return "\(formattedDate), \(wordsRead) words read"
+    }
+}
+
+private struct ContributionGridLayout {
+    var columns: [ReadingContributionGridWeek]
+    var monthLabels: [ContributionMonthLayoutLabel]
+    var cellSize: CGFloat
+    var cellSpacing: CGFloat
+    var weekdayLabelWidth: CGFloat
+    var weekdayLabelGap: CGFloat
+    var monthLabelHeight: CGFloat
+    var labelGap: CGFloat
+    var gridWidth: CGFloat
+    var totalWidth: CGFloat
+    var totalHeight: CGFloat
+}
+
+private struct ContributionMonthLayoutLabel: Identifiable {
+    var id: Date
+    var text: String
+    var xOffset: CGFloat
 }
 
 private struct DailyProgressMetricWidget: View {
@@ -479,7 +639,7 @@ private struct StatsWidgetSurface: ViewModifier {
 
 #if DEBUG
 private extension ReadingDayActivity {
-    static func previewActivities(dayCount: Int = 91, dailyGoalWords: Int = 2_200) -> [ReadingDayActivity] {
+    static func previewActivities(dayCount: Int = 366, dailyGoalWords: Int = 2_200) -> [ReadingDayActivity] {
         let calendar = Calendar(identifier: .gregorian)
         let today = Date()
 
@@ -522,7 +682,7 @@ private extension ReadingDayActivity {
     .background(FocusReadBackground())
 }
 
-#Preview("Reading Activity - 90 Days") {
+#Preview("Reading Activity - Calendar Grid") {
     ReadingActivityWidget(
         activities: ReadingDayActivity.previewActivities()
     )
