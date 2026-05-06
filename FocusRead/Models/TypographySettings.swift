@@ -16,16 +16,36 @@ enum ReaderBehaviorSettingsKey {
     static let punctuationPausesEnabled = "punctuationPausesEnabled"
     static let longWordDelayMode = "longWordDelayMode"
     static let smartCleanupMode = "smartCleanupMode"
+    static let anchorLetterEnabled = "anchorLetterEnabled"
+    static let displayMode = "displayMode"
 }
 
 struct ReaderBehaviorSettings: Equatable, Sendable {
     var punctuationPausesEnabled: Bool
     var longWordDelayMode: LongWordDelayMode
+    var anchorLetterEnabled: Bool
+    var displayMode: ReaderDisplayMode
 
     static let `default` = ReaderBehaviorSettings(
         punctuationPausesEnabled: true,
-        longWordDelayMode: .moderate
+        longWordDelayMode: .moderate,
+        anchorLetterEnabled: true,
+        displayMode: .oneWord
     )
+}
+
+enum ReaderDisplayMode: String, CaseIterable, Identifiable, Sendable {
+    case oneWord
+    case twoWords
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .oneWord: return "One Word"
+        case .twoWords: return "Two Words"
+        }
+    }
 }
 
 enum LongWordDelayMode: String, CaseIterable, Identifiable, Sendable {

@@ -8,6 +8,14 @@ struct WordLookupRequest: Identifiable, Equatable {
     var id: String { term }
 }
 
+struct WordParts: Equatable {
+    let prefix: String
+    let anchor: String
+    let suffix: String
+    let isAnchorEnabled: Bool
+    let fullWord: String
+}
+
 @MainActor
 final class ReaderViewModel: ObservableObject {
     @Published private(set) var session: ReadingSession
@@ -73,12 +81,108 @@ final class ReaderViewModel: ObservableObject {
         startBackgroundAICleanupIfNeeded()
     }
 
+    var isTranslationAvailable: Bool {
+        if #available(iOS 17.4, *) {
+            return true
+        }
+        return false
+    }
+
+    var isTwoWordMode: Bool {
+        behaviorSettings.displayMode == .twoWords
+    }
+
     var currentWord: String {
-        session.currentToken?.text ?? ""
+        session.currentTokens.map(\.text).joined(separator: " ")
+    }
+
+    var currentWordParts: WordParts? {
+        guard behaviorSettings.displayMode == .oneWord,
+              behaviorSettings.anchorLetterEnabled,
+              let token = session.currentToken else {
+            return nil
+        }
+        
+        return parts(for: token.text)
+    }
+
+    var currentAttributedWord: AttributedString {
+        let tokens = session.currentTokens
+        guard !tokens.isEmpty else { return AttributedString("") }
+        
+        if behaviorSettings.displayMode == .oneWord {
+            return attributedString(for: tokens[0].text)
+        } else {
+            var result = AttributedString("")
+            for (index, token) in tokens.enumerated() {
+                if index > 0 {
+                    result.append(AttributedString(" "))
+                }
+                result.append(attributedString(for: token.text))
+            }
+            return result
+        }
+    }
+
+    private func attributedString(for text: String) -> AttributedString {
+        var attributed = AttributedString(text)
+        guard behaviorSettings.anchorLetterEnabled else { return attributed }
+        
+        if let offset = anchorGlobalOffset(for: text),
+           let attrIndex = AttributedString.Index(text.index(text.startIndex, offsetBy: offset), within: attributed) {
+            let nextIndex = attributed.index(afterCharacter: attrIndex)
+            attributed[attrIndex..<nextIndex].foregroundColor = AppTheme.accent
+        }
+        return attributed
+    }
+
+    private func parts(for text: String) -> WordParts {
+        let offset = anchorGlobalOffset(for: text) ?? 0
+        let anchorIndex = text.index(text.startIndex, offsetBy: offset)
+        let nextIndex = text.index(after: anchorIndex)
+        
+        return WordParts(
+            prefix: String(text[..<anchorIndex]),
+            anchor: String(text[anchorIndex..<nextIndex]),
+            suffix: String(text[nextIndex...]),
+            isAnchorEnabled: true,
+            fullWord: text
+        )
+    }
+
+    private func anchorGlobalOffset(for text: String) -> Int? {
+        let characters = Array(text)
+        guard let contentStartOffset = characters.firstIndex(where: Self.isAlphanumeric),
+              let contentEndInclusiveOffset = characters.indices.reversed().first(where: { Self.isAlphanumeric(characters[$0]) }) else {
+            return nil
+        }
+
+        let contentEndOffset = contentEndInclusiveOffset + 1
+        let length = contentEndOffset - contentStartOffset
+        let anchorOffset: Int
+        switch length {
+        case 0...2:
+            anchorOffset = 0
+        case 3...4:
+            anchorOffset = 1
+        case 5...6:
+            anchorOffset = 1
+        case 7...9:
+            anchorOffset = 2
+        default:
+            anchorOffset = Int(floor(Double(length) * 0.35))
+        }
+        
+        return contentStartOffset + anchorOffset
+    }
+
+    private static func isAlphanumeric(_ character: Character) -> Bool {
+        character.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
     }
 
     var sanitizedCurrentWordForLookup: String? {
-        wordLookupService.sanitizedTerm(from: currentWord)
+        guard let firstToken = session.currentTokens.first else { return nil }
+        return wordLookupService.sanitizedTerm(from: firstToken.text)
     }
 
     var wordsPerMinute: Int {
@@ -294,20 +398,19 @@ final class ReaderViewModel: ObservableObject {
 
     func updateBehaviorSettings(_ settings: ReaderBehaviorSettings) {
         behaviorSettings = settings
+        session.stepSize = settings.displayMode == .twoWords ? 2 : 1
     }
 
     func lookupCurrentWord() {
-        let visibleWord = currentWord
         pause(showControls: true)
 
-        guard let term = wordLookupService.sanitizedTerm(from: visibleWord),
+        guard let term = sanitizedCurrentWordForLookup,
               wordLookupService.hasDefinition(for: term) else {
             lookupRequest = nil
             noDefinitionFound = true
             return
         }
 
-        noDefinitionFound = false
         lookupRequest = WordLookupRequest(term: term)
     }
 
@@ -563,6 +666,9 @@ final class ReaderViewModel: ObservableObject {
     private func advanceFromEngine() -> Bool {
         guard isPlaying else { return false }
         recordCurrentWordReadForStats()
+
+        let willBeAtEnd = session.currentIndex + session.stepSize >= session.tokens.count
+
         if session.isAtEnd {
             isPlaying = false
             controlsVisible = true
@@ -573,9 +679,17 @@ final class ReaderViewModel: ObservableObject {
 
         session.advance()
         persistProgress()
+
+        if willBeAtEnd {
+            isPlaying = false
+            controlsVisible = true
+            persistProgress(force: true)
+            finishReadingStatsSession()
+            return false
+        }
+
         return true
     }
-
     private func withAnimationStateChange(_ change: () -> Void) {
         change()
     }
@@ -591,7 +705,7 @@ final class ReaderViewModel: ObservableObject {
 
     private var currentWordNumber: Int {
         guard !session.tokens.isEmpty else { return 0 }
-        return session.currentIndex + 1
+        return min(session.currentIndex + session.stepSize, session.tokens.count)
     }
 
     private func currentTokenLocation() -> TokenLocation? {
@@ -743,8 +857,9 @@ final class ReaderViewModel: ObservableObject {
     private func recordCurrentWordReadForStats() {
         guard readingStatsSessionStartedAt != nil else { return }
 
-        readingStatsSessionWordsRead += 1
-        readingStatsSessionWeightedWPM += session.wordsPerMinute
+        let wordsInStep = session.currentTokens.count
+        readingStatsSessionWordsRead += wordsInStep
+        readingStatsSessionWeightedWPM += session.wordsPerMinute * wordsInStep
     }
 
     private func finishReadingStatsSession() {
@@ -807,10 +922,14 @@ final class ReaderViewModel: ObservableObject {
         let defaults = UserDefaults.standard
         let punctuationPauses = defaults.object(forKey: ReaderBehaviorSettingsKey.punctuationPausesEnabled) as? Bool ?? true
         let rawLongWordMode = defaults.string(forKey: ReaderBehaviorSettingsKey.longWordDelayMode) ?? LongWordDelayMode.moderate.rawValue
+        let anchorLetterEnabled = defaults.object(forKey: ReaderBehaviorSettingsKey.anchorLetterEnabled) as? Bool ?? true
+        let rawDisplayMode = defaults.string(forKey: ReaderBehaviorSettingsKey.displayMode) ?? ReaderDisplayMode.oneWord.rawValue
 
         return ReaderBehaviorSettings(
             punctuationPausesEnabled: punctuationPauses,
-            longWordDelayMode: LongWordDelayMode(rawValue: rawLongWordMode) ?? .moderate
+            longWordDelayMode: LongWordDelayMode(rawValue: rawLongWordMode) ?? .moderate,
+            anchorLetterEnabled: anchorLetterEnabled,
+            displayMode: ReaderDisplayMode(rawValue: rawDisplayMode) ?? .oneWord
         )
     }
 }

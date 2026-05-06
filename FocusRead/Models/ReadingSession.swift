@@ -120,6 +120,7 @@ struct ReadingSession: Equatable, Sendable {
     var document: ReadingDocument
     var currentIndex: Int
     var wordsPerMinute: Int
+    var stepSize: Int
 
     static let minimumWPM = 100
     static let maximumWPM = 1_200
@@ -129,12 +130,14 @@ struct ReadingSession: Equatable, Sendable {
         tokens: [ReadingToken],
         document: ReadingDocument = .pastedText(),
         currentIndex: Int = 0,
-        wordsPerMinute: Int = Self.defaultWPM
+        wordsPerMinute: Int = Self.defaultWPM,
+        stepSize: Int = 1
     ) {
         self.tokens = tokens
         self.document = document
         self.currentIndex = min(max(currentIndex, 0), max(tokens.count - 1, 0))
         self.wordsPerMinute = Self.clampWPM(wordsPerMinute)
+        self.stepSize = max(1, stepSize)
     }
 
     var currentToken: ReadingToken? {
@@ -142,22 +145,30 @@ struct ReadingSession: Equatable, Sendable {
         return tokens[currentIndex]
     }
 
+    var currentTokens: [ReadingToken] {
+        guard !tokens.isEmpty, tokens.indices.contains(currentIndex) else { return [] }
+        let endIndex = min(currentIndex + stepSize, tokens.count)
+        return Array(tokens[currentIndex..<endIndex])
+    }
+
     var progress: Double {
         guard !tokens.isEmpty else { return 0 }
-        return Double(currentIndex + 1) / Double(tokens.count)
+        let readCount = min(currentIndex + stepSize, tokens.count)
+        return Double(readCount) / Double(tokens.count)
     }
 
     var isAtEnd: Bool {
-        currentIndex >= max(tokens.count - 1, 0)
+        guard !tokens.isEmpty else { return true }
+        return currentIndex >= max(tokens.count - 1, 0)
     }
 
     mutating func advance() {
         guard !tokens.isEmpty else { return }
-        currentIndex = min(currentIndex + 1, tokens.count - 1)
+        currentIndex = min(currentIndex + stepSize, max(tokens.count - 1, 0))
     }
 
     mutating func rewindWord() {
-        currentIndex = max(currentIndex - 1, 0)
+        currentIndex = max(currentIndex - stepSize, 0)
     }
 
     mutating func skipWord() {

@@ -4,10 +4,12 @@ struct ReaderActionPaletteView: View {
     @Binding var isPresented: Bool
     @Binding var isInteracting: Bool
     let isVisible: Bool
+    let isTranslateSupported: Bool
     let currentWord: String
     let onToggle: () -> Void
     let onDictionary: () -> Void
     let onLookup: () -> Void
+    let onTranslate: () -> Void
     let onSettings: () -> Void
 
     private let triggerSize: CGFloat = 50
@@ -41,13 +43,26 @@ struct ReaderActionPaletteView: View {
     private var actionCluster: some View {
         if isPresented {
             VStack(alignment: .trailing, spacing: spacing) {
-                ReaderActionItem(
-                    title: "Settings",
-                    systemImage: "gearshape",
-                    size: actionSize,
-                    onPressedChange: updateInteractionState
-                ) {
-                    runAndClose(onSettings)
+                HStack(spacing: spacing) {
+                    if isTranslateSupported {
+                        ReaderActionItem(
+                            title: "Translate",
+                            systemImage: "translate",
+                            size: actionSize,
+                            onPressedChange: updateInteractionState
+                        ) {
+                            runAndClose(onTranslate)
+                        }
+                    }
+                    
+                    ReaderActionItem(
+                        title: "Settings",
+                        systemImage: "gearshape",
+                        size: actionSize,
+                        onPressedChange: updateInteractionState
+                    ) {
+                        runAndClose(onSettings)
+                    }
                 }
 
                 HStack(spacing: spacing) {

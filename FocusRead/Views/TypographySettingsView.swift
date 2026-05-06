@@ -20,6 +20,8 @@ struct TypographySettingsView: View {
     @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
+    @AppStorage(ReaderBehaviorSettingsKey.anchorLetterEnabled) private var anchorLetterEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
 
     init(
         readingStatsStore: LocalReadingStatsStore,
@@ -184,6 +186,22 @@ struct TypographySettingsView: View {
 
                     Divider().foregroundStyle(AppTheme.border)
 
+                    settingsRow("Display Mode") {
+                        Picker("Display Mode", selection: $displayMode) {
+                            ForEach(ReaderDisplayMode.allCases) { mode in
+                                Text(mode.title).tag(mode.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle("Anchor Letter", isOn: $anchorLetterEnabled)
+                        .tint(AppTheme.accent)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
                     Toggle("Haptics", isOn: $hapticsEnabled)
                         .tint(AppTheme.accent)
 
@@ -211,6 +229,8 @@ struct TypographySettingsView: View {
                     Divider().foregroundStyle(AppTheme.border)
 
                     VStack(alignment: .leading, spacing: 8) {
+                        Text("Display Mode controls how many words are shown at a time.")
+                        Text("Anchor Letter highlights an optical fixation point to help your eyes stay focused.")
                         Text("Punctuation pauses add natural reading pauses after commas, periods, and paragraph breaks.")
                         Text("Long-word delay gives extra time for longer words, names, and numbers.")
                     }
@@ -366,6 +386,8 @@ struct TypographySettingsView: View {
         punctuationPausesEnabled = true
         longWordDelayMode = LongWordDelayMode.moderate.rawValue
         smartCleanupMode = SmartCleanupAvailability.defaultMode.rawValue
+        anchorLetterEnabled = true
+        displayMode = ReaderDisplayMode.oneWord.rawValue
         resetTypography()
     }
 

@@ -18,7 +18,7 @@ enum SavedReadMapper {
             lastOpenedAt: now,
             totalWordCount: tokens.count,
             currentWordIndex: 0,
-            progressPercent: progressPercent(currentIndex: 0, totalWordCount: tokens.count),
+            progressPercent: progressPercent(currentIndex: 0, stepSize: 1, totalWordCount: tokens.count),
             currentPage: nil,
             totalPages: nil,
             currentChapter: nil,
@@ -62,7 +62,7 @@ enum SavedReadMapper {
             lastOpenedAt: now,
             totalWordCount: tokens.count,
             currentWordIndex: 0,
-            progressPercent: progressPercent(currentIndex: 0, totalWordCount: tokens.count),
+            progressPercent: progressPercent(currentIndex: 0, stepSize: 1, totalWordCount: tokens.count),
             currentPage: nil,
             totalPages: totalPages(in: sections),
             currentChapter: nil,
@@ -83,8 +83,9 @@ enum SavedReadMapper {
         updated.lastOpenedAt = now
         updated.totalWordCount = session.tokens.count
         updated.currentWordIndex = session.currentIndex
-        updated.progressPercent = progressPercent(
+        updated.progressPercent = session.isAtEnd ? 100 : progressPercent(
             currentIndex: session.currentIndex,
+            stepSize: session.stepSize,
             totalWordCount: session.tokens.count
         )
         updated.currentPage = session.currentToken?.sourcePageNumber
@@ -232,9 +233,10 @@ enum SavedReadMapper {
         }
     }
 
-    private static func progressPercent(currentIndex: Int, totalWordCount: Int) -> Double {
+    private static func progressPercent(currentIndex: Int, stepSize: Int, totalWordCount: Int) -> Double {
         guard totalWordCount > 0 else { return 0 }
-        return min(max(Double(currentIndex + 1) / Double(totalWordCount) * 100, 0), 100)
+        let readCount = min(currentIndex + stepSize, totalWordCount)
+        return min(max(Double(readCount) / Double(totalWordCount) * 100, 0), 100)
     }
 
     private static func totalPages(in sections: [SavedReadSection]) -> Int? {

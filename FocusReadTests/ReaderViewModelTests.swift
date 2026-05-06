@@ -81,6 +81,26 @@ final class ReaderViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.noDefinitionFound)
     }
 
+    @MainActor
+    func testCurrentWordPartsKeepsAnchorInsidePunctuation() {
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: [Self.token("\"word,\"")]))
+        viewModel.updateBehaviorSettings(.default)
+
+        XCTAssertEqual(viewModel.currentWordParts?.prefix, "\"w")
+        XCTAssertEqual(viewModel.currentWordParts?.anchor, "o")
+        XCTAssertEqual(viewModel.currentWordParts?.suffix, "rd,\"")
+    }
+
+    @MainActor
+    func testCurrentWordPartsUsesCharacterOffsetsForComposedText() {
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: [Self.token("👩‍💻word")]))
+        viewModel.updateBehaviorSettings(.default)
+
+        XCTAssertEqual(viewModel.currentWordParts?.prefix, "👩‍💻w")
+        XCTAssertEqual(viewModel.currentWordParts?.anchor, "o")
+        XCTAssertEqual(viewModel.currentWordParts?.suffix, "rd")
+    }
+
     private static func token(_ text: String, id: Int = 0) -> ReadingToken {
         ReadingToken(
             id: id,

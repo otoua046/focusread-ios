@@ -1,4 +1,6 @@
 import SwiftUI
+import Translation
+import UIKit
 
 struct ReaderView: View {
     @ObservedObject var viewModel: ReaderViewModel
@@ -11,6 +13,8 @@ struct ReaderView: View {
     @AppStorage(TypographySettingsKey.textColor) private var textColor: String = ReaderTextColor.primary.rawValue
     @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
+    @AppStorage(ReaderBehaviorSettingsKey.anchorLetterEnabled) private var anchorLetterEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var readingStatsStore: LocalReadingStatsStore
 
@@ -20,6 +24,7 @@ struct ReaderView: View {
     @State private var showingActionPalette = false
     @State private var showingTypographySettings = false
     @State private var showingGoToNavigation = false
+    @State private var showingTranslation = false
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -51,6 +56,7 @@ struct ReaderView: View {
                 isPresented: $showingActionPalette,
                 isInteracting: $actionPaletteInteractionActive,
                 isVisible: viewModel.controlsVisible || showingActionPalette,
+                isTranslateSupported: viewModel.isTranslationAvailable,
                 currentWord: viewModel.currentWord,
                 onToggle: toggleActionPalette,
                 onDictionary: {
@@ -59,6 +65,10 @@ struct ReaderView: View {
                 onLookup: {
                     viewModel.prepareForSearchNavigation()
                     showingGoToNavigation = true
+                },
+                onTranslate: {
+                    viewModel.pause(showControls: true)
+                    showingTranslation = true
                 },
                 onSettings: {
                     viewModel.pause(showControls: true)
@@ -72,7 +82,6 @@ struct ReaderView: View {
         .simultaneousGesture(horizontalSwipeGesture)
         .simultaneousGesture(verticalSpeedGesture)
         .animation(.smooth(duration: 0.25), value: viewModel.controlsVisible)
-        .animation(.smooth(duration: 0.18), value: viewModel.currentWord)
         .sheet(isPresented: $showingTypographySettings) {
             TypographySettingsView(readingStatsStore: readingStatsStore)
         }
@@ -82,6 +91,7 @@ struct ReaderView: View {
         .sheet(item: $viewModel.lookupRequest) { request in
             DictionaryLookupView(term: request.term)
         }
+        .translationPresentation(isPresented: $showingTranslation, text: viewModel.currentWord)
         .alert("No definition found.", isPresented: $viewModel.noDefinitionFound) {
             Button("OK", role: .cancel) {}
         }
@@ -92,6 +102,12 @@ struct ReaderView: View {
             syncBehaviorSettings()
         }
         .onChange(of: longWordDelayMode) {
+            syncBehaviorSettings()
+        }
+        .onChange(of: anchorLetterEnabled) {
+            syncBehaviorSettings()
+        }
+        .onChange(of: displayMode) {
             syncBehaviorSettings()
         }
         .onChange(of: scenePhase) {
@@ -145,21 +161,26 @@ struct ReaderView: View {
     private var wordStage: some View {
         VStack(spacing: 28) {
             ZStack {
-                Text(viewModel.currentWord)
-                    .typographyStyle(currentStyle)
-                    .minimumScaleFactor(0.42)
-                    .lineLimit(1)
-                    .contentTransition(.opacity)
-                    .id(viewModel.currentWord)
-                    .frame(maxWidth: .infinity, minHeight: 96)
-                    .multilineTextAlignment(.center)
+                if let parts = viewModel.currentWordParts {
+                    ORPTextView(parts: parts, style: currentStyle)
+                } else {
+                    // Two-word mode or anchor highlighting only (centered)
+                    Text(viewModel.currentAttributedWord)
+                        .typographyStyle(currentStyle)
+                        .minimumScaleFactor(0.4)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                }
 
-                Rectangle()
-                    .fill(AppTheme.border.opacity(0.25))
-                    .frame(width: 1, height: 130)
-                    .allowsHitTesting(false)
+                ORPFixationGuide()
             }
-            .frame(maxWidth: .infinity)
+            .id(viewModel.currentWord)
+            .contentTransition(.opacity)
+            .transaction { transaction in
+                transaction.animation = nil
+            }
+            .frame(maxWidth: .infinity, minHeight: 96)
             .onLongPressGesture {
                 viewModel.lookupCurrentWord()
             }
@@ -199,7 +220,9 @@ struct ReaderView: View {
     private func syncBehaviorSettings() {
         viewModel.updateBehaviorSettings(ReaderBehaviorSettings(
             punctuationPausesEnabled: punctuationPausesEnabled,
-            longWordDelayMode: LongWordDelayMode(rawValue: longWordDelayMode) ?? .moderate
+            longWordDelayMode: LongWordDelayMode(rawValue: longWordDelayMode) ?? .moderate,
+            anchorLetterEnabled: anchorLetterEnabled,
+            displayMode: ReaderDisplayMode(rawValue: displayMode) ?? .oneWord
         ))
     }
 
@@ -262,5 +285,153 @@ struct ReaderView: View {
             .onEnded { _ in
                 verticalDragStartWPM = nil
             }
+    }
+}
+
+private enum ORPLayout {
+    static let fixationRatio: CGFloat = 0.45
+}
+
+private struct ORPFixationGuide: View {
+    var body: some View {
+        GeometryReader { proxy in
+            Rectangle()
+                .fill(AppTheme.border.opacity(0.25))
+                .frame(width: 1, height: 130)
+                .position(
+                    x: proxy.size.width * ORPLayout.fixationRatio,
+                    y: proxy.size.height / 2
+                )
+        }
+        .frame(height: 130)
+        .allowsHitTesting(false)
+    }
+}
+
+private struct ORPTextView: View {
+    let parts: WordParts
+    let style: FontStyle
+
+    var body: some View {
+        let metrics = ORPTextMetrics(parts: parts, style: style)
+
+        GeometryReader { proxy in
+            let availableWidth = max(proxy.size.width, 1)
+            let fixationX = availableWidth * ORPLayout.fixationRatio
+            let layout = metrics.layout(fixationX: fixationX, availableWidth: availableWidth)
+
+            HStack(spacing: 0) {
+                Text(parts.prefix)
+                Text(parts.anchor)
+                    .foregroundStyle(AppTheme.accent)
+                Text(parts.suffix)
+            }
+            .typographyStyle(style)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: true)
+            .scaleEffect(layout.scale, anchor: .topLeading)
+            .offset(
+                x: layout.leadingX,
+                y: (proxy.size.height - metrics.lineHeight * layout.scale) / 2
+            )
+        }
+        .frame(height: metrics.lineHeight)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(parts.fullWord)
+    }
+}
+
+private struct ORPTextMetrics {
+    let prefixWidth: CGFloat
+    let anchorWidth: CGFloat
+    let suffixWidth: CGFloat
+    let lineHeight: CGFloat
+
+    init(parts: WordParts, style: FontStyle) {
+        let font = style.uiFont
+        prefixWidth = Self.measure(parts.prefix, font: font)
+        anchorWidth = Self.measure(parts.anchor, font: font)
+        suffixWidth = Self.measure(parts.suffix, font: font)
+        lineHeight = ceil(font.lineHeight)
+    }
+
+    func layout(fixationX: CGFloat, availableWidth: CGFloat) -> ORPTextLayout {
+        let anchorCenterFromLeading = prefixWidth + anchorWidth / 2
+        let rightReach = anchorWidth / 2 + suffixWidth
+        let scale = min(
+            1,
+            Self.scaleLimit(available: fixationX, required: anchorCenterFromLeading),
+            Self.scaleLimit(available: availableWidth - fixationX, required: rightReach)
+        )
+        let leadingX = fixationX - anchorCenterFromLeading * scale
+
+        return ORPTextLayout(leadingX: leadingX, scale: scale)
+    }
+
+    private static func scaleLimit(available: CGFloat, required: CGFloat) -> CGFloat {
+        guard required > 0 else { return 1 }
+        return max(0.01, available / required)
+    }
+
+    private static func measure(_ text: String, font: UIFont) -> CGFloat {
+        guard !text.isEmpty else { return 0 }
+
+        let size = (text as NSString).size(withAttributes: [.font: font])
+        return ceil(size.width)
+    }
+}
+
+private struct ORPTextLayout {
+    let leadingX: CGFloat
+    let scale: CGFloat
+}
+
+private extension FontStyle {
+    var uiFont: UIFont {
+        var descriptor = UIFont
+            .systemFont(ofSize: size, weight: weight.uiFontWeight)
+            .fontDescriptor
+
+        if let design = family.uiFontDesign,
+           let designedDescriptor = descriptor.withDesign(design) {
+            descriptor = designedDescriptor
+        }
+
+        if isItalic,
+           let italicDescriptor = descriptor.withSymbolicTraits(
+                descriptor.symbolicTraits.union(.traitItalic)
+           ) {
+            descriptor = italicDescriptor
+        }
+
+        return UIFont(descriptor: descriptor, size: size)
+    }
+}
+
+private extension ReaderFontFamily {
+    var uiFontDesign: UIFontDescriptor.SystemDesign? {
+        switch self {
+        case .serif:
+            return .serif
+        case .system:
+            return nil
+        case .rounded:
+            return .rounded
+        case .monospaced:
+            return .monospaced
+        }
+    }
+}
+
+private extension ReaderFontWeight {
+    var uiFontWeight: UIFont.Weight {
+        switch self {
+        case .regular:
+            return .regular
+        case .medium:
+            return .medium
+        case .bold:
+            return .bold
+        }
     }
 }
