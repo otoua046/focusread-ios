@@ -4,8 +4,10 @@ import UIKit
 struct LibraryView: View {
     @ObservedObject var store: LocalReadingHistoryStore
     @StateObject private var viewModel: LibraryViewModel
+    @StateObject private var documentImportViewModel = DocumentImportViewModel()
     let onResume: (SavedRead) -> Void
     let onReadCompleted: (SavedRead) -> Void
+    let onStartImportedDocument: (ImportedDocument) -> Void
     @State private var renameTarget: SavedRead?
     @State private var deleteTarget: SavedRead?
     @State private var isDeleteConfirmationPresented = false
@@ -20,11 +22,13 @@ struct LibraryView: View {
     init(
         store: LocalReadingHistoryStore,
         onResume: @escaping (SavedRead) -> Void,
-        onReadCompleted: @escaping (SavedRead) -> Void = { _ in }
+        onReadCompleted: @escaping (SavedRead) -> Void = { _ in },
+        onStartImportedDocument: @escaping (ImportedDocument) -> Void
     ) {
         self.store = store
         self.onResume = onResume
         self.onReadCompleted = onReadCompleted
+        self.onStartImportedDocument = onStartImportedDocument
         _viewModel = StateObject(wrappedValue: LibraryViewModel(store: store))
     }
 
@@ -40,6 +44,10 @@ struct LibraryView: View {
             }
             .navigationBarHidden(true)
             .background(FocusReadBackground())
+            .documentImportFlow(
+                viewModel: documentImportViewModel,
+                onStartImportedDocument: onStartImportedDocument
+            )
             .task(id: store.savedReads.map(\.id)) {
                 await reconcileThumbnails()
             }
@@ -169,13 +177,27 @@ struct LibraryView: View {
                 .foregroundStyle(AppTheme.primaryText)
                 .padding(.top, 4)
             } else {
-                LibraryControlsMenu(
-                    viewMode: $viewMode,
-                    sortMode: $viewModel.sortMode,
-                    onSelectMode: {
-                        isSelectMode = true
+                HStack(spacing: 8) {
+                    ImportSourceMenu(
+                        viewModel: documentImportViewModel,
+                        onSourceSelected: {}
+                    ) {
+                        Image(systemName: "plus")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(AppTheme.primaryText)
+                            .frame(width: 44, height: 44)
+                            .background(AppTheme.controlBackground.opacity(0.8), in: Circle())
                     }
-                )
+                    .accessibilityLabel("Import")
+
+                    LibraryControlsMenu(
+                        viewMode: $viewMode,
+                        sortMode: $viewModel.sortMode,
+                        onSelectMode: {
+                            isSelectMode = true
+                        }
+                    )
+                }
                 .padding(.top, 4)
             }
         }

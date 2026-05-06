@@ -25,34 +25,10 @@ struct TextInputView: View {
                         isEditorFocused = false
                     }
             )
-            .sheet(isPresented: $documentImportViewModel.isImportSheetPresented) {
-                DocumentImportView(viewModel: documentImportViewModel) { document in
-                    documentImportViewModel.dismissImport()
-                    onStartImportedDocument(document)
-                }
-            }
-            .sheet(isPresented: $documentImportViewModel.isCameraCapturePresented) {
-                CameraCaptureView(
-                    onCapture: documentImportViewModel.handleCameraCapture,
-                    onCancel: documentImportViewModel.handleImagePickerCancellation,
-                    onFailure: documentImportViewModel.handleImagePickerFailure
-                )
-                .ignoresSafeArea()
-            }
-            .sheet(isPresented: $documentImportViewModel.isPhotoLibraryPickerPresented) {
-                PhotoLibraryPicker(
-                    selectionLimit: 0,
-                    onImagesPicked: documentImportViewModel.handlePhotoLibrarySelection,
-                    onCancel: documentImportViewModel.handleImagePickerCancellation,
-                    onFailure: documentImportViewModel.handleImagePickerFailure
-                )
-            }
-            .fileImporter(
-                isPresented: $documentImportViewModel.isFileImporterPresented,
-                allowedContentTypes: DocumentPickerService.allowedContentTypes
-            ) { result in
-                documentImportViewModel.handleFileImporterResult(result)
-            }
+            .documentImportFlow(
+                viewModel: documentImportViewModel,
+                onStartImportedDocument: onStartImportedDocument
+            )
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -172,16 +148,12 @@ struct TextInputView: View {
             .disabled(!viewModel.canStart)
             .opacity(viewModel.canStart ? 1 : 0.45)
 
-            Menu {
-                ForEach(ImportSource.allCases) { source in
-                    Button {
-                        isEditorFocused = false
-                        documentImportViewModel.presentImportSource(source)
-                    } label: {
-                        Label(source.title, systemImage: source.systemImageName)
-                    }
+            ImportSourceMenu(
+                viewModel: documentImportViewModel,
+                onSourceSelected: {
+                    isEditorFocused = false
                 }
-            } label: {
+            ) {
                 Label("Import", systemImage: "square.and.arrow.down")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(AppTheme.primaryText)

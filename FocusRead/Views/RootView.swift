@@ -37,6 +37,7 @@ struct RootView: View {
     @StateObject private var inputViewModel = InputViewModel()
     @StateObject private var readingHistoryStore = LocalReadingHistoryStore()
     @StateObject private var readingStatsStore = LocalReadingStatsStore()
+    @StateObject private var documentOpenInViewModel = DocumentImportViewModel()
     @State private var readerViewModel: ReaderViewModel?
     @State private var selectedTab: MainTab = .home
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
@@ -72,6 +73,9 @@ struct RootView: View {
                         },
                         onReadCompleted: { read in
                             readingStatsStore.markReadCompleted(readID: read.id, completedAt: read.updatedAt)
+                        },
+                        onStartImportedDocument: { document in
+                            startReading(importedDocument: document)
                         }
                     )
                     .tabItem {
@@ -104,6 +108,18 @@ struct RootView: View {
             }
         }
         .animation(.smooth(duration: 0.35), value: readerViewModel == nil)
+        .documentImportFlow(
+            viewModel: documentOpenInViewModel,
+            onStartImportedDocument: { document in
+                startReading(importedDocument: document)
+            }
+        )
+        .onOpenURL { url in
+            readerViewModel?.cleanup()
+            readerViewModel = nil
+            selectedTab = .library
+            documentOpenInViewModel.importDocument(from: url)
+        }
     }
 
     private func startReading() {

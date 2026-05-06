@@ -176,6 +176,76 @@ struct DocumentImportView: View {
     }
 }
 
+struct ImportSourceMenu<MenuLabel: View>: View {
+    @ObservedObject var viewModel: DocumentImportViewModel
+    let onSourceSelected: () -> Void
+    @ViewBuilder let label: () -> MenuLabel
+
+    var body: some View {
+        Menu {
+            ForEach(ImportSource.allCases) { source in
+                Button {
+                    onSourceSelected()
+                    viewModel.presentImportSource(source)
+                } label: {
+                    Label(source.title, systemImage: source.systemImageName)
+                }
+            }
+        } label: {
+            label()
+        }
+    }
+}
+
+private struct DocumentImportFlowModifier: ViewModifier {
+    @ObservedObject var viewModel: DocumentImportViewModel
+    let onStartImportedDocument: (ImportedDocument) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $viewModel.isImportSheetPresented) {
+                DocumentImportView(viewModel: viewModel) { document in
+                    viewModel.dismissImport()
+                    onStartImportedDocument(document)
+                }
+            }
+            .sheet(isPresented: $viewModel.isCameraCapturePresented) {
+                CameraCaptureView(
+                    onCapture: viewModel.handleCameraCapture,
+                    onCancel: viewModel.handleImagePickerCancellation,
+                    onFailure: viewModel.handleImagePickerFailure
+                )
+                .ignoresSafeArea()
+            }
+            .sheet(isPresented: $viewModel.isPhotoLibraryPickerPresented) {
+                PhotoLibraryPicker(
+                    selectionLimit: 0,
+                    onImagesPicked: viewModel.handlePhotoLibrarySelection,
+                    onCancel: viewModel.handleImagePickerCancellation,
+                    onFailure: viewModel.handleImagePickerFailure
+                )
+            }
+            .fileImporter(
+                isPresented: $viewModel.isFileImporterPresented,
+                allowedContentTypes: DocumentPickerService.allowedContentTypes
+            ) { result in
+                viewModel.handleFileImporterResult(result)
+            }
+    }
+}
+
+extension View {
+    func documentImportFlow(
+        viewModel: DocumentImportViewModel,
+        onStartImportedDocument: @escaping (ImportedDocument) -> Void
+    ) -> some View {
+        modifier(DocumentImportFlowModifier(
+            viewModel: viewModel,
+            onStartImportedDocument: onStartImportedDocument
+        ))
+    }
+}
+
 private extension DocumentSourceType {
     var previewSystemImageName: String {
         switch self {

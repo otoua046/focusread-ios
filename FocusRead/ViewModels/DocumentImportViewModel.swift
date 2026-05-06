@@ -45,9 +45,7 @@ final class DocumentImportViewModel: ObservableObject {
     func handleFileImporterResult(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
-            lastSelectedURL = url
-            lastImageImport = nil
-            startImport(from: url)
+            importDocument(from: url)
         case .failure(let error):
             guard !Self.isUserCancellation(error) else {
                 return
@@ -56,6 +54,12 @@ final class DocumentImportViewModel: ObservableObject {
             state = .failed(.fileCopyFailed)
             isImportSheetPresented = true
         }
+    }
+
+    func importDocument(from url: URL) {
+        lastSelectedURL = url
+        lastImageImport = nil
+        startImport(from: url)
     }
 
     func retryImport() {
