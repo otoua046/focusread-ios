@@ -17,7 +17,7 @@ struct LibraryView: View {
     @AppStorage("library_sort_mode") private var sortMode: LibrarySortMode = .recent
     @State private var isSelectMode = false
     @State private var selection = Set<UUID>()
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.focusReadTheme) private var theme
 
     init(
         store: LocalReadingHistoryStore,
@@ -174,7 +174,7 @@ struct LibraryView: View {
                     selection.removeAll()
                 }
                 .font(.headline)
-                .foregroundStyle(AppTheme.primaryText)
+                .foregroundStyle(theme.primaryText)
                 .padding(.top, 4)
             } else {
                 HStack(spacing: 8) {
@@ -184,9 +184,9 @@ struct LibraryView: View {
                     ) {
                         Image(systemName: "plus")
                             .font(.title2.weight(.semibold))
-                            .foregroundStyle(AppTheme.primaryText)
+                            .foregroundStyle(theme.primaryText)
                             .frame(width: 44, height: 44)
-                            .background(AppTheme.controlBackground.opacity(0.8), in: Circle())
+                            .background(theme.controlBackground.opacity(0.8), in: Circle())
                     }
                     .accessibilityLabel("Import")
 
@@ -225,7 +225,7 @@ struct LibraryView: View {
 
             Text("\(selection.count) Selected")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppTheme.secondaryText)
+                .foregroundStyle(theme.secondaryText)
             
             Spacer()
             
@@ -234,7 +234,7 @@ struct LibraryView: View {
             } label: {
                 Image(systemName: "trash")
                     .font(.headline)
-                    .foregroundStyle(selection.isEmpty ? AppTheme.secondaryText.opacity(0.5) : AppTheme.destructive)
+                    .foregroundStyle(selection.isEmpty ? theme.secondaryText.opacity(0.5) : theme.destructive)
             }
             .disabled(selection.isEmpty)
         }
@@ -244,13 +244,13 @@ struct LibraryView: View {
         VStack(spacing: 12) {
             Image(systemName: "books.vertical")
                 .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(AppTheme.secondaryText)
+                .foregroundStyle(theme.secondaryText)
                 .frame(width: 56, height: 56)
-                .background(AppTheme.controlBackground, in: Circle())
+                .background(theme.controlBackground, in: Circle())
 
             Text("No reads yet.")
                 .font(.headline)
-                .foregroundStyle(AppTheme.primaryText)
+                .foregroundStyle(theme.primaryText)
         }
         .frame(maxWidth: .infinity, minHeight: 320)
         .padding(.vertical, 28)
@@ -260,17 +260,17 @@ struct LibraryView: View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(AppTheme.secondaryText)
+                .foregroundStyle(theme.secondaryText)
                 .frame(width: 54, height: 54)
-                .background(AppTheme.controlBackground, in: Circle())
+                .background(theme.controlBackground, in: Circle())
 
             Text("No results")
                 .font(.headline)
-                .foregroundStyle(AppTheme.primaryText)
+                .foregroundStyle(theme.primaryText)
 
             Text("Try a different title or author")
                 .font(.callout)
-                .foregroundStyle(AppTheme.secondaryText)
+                .foregroundStyle(theme.secondaryText)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, minHeight: 320)
@@ -365,7 +365,7 @@ struct LibraryBookCard: View {
     let onRename: () -> Void
     let onDelete: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.focusReadTheme) private var theme
     @State private var thumbnailData: Data?
 
     var body: some View {
@@ -383,7 +383,7 @@ struct LibraryBookCard: View {
 
             Text(read.displayTitle)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppTheme.primaryText)
+                .foregroundStyle(theme.primaryText)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -391,7 +391,7 @@ struct LibraryBookCard: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("\(Int(read.progressPercent.rounded()))%")
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(AppTheme.secondaryText)
+                    .foregroundStyle(theme.secondaryText)
 
                 Spacer(minLength: 8)
 
@@ -411,10 +411,10 @@ struct LibraryBookCard: View {
     private var coverView: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(AppTheme.controlBackground)
+                .fill(theme.controlBackground)
                 .overlay {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(AppTheme.border.opacity(0.24), lineWidth: 1)
+                        .strokeBorder(theme.border.opacity(0.24), lineWidth: 1)
                 }
 
             if let thumbnailData, let thumbnailImage = UIImage(data: thumbnailData) {
@@ -431,13 +431,13 @@ struct LibraryBookCard: View {
             if isSelectMode {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(isSelected ? AppTheme.coverSelectionForeground : AppTheme.coverUnselectedForeground)
-                    .background(Circle().fill(isSelected ? AppTheme.coverSelectionBackground : AppTheme.coverUnselectedBackground))
+                    .foregroundStyle(isSelected ? theme.coverSelectionForeground : theme.coverUnselectedForeground)
+                    .background(Circle().fill(isSelected ? theme.coverSelectionBackground : theme.coverUnselectedBackground))
                     .padding(8)
             }
         }
         .shadow(
-            color: colorScheme == .dark ? AppTheme.deepOverlayShadow : AppTheme.overlayShadow,
+            color: theme.colorScheme == .dark ? theme.deepOverlayShadow : theme.overlayShadow,
             radius: 12,
             x: 0,
             y: 6
@@ -449,54 +449,24 @@ struct LibraryBookCard: View {
         VStack(spacing: 12) {
             Image(systemName: read.sourceType.systemImageName)
                 .font(.system(size: 26, weight: .semibold))
-                .foregroundStyle(AppTheme.coverText)
+                .foregroundStyle(theme.coverText)
 
             Text(read.sourceType.libraryLabel)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(AppTheme.coverSecondaryText)
+                .foregroundStyle(theme.coverSecondaryText)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             LinearGradient(
                 colors: [
-                    Color(uiColor: placeholderTopColor),
-                    Color(uiColor: placeholderBottomColor)
+                    theme.coverPlaceholderTop,
+                    theme.coverPlaceholderBottom
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
-    }
-
-    private var placeholderTopColor: UIColor {
-        switch read.sourceType {
-        case .epub:
-            return UIColor(red: 0.20, green: 0.29, blue: 0.52, alpha: 1)
-        case .pdf:
-            return UIColor(red: 0.44, green: 0.20, blue: 0.16, alpha: 1)
-        case .image:
-            return UIColor(red: 0.14, green: 0.38, blue: 0.34, alpha: 1)
-        case .txt:
-            return UIColor(red: 0.18, green: 0.22, blue: 0.28, alpha: 1)
-        case .pastedText:
-            return UIColor(red: 0.23, green: 0.19, blue: 0.15, alpha: 1)
-        }
-    }
-
-    private var placeholderBottomColor: UIColor {
-        switch read.sourceType {
-        case .epub:
-            return UIColor(red: 0.52, green: 0.61, blue: 0.89, alpha: 1)
-        case .pdf:
-            return UIColor(red: 0.79, green: 0.48, blue: 0.34, alpha: 1)
-        case .image:
-            return UIColor(red: 0.43, green: 0.68, blue: 0.63, alpha: 1)
-        case .txt:
-            return UIColor(red: 0.50, green: 0.56, blue: 0.68, alpha: 1)
-        case .pastedText:
-            return UIColor(red: 0.65, green: 0.52, blue: 0.39, alpha: 1)
-        }
     }
 
     private func loadThumbnail() async {
@@ -508,6 +478,7 @@ struct LibraryItemMenu: View {
     let onMarkFinished: () -> Void
     let onRename: () -> Void
     let onDelete: () -> Void
+    @Environment(\.focusReadTheme) private var theme
 
     var body: some View {
         Menu {
@@ -527,14 +498,14 @@ struct LibraryItemMenu: View {
                 onDelete()
             } label: {
                 Label("Delete", systemImage: "trash")
-                    .foregroundStyle(AppTheme.destructive)
+                    .foregroundStyle(theme.destructive)
             }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppTheme.secondaryText)
+                .foregroundStyle(theme.secondaryText)
                 .frame(width: 30, height: 30)
-                .background(AppTheme.controlBackground.opacity(0.75), in: Circle())
+                .background(theme.controlBackground.opacity(0.75), in: Circle())
         }
         .menuStyle(.borderlessButton)
     }
@@ -542,6 +513,7 @@ struct LibraryItemMenu: View {
 
 struct RenameReadSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.focusReadTheme) private var theme
     @State private var title: String
 
     let initialTitle: String
@@ -565,8 +537,12 @@ struct RenameReadSheet: View {
                 Section("Title") {
                     TextField("Read title", text: $title)
                         .textInputAutocapitalization(.words)
+                        .foregroundStyle(theme.primaryText)
                 }
+                .listRowBackground(theme.cardBackground)
             }
+            .scrollContentBackground(.hidden)
+            .background(FocusReadBackground())
             .navigationTitle("Rename")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -640,6 +616,7 @@ struct LibraryListRow: View {
     let onDelete: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.focusReadTheme) private var theme
     @State private var thumbnailData: Data?
 
     var body: some View {
@@ -654,7 +631,7 @@ struct LibraryListRow: View {
                 if isSelectMode {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .font(.title2)
-                        .foregroundStyle(isSelected ? AppTheme.accent : AppTheme.secondaryText)
+                        .foregroundStyle(isSelected ? theme.accent : theme.secondaryText)
                 }
 
                 coverView
@@ -663,13 +640,13 @@ struct LibraryListRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(read.displayTitle)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(AppTheme.primaryText)
+                        .foregroundStyle(theme.primaryText)
                         .lineLimit(2)
 
                     if let author = read.author, !author.isEmpty {
                         Text(author)
                             .font(.footnote)
-                            .foregroundStyle(AppTheme.secondaryText)
+                            .foregroundStyle(theme.secondaryText)
                             .lineLimit(1)
                     }
 
@@ -678,7 +655,7 @@ struct LibraryListRow: View {
                         Text("\(Int(read.progressPercent.rounded()))%")
                     }
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(AppTheme.secondaryText)
+                    .foregroundStyle(theme.secondaryText)
                     .padding(.top, 2)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -704,10 +681,10 @@ struct LibraryListRow: View {
     private var coverView: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(AppTheme.controlBackground)
+                .fill(theme.controlBackground)
                 .overlay {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(AppTheme.border.opacity(0.24), lineWidth: 1)
+                        .strokeBorder(theme.border.opacity(0.24), lineWidth: 1)
                 }
 
             if let thumbnailData, let thumbnailImage = UIImage(data: thumbnailData) {
@@ -717,13 +694,13 @@ struct LibraryListRow: View {
             } else {
                 Image(systemName: read.sourceType.systemImageName)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppTheme.coverText)
+                    .foregroundStyle(theme.coverText)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(
                         LinearGradient(
                             colors: [
-                                Color(uiColor: placeholderTopColor),
-                                Color(uiColor: placeholderBottomColor)
+                                theme.coverPlaceholderTop,
+                                theme.coverPlaceholderBottom
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -733,32 +710,13 @@ struct LibraryListRow: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
-
-    private var placeholderTopColor: UIColor {
-        switch read.sourceType {
-        case .epub: return UIColor(red: 0.20, green: 0.29, blue: 0.52, alpha: 1)
-        case .pdf: return UIColor(red: 0.44, green: 0.20, blue: 0.16, alpha: 1)
-        case .image: return UIColor(red: 0.14, green: 0.38, blue: 0.34, alpha: 1)
-        case .txt: return UIColor(red: 0.18, green: 0.22, blue: 0.28, alpha: 1)
-        case .pastedText: return UIColor(red: 0.23, green: 0.19, blue: 0.15, alpha: 1)
-        }
-    }
-
-    private var placeholderBottomColor: UIColor {
-        switch read.sourceType {
-        case .epub: return UIColor(red: 0.52, green: 0.61, blue: 0.89, alpha: 1)
-        case .pdf: return UIColor(red: 0.79, green: 0.48, blue: 0.34, alpha: 1)
-        case .image: return UIColor(red: 0.43, green: 0.68, blue: 0.63, alpha: 1)
-        case .txt: return UIColor(red: 0.50, green: 0.56, blue: 0.68, alpha: 1)
-        case .pastedText: return UIColor(red: 0.65, green: 0.52, blue: 0.39, alpha: 1)
-        }
-    }
 }
 
 struct LibraryControlsMenu: View {
     @Binding var viewMode: LibraryViewMode
     @Binding var sortMode: LibrarySortMode
     let onSelectMode: () -> Void
+    @Environment(\.focusReadTheme) private var theme
 
     var body: some View {
         Menu {
@@ -788,9 +746,9 @@ struct LibraryControlsMenu: View {
         } label: {
             Image(systemName: "ellipsis.circle")
                 .font(.title2)
-                .foregroundStyle(AppTheme.primaryText)
+                .foregroundStyle(theme.primaryText)
                 .frame(width: 44, height: 44)
-                .background(AppTheme.controlBackground.opacity(0.8), in: Circle())
+                .background(theme.controlBackground.opacity(0.8), in: Circle())
         }
         .menuStyle(.borderlessButton)
     }

@@ -14,6 +14,8 @@ struct GoToNavigationView: View {
                 searchSection
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(FocusReadBackground())
             .navigationTitle("Search Word")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -28,6 +30,7 @@ struct GoToNavigationView: View {
         .onDisappear {
             viewModel.cancelSearch()
         }
+        .focusReadThemeRefresh()
     }
 
     private var searchSection: some View {
@@ -40,18 +43,22 @@ struct GoToNavigationView: View {
             .disableAutocorrection(true)
             .textFieldStyle(.roundedBorder)
             .padding(.vertical, 4)
+            .listRowBackground(AppTheme.cardBackground)
 
             if viewModel.isSearching {
                 HStack {
                     ProgressView()
+                        .tint(AppTheme.progressIndicator)
                     Text("Searching...")
                         .foregroundStyle(AppTheme.secondaryText)
                 }
                 .padding(.vertical, 8)
+                .listRowBackground(AppTheme.cardBackground)
             } else if viewModel.showNoSearchResults {
                 Text("No matches found")
                     .foregroundStyle(AppTheme.secondaryText)
                     .padding(.vertical, 8)
+                    .listRowBackground(AppTheme.cardBackground)
             } else {
                 ForEach(viewModel.searchResults) { result in
                     Button {
@@ -70,6 +77,7 @@ struct GoToNavigationView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 6)
                     }
+                    .listRowBackground(AppTheme.cardBackground)
                 }
             }
         }

@@ -86,6 +86,81 @@ final class FocusReadThemeManager: ObservableObject {
     func reset() {
         selectedThemeID = FocusReadThemeCatalog.defaultTheme.id
     }
+
+    func resolvedTheme(for colorScheme: ColorScheme) -> FocusReadResolvedTheme {
+        FocusReadResolvedTheme(
+            themeID: selectedThemeID,
+            colorScheme: colorScheme,
+            palette: selectedTheme.palette(
+                for: colorScheme == .dark ? UIUserInterfaceStyle.dark : UIUserInterfaceStyle.light
+            )
+        )
+    }
+}
+
+struct FocusReadResolvedTheme: Equatable {
+    let themeID: String
+    let colorScheme: ColorScheme
+    let palette: FocusReadThemePalette
+
+    var background: Color { color(\.primaryBackground) }
+    var secondaryBackground: Color { color(\.secondaryBackground) }
+    var cardBackground: Color { color(\.cardSurface) }
+    var controlBackground: Color { color(\.controlBackground) }
+    var controlForeground: Color { color(\.controlForeground) }
+    var primaryText: Color { color(\.primaryText) }
+    var secondaryText: Color { color(\.secondaryText) }
+    var tertiaryText: Color { color(\.tertiaryText) }
+    var border: Color { color(\.separator) }
+    var accent: Color { color(\.accent) }
+    var progressIndicator: Color { color(\.progressIndicator) }
+    var ringTrack: Color { color(\.ringTrack) }
+    var iconBackground: Color { color(\.iconBackground) }
+    var destructive: Color { color(\.destructive) }
+    var coverSelectionForeground: Color { color(\.coverSelectionForeground) }
+    var coverSelectionBackground: Color { color(\.coverSelectionBackground) }
+    var coverPlaceholderTop: Color { color(\.accent) }
+    var coverPlaceholderBottom: Color { color(\.primaryText) }
+    var coverText: Color { Color.white.opacity(0.96) }
+    var coverSecondaryText: Color { Color.white.opacity(0.9) }
+    var coverUnselectedForeground: Color { Color.white }
+    var coverUnselectedBackground: Color { Color.black.opacity(0.4) }
+    var overlayShadow: Color { Color.black.opacity(0.14) }
+    var deepOverlayShadow: Color { Color.black.opacity(0.35) }
+    var subtleShadow: Color { Color.black.opacity(0.07) }
+
+    func contributionColor(for level: Int) -> Color {
+        let safeLevel = min(max(level, 0), palette.contributionLevels.count - 1)
+        return Color(uiColor: palette.contributionLevels[safeLevel])
+    }
+
+    private func color(_ keyPath: KeyPath<FocusReadThemePalette, UIColor>) -> Color {
+        Color(uiColor: palette[keyPath: keyPath])
+    }
+}
+
+private struct FocusReadResolvedThemeKey: EnvironmentKey {
+    static let defaultValue = FocusReadThemeCatalog.defaultTheme
+        .resolvedTheme(for: ColorScheme.light)
+}
+
+extension FocusReadTheme {
+    func resolvedTheme(for colorScheme: ColorScheme) -> FocusReadResolvedTheme {
+        FocusReadResolvedTheme(
+            themeID: id,
+            colorScheme: colorScheme,
+            palette: palette(
+                for: colorScheme == .dark ? UIUserInterfaceStyle.dark : UIUserInterfaceStyle.light
+            )
+        )
+    }
+}
+
+extension EnvironmentValues {
+    var focusReadTheme: FocusReadResolvedTheme {
+        get { self[FocusReadResolvedThemeKey.self] }
+        set { self[FocusReadResolvedThemeKey.self] = newValue }
+    }
 }
 
 enum FocusReadThemeCatalog {
@@ -402,6 +477,42 @@ enum FocusReadThemeCatalog {
                 searchHighlightBackground: 0x62402A,
                 searchHighlightForeground: 0xFFF4EC
             )
+        ),
+        FocusReadTheme(
+            id: "arctic",
+            name: "Arctic",
+            category: .full,
+            description: "Cold, minimal surfaces with an icy blue accent.",
+            lightPalette: palette(
+                primaryBackground: 0xF8FBFD,
+                secondaryBackground: 0xEAF2F7,
+                cardSurface: 0xF1F7FA,
+                primaryText: 0x162431,
+                secondaryText: 0x536B7C,
+                tertiaryText: 0x7E94A3,
+                accent: 0x4E9BC8,
+                buttonForeground: 0xF7FCFF,
+                separator: 0xD3E1EA,
+                ringTrack: 0xDDEAF1,
+                iconBackground: 0xE2EDF4,
+                searchHighlightBackground: 0xCDEAF7,
+                searchHighlightForeground: 0x0D2634
+            ),
+            darkPalette: palette(
+                primaryBackground: 0x06111B,
+                secondaryBackground: 0x0B1B29,
+                cardSurface: 0x102434,
+                primaryText: 0xEAF6FB,
+                secondaryText: 0xB6CCD8,
+                tertiaryText: 0x7D98A8,
+                accent: 0x6FCBF0,
+                buttonForeground: 0x05111A,
+                separator: 0x253D4D,
+                ringTrack: 0x1A3040,
+                iconBackground: 0x183043,
+                searchHighlightBackground: 0x1F5974,
+                searchHighlightForeground: 0xF2FCFF
+            )
         )
     ]
 
@@ -592,6 +703,8 @@ enum AppTheme {
     static var destructive: Color { color(\.destructive) }
     static var coverSelectionForeground: Color { color(\.coverSelectionForeground) }
     static var coverSelectionBackground: Color { color(\.coverSelectionBackground) }
+    static var coverPlaceholderTop: Color { color(\.accent) }
+    static var coverPlaceholderBottom: Color { color(\.primaryText) }
     static var coverUnselectedForeground: Color { Color.white }
     static var coverUnselectedBackground: Color { Color.black.opacity(0.4) }
     static var coverText: Color { Color.white.opacity(0.96) }
@@ -638,6 +751,10 @@ enum AppTheme {
         })
     }
 
+    static func palette(for colorScheme: ColorScheme) -> FocusReadThemePalette {
+        palette(for: colorScheme == .dark ? UIUserInterfaceStyle.dark : UIUserInterfaceStyle.light)
+    }
+
     private static func color(_ keyPath: KeyPath<FocusReadThemePalette, UIColor>) -> Color {
         Color(uiColor: uiColor(keyPath))
     }
@@ -651,6 +768,140 @@ enum AppTheme {
     private static func palette(for style: UIUserInterfaceStyle) -> FocusReadThemePalette {
         let savedThemeID = UserDefaults.standard.string(forKey: FocusReadThemeStorageKey.selectedThemeID)
         return FocusReadThemeCatalog.theme(matching: savedThemeID).palette(for: style)
+    }
+}
+
+struct FocusReadThemeRefreshModifier: ViewModifier {
+    @ObservedObject private var themeManager = FocusReadThemeManager.shared
+
+    func body(content: Content) -> some View {
+        let _ = themeManager.selectedThemeID
+        content
+    }
+}
+
+struct FocusReadThemeEnvironmentModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject private var themeManager = FocusReadThemeManager.shared
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.focusReadTheme, themeManager.resolvedTheme(for: colorScheme))
+    }
+}
+
+struct FocusReadSystemChromeModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.focusReadTheme) private var theme
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear(perform: applyAppearance)
+            .onChange(of: theme.themeID) { applyAppearance() }
+            .onChange(of: colorScheme) { applyAppearance() }
+    }
+
+    private func applyAppearance() {
+        let palette = theme.palette
+        let tabAppearance = UITabBarAppearance()
+        tabAppearance.configureWithOpaqueBackground()
+        tabAppearance.backgroundColor = palette.cardSurface
+        tabAppearance.shadowColor = palette.separator
+
+        applyTabItemColors(to: tabAppearance.stackedLayoutAppearance, palette: palette)
+        applyTabItemColors(to: tabAppearance.inlineLayoutAppearance, palette: palette)
+        applyTabItemColors(to: tabAppearance.compactInlineLayoutAppearance, palette: palette)
+
+        UITabBar.appearance().standardAppearance = tabAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabAppearance
+
+        let navigationAppearance = UINavigationBarAppearance()
+        navigationAppearance.configureWithOpaqueBackground()
+        navigationAppearance.backgroundColor = palette.cardSurface
+        navigationAppearance.shadowColor = palette.separator
+        navigationAppearance.titleTextAttributes = [
+            .foregroundColor: palette.primaryText
+        ]
+        navigationAppearance.largeTitleTextAttributes = [
+            .foregroundColor: palette.primaryText
+        ]
+
+        UINavigationBar.appearance().standardAppearance = navigationAppearance
+        UINavigationBar.appearance().compactAppearance = navigationAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navigationAppearance
+        UINavigationBar.appearance().tintColor = palette.accent
+    }
+
+    private func applyTabItemColors(
+        to appearance: UITabBarItemAppearance,
+        palette: FocusReadThemePalette
+    ) {
+        appearance.normal.iconColor = palette.secondaryText
+        appearance.normal.titleTextAttributes = [
+            .foregroundColor: palette.secondaryText
+        ]
+        appearance.selected.iconColor = palette.accent
+        appearance.selected.titleTextAttributes = [
+            .foregroundColor: palette.accent
+        ]
+    }
+}
+
+struct FocusReadTabBarUpdater: UIViewControllerRepresentable {
+    @Environment(\.focusReadTheme) private var theme
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        UIViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        let palette = theme.palette
+
+        DispatchQueue.main.async {
+            guard let tabBar = uiViewController.parent?.tabBarController?.tabBar else { return }
+            let appearance = UITabBarAppearance()
+            appearance.configureWithOpaqueBackground()
+            appearance.backgroundColor = palette.cardSurface
+            appearance.shadowColor = palette.separator
+
+            Self.applyTabItemColors(to: appearance.stackedLayoutAppearance, palette: palette)
+            Self.applyTabItemColors(to: appearance.inlineLayoutAppearance, palette: palette)
+            Self.applyTabItemColors(to: appearance.compactInlineLayoutAppearance, palette: palette)
+
+            tabBar.standardAppearance = appearance
+            tabBar.scrollEdgeAppearance = appearance
+            tabBar.tintColor = palette.accent
+            tabBar.unselectedItemTintColor = palette.secondaryText
+            tabBar.setNeedsLayout()
+        }
+    }
+
+    private static func applyTabItemColors(
+        to appearance: UITabBarItemAppearance,
+        palette: FocusReadThemePalette
+    ) {
+        appearance.normal.iconColor = palette.secondaryText
+        appearance.normal.titleTextAttributes = [
+            .foregroundColor: palette.secondaryText
+        ]
+        appearance.selected.iconColor = palette.accent
+        appearance.selected.titleTextAttributes = [
+            .foregroundColor: palette.accent
+        ]
+    }
+}
+
+extension View {
+    func focusReadThemeEnvironment() -> some View {
+        modifier(FocusReadThemeEnvironmentModifier())
+    }
+
+    func focusReadThemeRefresh() -> some View {
+        modifier(FocusReadThemeRefreshModifier())
+    }
+
+    func focusReadSystemChrome() -> some View {
+        modifier(FocusReadSystemChromeModifier())
     }
 }
 

@@ -10,6 +10,8 @@ struct FocusReadApp: App {
             RootView()
                 .environmentObject(themeManager)
                 .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
+                .focusReadThemeEnvironment()
+                .focusReadSystemChrome()
         }
     }
 }

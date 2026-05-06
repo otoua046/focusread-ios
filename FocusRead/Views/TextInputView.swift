@@ -38,6 +38,7 @@ struct TextInputView: View {
                 }
             }
         }
+        .focusReadThemeRefresh()
     }
 
     private var mainContent: some View {
@@ -189,12 +190,14 @@ struct TextInputView: View {
 }
 
 struct FocusReadBackground: View {
+    @Environment(\.focusReadTheme) private var theme
+
     var body: some View {
         LinearGradient(
             colors: [
-                AppTheme.background,
-                AppTheme.cardBackground,
-                AppTheme.background
+                theme.background,
+                theme.cardBackground,
+                theme.background
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing

@@ -39,6 +39,7 @@ struct DocumentImportView: View {
                 }
             }
         }
+        .focusReadThemeRefresh()
     }
 
     private func loadingView(_ progress: DocumentImportProgress) -> some View {

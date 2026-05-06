@@ -122,6 +122,7 @@ struct ReaderView: View {
         .onDisappear {
             viewModel.cleanup()
         }
+        .focusReadThemeRefresh()
     }
 
     private var topBar: some View {
@@ -342,6 +343,7 @@ struct CurrentLocationPreviewView: View {
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        .focusReadThemeRefresh()
     }
 
     private var previewContainer: some View {
