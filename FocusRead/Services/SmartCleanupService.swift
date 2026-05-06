@@ -53,7 +53,7 @@ struct SmartCleanupService: Sendable {
             return deterministicTitle
         }
 
-        if currentTitle == document.fileName || currentTitle == rawBaseName {
+        if currentTitle == document.fileName {
             return deterministicTitle
         }
 
