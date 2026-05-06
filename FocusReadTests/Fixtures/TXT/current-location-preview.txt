@@ -1,0 +1,3 @@
+FocusRead current location preview fixture.
+
+This plain text sample is intentionally small but varied enough to exercise punctuation, sentence endings, and a middle-of-document reading position. The preview sheet should show the surrounding words using native SwiftUI text, keep the current word highlighted, keep already read words bright, and leave upcoming words dimmed. It should not reparse this file, rewrite progress, or change the reader position when opened. Near the beginning and near the end, the snippet should simply use the words that are available.
