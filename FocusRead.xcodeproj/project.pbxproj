@@ -3,16 +3,17 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4BB9D30A2FAACCED00E05D79 /* The Psychology of Persuasion.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 4BB9D3092FAACCED00E05D79 /* The Psychology of Persuasion.pdf */; };
+		4BB9D30B2FAACCED00E05D79 /* E001005.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 4BB9D3082FAACCED00E05D79 /* E001005.pdf */; };
 		710000000000000000000001 /* FocusReadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000101 /* FocusReadApp.swift */; };
 		710000000000000000000002 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000102 /* RootView.swift */; };
 		710000000000000000000003 /* TextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000103 /* TextInputView.swift */; };
 		710000000000000000000004 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000104 /* ReaderView.swift */; };
 		710000000000000000000005 /* ReaderControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000105 /* ReaderControlsView.swift */; };
-		710000000000000000000122 /* ReaderActionPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000121 /* ReaderActionPaletteView.swift */; };
 		710000000000000000000006 /* ReadingToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000106 /* ReadingToken.swift */; };
 		710000000000000000000007 /* ReadingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000107 /* ReadingSession.swift */; };
 		710000000000000000000008 /* TextTokenizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000108 /* TextTokenizer.swift */; };
@@ -22,6 +23,7 @@
 		71000000000000000000000C /* TypographySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010C /* TypographySettings.swift */; };
 		71000000000000000000000D /* TypographySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010D /* TypographySettingsView.swift */; };
 		71000000000000000000000E /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010F /* AppTheme.swift */; };
+		710000000000000000000122 /* ReaderActionPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000121 /* ReaderActionPaletteView.swift */; };
 		720000000000000000000001 /* DocumentImportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000101 /* DocumentImportModels.swift */; };
 		720000000000000000000002 /* DocumentTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000102 /* DocumentTextExtractor.swift */; };
 		720000000000000000000003 /* DocumentPickerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000103 /* DocumentPickerService.swift */; };
@@ -50,9 +52,6 @@
 		72000000000000000000001A /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011A /* LibraryViewModel.swift */; };
 		72000000000000000000001B /* ThumbnailGeneratorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000120 /* ThumbnailGeneratorService.swift */; };
 		72000000000000000000001C /* NativeSearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011C /* NativeSearchBarView.swift */; };
-		750000000000000000000001 /* ReadingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000101 /* ReadingStats.swift */; };
-		750000000000000000000002 /* ReadingStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000102 /* ReadingStatsStore.swift */; };
-		750000000000000000000003 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000103 /* StatsView.swift */; };
 		730000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 730000000000000000000101 /* ZIPFoundation */; };
 		740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000101 /* EPUBTextExtractorTests.swift */; };
 		740000000000000000000002 /* minimal.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000102 /* minimal.epub */; };
@@ -62,7 +61,11 @@
 		740000000000000000000006 /* WordLookupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000106 /* WordLookupServiceTests.swift */; };
 		740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000107 /* ReaderSearchServiceTests.swift */; };
 		740000000000000000000008 /* ReaderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000108 /* ReaderViewModelTests.swift */; };
-		750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000104 /* ReadingStatsStoreTests.swift */; };	/* End PBXBuildFile section */
+		750000000000000000000001 /* ReadingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000101 /* ReadingStats.swift */; };
+		750000000000000000000002 /* ReadingStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000102 /* ReadingStatsStore.swift */; };
+		750000000000000000000003 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000103 /* StatsView.swift */; };
+		750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000104 /* ReadingStatsStoreTests.swift */; };
+/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		740000000000000000000201 /* PBXContainerItemProxy */ = {
@@ -75,13 +78,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4BB9D3082FAACCED00E05D79 /* E001005.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = E001005.pdf; sourceTree = "<group>"; };
+		4BB9D3092FAACCED00E05D79 /* The Psychology of Persuasion.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "The Psychology of Persuasion.pdf"; sourceTree = "<group>"; };
 		710000000000000000000011 /* FocusRead.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FocusRead.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		710000000000000000000101 /* FocusReadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadApp.swift; sourceTree = "<group>"; };
 		710000000000000000000102 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		710000000000000000000103 /* TextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInputView.swift; sourceTree = "<group>"; };
 		710000000000000000000104 /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 		710000000000000000000105 /* ReaderControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderControlsView.swift; sourceTree = "<group>"; };
-		710000000000000000000121 /* ReaderActionPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderActionPaletteView.swift; sourceTree = "<group>"; };
 		710000000000000000000106 /* ReadingToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingToken.swift; sourceTree = "<group>"; };
 		710000000000000000000107 /* ReadingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingSession.swift; sourceTree = "<group>"; };
 		710000000000000000000108 /* TextTokenizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextTokenizer.swift; sourceTree = "<group>"; };
@@ -92,6 +96,7 @@
 		71000000000000000000010D /* TypographySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographySettingsView.swift; sourceTree = "<group>"; };
 		71000000000000000000010E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		71000000000000000000010F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		710000000000000000000121 /* ReaderActionPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderActionPaletteView.swift; sourceTree = "<group>"; };
 		720000000000000000000101 /* DocumentImportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportModels.swift; sourceTree = "<group>"; };
 		720000000000000000000102 /* DocumentTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentTextExtractor.swift; sourceTree = "<group>"; };
 		720000000000000000000103 /* DocumentPickerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPickerService.swift; sourceTree = "<group>"; };
@@ -118,11 +123,8 @@
 		720000000000000000000118 /* GoToViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToViewModel.swift; sourceTree = "<group>"; };
 		720000000000000000000119 /* GoToNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToNavigationView.swift; sourceTree = "<group>"; };
 		72000000000000000000011A /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
-		720000000000000000000120 /* ThumbnailGeneratorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailGeneratorService.swift; sourceTree = "<group>"; };
 		72000000000000000000011C /* NativeSearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSearchBarView.swift; sourceTree = "<group>"; };
-		750000000000000000000101 /* ReadingStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStats.swift; sourceTree = "<group>"; };
-		750000000000000000000102 /* ReadingStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStore.swift; sourceTree = "<group>"; };
-		750000000000000000000103 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		720000000000000000000120 /* ThumbnailGeneratorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailGeneratorService.swift; sourceTree = "<group>"; };
 		740000000000000000000011 /* FocusReadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusReadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		740000000000000000000101 /* EPUBTextExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractorTests.swift; sourceTree = "<group>"; };
 		740000000000000000000102 /* minimal.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = minimal.epub; sourceTree = "<group>"; };
@@ -132,7 +134,11 @@
 		740000000000000000000106 /* WordLookupServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordLookupServiceTests.swift; sourceTree = "<group>"; };
 		740000000000000000000107 /* ReaderSearchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSearchServiceTests.swift; sourceTree = "<group>"; };
 		740000000000000000000108 /* ReaderViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModelTests.swift; sourceTree = "<group>"; };
-		750000000000000000000104 /* ReadingStatsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStoreTests.swift; sourceTree = "<group>"; };	/* End PBXFileReference section */
+		750000000000000000000101 /* ReadingStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStats.swift; sourceTree = "<group>"; };
+		750000000000000000000102 /* ReadingStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStore.swift; sourceTree = "<group>"; };
+		750000000000000000000103 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		750000000000000000000104 /* ReadingStatsStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStoreTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		710000000000000000000020 /* Frameworks */ = {
@@ -150,24 +156,33 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-	/* End PBXFrameworksBuildPhase section */
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4BB9D3072FAACCDC00E05D79 /* PDF */ = {
+			isa = PBXGroup;
+			children = (
+				4BB9D3082FAACCED00E05D79 /* E001005.pdf */,
+				4BB9D3092FAACCED00E05D79 /* The Psychology of Persuasion.pdf */,
+			);
+			path = PDF;
+			sourceTree = "<group>";
+		};
 		710000000000000000000030 = {
 			isa = PBXGroup;
-				children = (
-					710000000000000000000040 /* FocusRead */,
-					740000000000000000000040 /* FocusReadTests */,
-					710000000000000000000050 /* Products */,
-				);
-				sourceTree = "<group>";
-			};
-			710000000000000000000040 /* FocusRead */ = {
-				isa = PBXGroup;
-				children = (
-					710000000000000000000101 /* FocusReadApp.swift */,
-					710000000000000000000060 /* Models */,
-					710000000000000000000061 /* Services */,
+			children = (
+				710000000000000000000040 /* FocusRead */,
+				740000000000000000000040 /* FocusReadTests */,
+				710000000000000000000050 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		710000000000000000000040 /* FocusRead */ = {
+			isa = PBXGroup;
+			children = (
+				710000000000000000000101 /* FocusReadApp.swift */,
+				710000000000000000000060 /* Models */,
+				710000000000000000000061 /* Services */,
 				710000000000000000000062 /* ViewModels */,
 				710000000000000000000064 /* Theme */,
 				710000000000000000000063 /* Views */,
@@ -178,13 +193,13 @@
 		};
 		710000000000000000000050 /* Products */ = {
 			isa = PBXGroup;
-				children = (
-					710000000000000000000011 /* FocusRead.app */,
-					740000000000000000000011 /* FocusReadTests.xctest */,
-				);
-				name = Products;
-				sourceTree = "<group>";
-			};
+			children = (
+				710000000000000000000011 /* FocusRead.app */,
+				740000000000000000000011 /* FocusReadTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		710000000000000000000060 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -262,9 +277,9 @@
 			children = (
 				71000000000000000000010F /* AppTheme.swift */,
 			);
-				path = Theme;
-				sourceTree = "<group>";
-			};
+			path = Theme;
+			sourceTree = "<group>";
+		};
 		740000000000000000000040 /* FocusReadTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -281,6 +296,7 @@
 		740000000000000000000041 /* Fixtures */ = {
 			isa = PBXGroup;
 			children = (
+				4BB9D3072FAACCDC00E05D79 /* PDF */,
 				740000000000000000000042 /* EPUB */,
 			);
 			path = Fixtures;
@@ -297,7 +313,7 @@
 			path = EPUB;
 			sourceTree = "<group>";
 		};
-	/* End PBXGroup section */
+/* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		710000000000000000000070 /* FocusRead */ = {
@@ -308,18 +324,18 @@
 				710000000000000000000020 /* Frameworks */,
 				710000000000000000000073 /* Resources */,
 			);
-				buildRules = (
-				);
-				dependencies = (
-				);
-				name = FocusRead;
-				packageProductDependencies = (
-					730000000000000000000101 /* ZIPFoundation */,
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FocusRead;
+			packageProductDependencies = (
+				730000000000000000000101 /* ZIPFoundation */,
 			);
 			productName = FocusRead;
-				productReference = 710000000000000000000011 /* FocusRead.app */;
-				productType = "com.apple.product-type.application";
-			};
+			productReference = 710000000000000000000011 /* FocusRead.app */;
+			productType = "com.apple.product-type.application";
+		};
 		740000000000000000000070 /* FocusReadTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 740000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadTests" */;
@@ -340,7 +356,7 @@
 			productReference = 740000000000000000000011 /* FocusReadTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-	/* End PBXNativeTarget section */
+/* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		710000000000000000000080 /* Project object */ = {
@@ -374,11 +390,11 @@
 			productRefGroup = 710000000000000000000050 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-				targets = (
-					710000000000000000000070 /* FocusRead */,
-					740000000000000000000070 /* FocusReadTests */,
-				);
-			};
+			targets = (
+				710000000000000000000070 /* FocusRead */,
+				740000000000000000000070 /* FocusReadTests */,
+			);
+		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
@@ -396,11 +412,13 @@
 				740000000000000000000004 /* accessible_epub_3.epub in Resources */,
 				740000000000000000000003 /* jane-austen_pride-and-prejudice.epub in Resources */,
 				740000000000000000000002 /* minimal.epub in Resources */,
+				4BB9D30A2FAACCED00E05D79 /* The Psychology of Persuasion.pdf in Resources */,
+				4BB9D30B2FAACCED00E05D79 /* E001005.pdf in Resources */,
 				740000000000000000000005 /* pg1342-images-3.epub in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-	/* End PBXResourcesBuildPhase section */
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		710000000000000000000071 /* Sources */ = {
@@ -468,7 +486,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-	/* End PBXSourcesBuildPhase section */
+/* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		740000000000000000000202 /* PBXTargetDependency */ = {
@@ -554,14 +572,8 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = WFH2TCAAQ8;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = FocusRead;
-				INFOPLIST_KEY_NSCameraUsageDescription = "FocusRead uses the camera to scan text for reading.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FocusRead/Info.plist;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -579,14 +591,8 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = WFH2TCAAQ8;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = FocusRead;
-				INFOPLIST_KEY_NSCameraUsageDescription = "FocusRead uses the camera to scan text for reading.";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FocusRead/Info.plist;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -633,7 +639,7 @@
 			};
 			name = Release;
 		};
-	/* End XCBuildConfiguration section */
+/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 		710000000000000000000081 /* Build configuration list for PBXProject "FocusRead" */ = {
@@ -663,7 +669,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-	/* End XCConfigurationList section */
+/* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
 		730000000000000000000201 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {

@@ -96,6 +96,10 @@ final class ReaderViewModel: ObservableObject {
         session.currentTokens.map(\.text).joined(separator: " ")
     }
 
+    var currentWordForTranslation: String {
+        Self.cleanedTranslateWord(from: currentWord)
+    }
+
     var currentWordParts: WordParts? {
         guard behaviorSettings.displayMode == .oneWord,
               behaviorSettings.anchorLetterEnabled,
@@ -178,6 +182,12 @@ final class ReaderViewModel: ObservableObject {
 
     private static func isAlphanumeric(_ character: Character) -> Bool {
         character.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
+    }
+
+    private static func cleanedTranslateWord(from text: String) -> String {
+        let edgeCharacters = CharacterSet.whitespacesAndNewlines
+            .union(CharacterSet(charactersIn: ",.-–—"))
+        return text.trimmingCharacters(in: edgeCharacters)
     }
 
     var sanitizedCurrentWordForLookup: String? {

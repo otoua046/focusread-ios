@@ -2,7 +2,11 @@ import Foundation
 import UniformTypeIdentifiers
 
 struct DocumentPickerService: Sendable {
-    static let allowedContentTypes: [UTType] = [.item]
+    static let allowedContentTypes: [UTType] = [
+        .pdf,
+        .plainText,
+        UTType(importedAs: "org.idpf.epub-container")
+    ]
 
     func copySecurityScopedFile(from url: URL) throws -> ImportedFile {
         let fileManager = FileManager.default

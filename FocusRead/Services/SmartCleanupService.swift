@@ -31,17 +31,33 @@ struct SmartCleanupService: Sendable {
         let deterministicSections = document.sections.map { section in
             section.withText(Self.deterministicTextCleanup(section.text, repeatedLineKeys: repeatedLineKeys))
         }
-        let deterministicTitle = Self.deterministicDisplayTitle(from: document.fileName)
+        let displayTitle = Self.displayTitleAfterCleanup(for: document)
 
         let sections = Self.sectionsWithUpdatedWordRanges(deterministicSections, sourceType: document.sourceType)
         let chunks = effectiveMode == .ai ? Self.cleanupChunks(originalSections: document.sections, smartSections: sections, sourceType: document.sourceType) : []
 
         return document.withCleanup(
-            displayTitle: deterministicTitle,
+            displayTitle: displayTitle,
             sections: sections,
             cleanupMode: effectiveMode,
             cleanupChunks: chunks
         )
+    }
+
+    static func displayTitleAfterCleanup(for document: ImportedDocument) -> String {
+        let currentTitle = document.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        let deterministicTitle = deterministicDisplayTitle(from: document.fileName)
+        let rawBaseName = (document.fileName as NSString).deletingPathExtension
+
+        guard !currentTitle.isEmpty else {
+            return deterministicTitle
+        }
+
+        if currentTitle == document.fileName {
+            return deterministicTitle
+        }
+
+        return currentTitle
     }
 
     static func deterministicDisplayTitle(from fileName: String) -> String {
