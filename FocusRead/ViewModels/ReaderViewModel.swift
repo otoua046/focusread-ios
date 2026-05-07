@@ -160,6 +160,8 @@ final class ReaderViewModel: ObservableObject {
     private var readingStatsSessionStartedAt: Date?
     private var readingStatsSessionWordsRead = 0
     private var readingStatsSessionWeightedWPM = 0
+    private var readingStatsSessionStartWordIndex: Int?
+    private var readingStatsSessionEndWordIndex: Int?
     private var hasMarkedCurrentReadCompleted = false
 
     @Published var isPlaying = false
@@ -986,12 +988,21 @@ final class ReaderViewModel: ObservableObject {
         readingStatsSessionStartedAt = dateProvider()
         readingStatsSessionWordsRead = 0
         readingStatsSessionWeightedWPM = 0
+        readingStatsSessionStartWordIndex = nil
+        readingStatsSessionEndWordIndex = nil
     }
 
     private func recordCurrentWordReadForStats() {
         guard readingStatsSessionStartedAt != nil else { return }
 
         let wordsInStep = session.currentTokens.count
+        guard wordsInStep > 0 else { return }
+
+        let sourceStart = session.currentIndex
+        let sourceEnd = min(session.currentIndex + wordsInStep, session.tokens.count)
+        readingStatsSessionStartWordIndex = min(readingStatsSessionStartWordIndex ?? sourceStart, sourceStart)
+        readingStatsSessionEndWordIndex = max(readingStatsSessionEndWordIndex ?? sourceEnd, sourceEnd)
+
         readingStatsSessionWordsRead += wordsInStep
         readingStatsSessionWeightedWPM += session.wordsPerMinute * wordsInStep
     }
@@ -1017,7 +1028,9 @@ final class ReaderViewModel: ObservableObject {
             startedAt: startedAt,
             endedAt: endedAt,
             wordsRead: wordsRead,
-            averageWPM: averageWPM
+            averageWPM: averageWPM,
+            sourceStartWordIndex: readingStatsSessionStartWordIndex,
+            sourceEndWordIndex: readingStatsSessionEndWordIndex
         )
         readingStatsStore?.record(event)
         addReadingTimeToSavedRead(event.readingSeconds)
@@ -1027,6 +1040,8 @@ final class ReaderViewModel: ObservableObject {
         readingStatsSessionStartedAt = nil
         readingStatsSessionWordsRead = 0
         readingStatsSessionWeightedWPM = 0
+        readingStatsSessionStartWordIndex = nil
+        readingStatsSessionEndWordIndex = nil
     }
 
     private func addReadingTimeToSavedRead(_ seconds: TimeInterval) {

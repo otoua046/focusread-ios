@@ -39,6 +39,32 @@ final class ReadingStatsStoreTests: XCTestCase {
         XCTAssertEqual(activities.last?.date, date("2026-05-04T00:00:00Z"))
     }
 
+    func testReadingSessionEventExposesSourceWordRangeWhenPresent() {
+        let event = ReadingSessionEvent(
+            readID: UUID(),
+            startedAt: date("2026-05-02T10:00:00Z"),
+            endedAt: date("2026-05-02T10:02:00Z"),
+            wordsRead: 120,
+            averageWPM: 300,
+            sourceStartWordIndex: 42,
+            sourceEndWordIndex: 162
+        )
+
+        XCTAssertEqual(event.sourceWordRange, 42..<162)
+    }
+
+    func testReadingSessionEventTreatsMissingSourceRangeAsIneligible() {
+        let event = ReadingSessionEvent(
+            readID: UUID(),
+            startedAt: date("2026-05-02T10:00:00Z"),
+            endedAt: date("2026-05-02T10:02:00Z"),
+            wordsRead: 120,
+            averageWPM: 300
+        )
+
+        XCTAssertNil(event.sourceWordRange)
+    }
+
     func testContributionCalendarCrossesFebruaryInNonLeapYearWithoutMissingDays() {
         let calendar = gregorianUTC()
         let activities = contributionActivities(
