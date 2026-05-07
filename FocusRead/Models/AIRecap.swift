@@ -12,6 +12,8 @@ struct AIRecap: Identifiable, Codable, Equatable, Sendable {
     var createdAt: Date
     var inputWordCount: Int
     var outputWordCount: Int
+    var sourceLanguageCode: String?
+    var sourceLanguageName: String?
     var modelName: String
     var modelVersion: String
 
@@ -27,6 +29,8 @@ struct AIRecap: Identifiable, Codable, Equatable, Sendable {
         createdAt: Date = Date(),
         inputWordCount: Int,
         outputWordCount: Int,
+        sourceLanguageCode: String? = nil,
+        sourceLanguageName: String? = nil,
         modelName: String,
         modelVersion: String
     ) {
@@ -41,6 +45,8 @@ struct AIRecap: Identifiable, Codable, Equatable, Sendable {
         self.createdAt = createdAt
         self.inputWordCount = max(inputWordCount, 0)
         self.outputWordCount = max(outputWordCount, 0)
+        self.sourceLanguageCode = sourceLanguageCode
+        self.sourceLanguageName = sourceLanguageName
         self.modelName = modelName
         self.modelVersion = modelVersion
     }

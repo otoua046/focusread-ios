@@ -22,6 +22,9 @@ struct TypographySettingsView: View {
     @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
     @AppStorage(ReaderBehaviorSettingsKey.anchorLetterEnabled) private var anchorLetterEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
+    @AppStorage(AIRecapSettingsKey.isEnabled) private var aiRecapsEnabledPreference: Bool = AIRecapSettings.defaultEnabled()
+
+    private let aiRecapCapabilityService = AIRecapService()
 
     init(
         readingStatsStore: LocalReadingStatsStore,
@@ -200,6 +203,26 @@ struct TypographySettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
 
+                settingsSection("AI Features") {
+                    settingsRow("AI Recaps") {
+                        Toggle("Enable AI Recaps", isOn: aiRecapsEnabledBinding)
+                            .tint(AppTheme.accent)
+                            .disabled(!isAIRecapCapabilityAvailable)
+
+                        Text("Show AI-generated reading session recaps for books.")
+                            .font(.footnote)
+                            .foregroundStyle(AppTheme.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if !isAIRecapCapabilityAvailable {
+                            Text("AI Recaps require on-device Apple Intelligence support.")
+                                .font(.footnote)
+                                .foregroundStyle(AppTheme.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+
                 settingsSection("About / Reset") {
                     settingsActionRow(
                         title: "Reset Typography",
@@ -326,6 +349,22 @@ struct TypographySettingsView: View {
         )
     }
 
+    private var isAIRecapCapabilityAvailable: Bool {
+        aiRecapCapabilityService.isAvailable
+    }
+
+    private var aiRecapsEnabledBinding: Binding<Bool> {
+        Binding(
+            get: {
+                _ = aiRecapsEnabledPreference
+                return AIRecapSettings.isEnabled(localAIAvailable: isAIRecapCapabilityAvailable)
+            },
+            set: { newValue in
+                aiRecapsEnabledPreference = newValue
+            }
+        )
+    }
+
     private var appVersionString: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
@@ -357,6 +396,7 @@ struct TypographySettingsView: View {
         smartCleanupMode = SmartCleanupAvailability.defaultMode.rawValue
         anchorLetterEnabled = true
         displayMode = ReaderDisplayMode.oneWord.rawValue
+        aiRecapsEnabledPreference = AIRecapSettings.defaultEnabled(localAIAvailable: isAIRecapCapabilityAvailable)
         resetTypography()
     }
 

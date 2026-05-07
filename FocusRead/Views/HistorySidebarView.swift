@@ -5,6 +5,7 @@ struct LibraryView: View {
     @ObservedObject var store: LocalReadingHistoryStore
     @ObservedObject var readingStatsStore: LocalReadingStatsStore
     @ObservedObject var recapStore: LocalAIRecapStore
+    let showsAIRecapEntryPoint: Bool
     @StateObject private var viewModel: LibraryViewModel
     @StateObject private var documentImportViewModel = DocumentImportViewModel()
     let onResume: (SavedRead) -> Void
@@ -27,6 +28,7 @@ struct LibraryView: View {
         store: LocalReadingHistoryStore,
         readingStatsStore: LocalReadingStatsStore,
         recapStore: LocalAIRecapStore,
+        showsAIRecapEntryPoint: Bool,
         onResume: @escaping (SavedRead) -> Void,
         onReadCompleted: @escaping (SavedRead) -> Void = { _ in },
         onStartImportedDocument: @escaping (ImportedDocument) -> Void,
@@ -35,6 +37,7 @@ struct LibraryView: View {
         self.store = store
         self.readingStatsStore = readingStatsStore
         self.recapStore = recapStore
+        self.showsAIRecapEntryPoint = showsAIRecapEntryPoint
         self.onResume = onResume
         self.onReadCompleted = onReadCompleted
         self.onStartImportedDocument = onStartImportedDocument
@@ -160,6 +163,7 @@ struct LibraryView: View {
                         onRename: { read in
                             renameTarget = read
                         },
+                        showsAIRecapEntryPoint: showsAIRecapEntryPoint,
                         onAIRecap: { read in
                             aiRecapTarget = read
                         },
@@ -178,6 +182,7 @@ struct LibraryView: View {
                         onRename: { read in
                             renameTarget = read
                         },
+                        showsAIRecapEntryPoint: showsAIRecapEntryPoint,
                         onAIRecap: { read in
                             aiRecapTarget = read
                         },
@@ -361,6 +366,7 @@ struct LibraryGridView: View {
     let onResume: (SavedRead) -> Void
     let onMarkFinished: (SavedRead) -> Void
     let onRename: (SavedRead) -> Void
+    let showsAIRecapEntryPoint: Bool
     let onAIRecap: (SavedRead) -> Void
     let onDelete: (SavedRead) -> Void
 
@@ -392,6 +398,7 @@ struct LibraryGridView: View {
                     onResume: { onResume(read) },
                     onMarkFinished: { onMarkFinished(read) },
                     onRename: { onRename(read) },
+                    showsAIRecapEntryPoint: showsAIRecapEntryPoint,
                     onAIRecap: { onAIRecap(read) },
                     onDelete: { onDelete(read) }
                 )
@@ -408,6 +415,7 @@ struct LibraryBookCard: View {
     let onResume: () -> Void
     let onMarkFinished: () -> Void
     let onRename: () -> Void
+    let showsAIRecapEntryPoint: Bool
     let onAIRecap: () -> Void
     let onDelete: () -> Void
 
@@ -442,6 +450,7 @@ struct LibraryBookCard: View {
                 Spacer(minLength: 8)
 
                 LibraryItemMenu(
+                    showsAIRecapEntryPoint: showsAIRecapEntryPoint,
                     onAIRecap: onAIRecap,
                     onMarkFinished: onMarkFinished,
                     onRename: onRename,
@@ -554,6 +563,7 @@ private struct LibraryCoverThumbnail: View {
 }
 
 struct LibraryItemMenu: View {
+    let showsAIRecapEntryPoint: Bool
     let onAIRecap: () -> Void
     let onMarkFinished: () -> Void
     let onRename: () -> Void
@@ -562,10 +572,12 @@ struct LibraryItemMenu: View {
 
     var body: some View {
         Menu {
-            Button {
-                onAIRecap()
-            } label: {
-                Label("AI Recap", systemImage: "sparkles")
+            if showsAIRecapEntryPoint {
+                Button {
+                    onAIRecap()
+                } label: {
+                    Label("AI Recap", systemImage: "sparkles")
+                }
             }
 
             Button {
@@ -659,6 +671,7 @@ struct LibraryListView: View {
     let onResume: (SavedRead) -> Void
     let onMarkFinished: (SavedRead) -> Void
     let onRename: (SavedRead) -> Void
+    let showsAIRecapEntryPoint: Bool
     let onAIRecap: (SavedRead) -> Void
     let onDelete: (SavedRead) -> Void
 
@@ -679,6 +692,7 @@ struct LibraryListView: View {
                     onResume: { onResume(read) },
                     onMarkFinished: { onMarkFinished(read) },
                     onRename: { onRename(read) },
+                    showsAIRecapEntryPoint: showsAIRecapEntryPoint,
                     onAIRecap: { onAIRecap(read) },
                     onDelete: { onDelete(read) }
                 )
@@ -701,6 +715,7 @@ struct LibraryListRow: View {
     let onResume: () -> Void
     let onMarkFinished: () -> Void
     let onRename: () -> Void
+    let showsAIRecapEntryPoint: Bool
     let onAIRecap: () -> Void
     let onDelete: () -> Void
 
@@ -750,6 +765,7 @@ struct LibraryListRow: View {
 
                 if !isSelectMode {
                     LibraryItemMenu(
+                        showsAIRecapEntryPoint: showsAIRecapEntryPoint,
                         onAIRecap: onAIRecap,
                         onMarkFinished: onMarkFinished,
                         onRename: onRename,

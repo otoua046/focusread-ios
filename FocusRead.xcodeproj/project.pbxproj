@@ -73,6 +73,8 @@
 		760000000000000000000005 /* AIRecapServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000105 /* AIRecapServiceTests.swift */; };
 		760000000000000000000006 /* AIRecapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000106 /* AIRecapViewModel.swift */; };
 		760000000000000000000007 /* AIRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000107 /* AIRecapView.swift */; };
+		760000000000000000000008 /* AIRecapSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000108 /* AIRecapSettings.swift */; };
+		760000000000000000000009 /* AIRecapSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000109 /* AIRecapSettingsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -154,6 +156,8 @@
 		760000000000000000000105 /* AIRecapServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapServiceTests.swift; sourceTree = "<group>"; };
 		760000000000000000000106 /* AIRecapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapViewModel.swift; sourceTree = "<group>"; };
 		760000000000000000000107 /* AIRecapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapView.swift; sourceTree = "<group>"; };
+		760000000000000000000108 /* AIRecapSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapSettings.swift; sourceTree = "<group>"; };
+		760000000000000000000109 /* AIRecapSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapSettingsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -223,6 +227,7 @@
 				710000000000000000000107 /* ReadingSession.swift */,
 				750000000000000000000101 /* ReadingStats.swift */,
 				760000000000000000000101 /* AIRecap.swift */,
+				760000000000000000000108 /* AIRecapSettings.swift */,
 				72000000000000000000010D /* SavedRead.swift */,
 				71000000000000000000010C /* TypographySettings.swift */,
 				720000000000000000000101 /* DocumentImportModels.swift */,
@@ -312,6 +317,7 @@
 				750000000000000000000104 /* ReadingStatsStoreTests.swift */,
 				760000000000000000000103 /* AIRecapStoreTests.swift */,
 				760000000000000000000105 /* AIRecapServiceTests.swift */,
+				760000000000000000000109 /* AIRecapSettingsTests.swift */,
 				740000000000000000000041 /* Fixtures */,
 			);
 			path = FocusReadTests;
@@ -460,6 +466,7 @@
 				720000000000000000000001 /* DocumentImportModels.swift in Sources */,
 				750000000000000000000001 /* ReadingStats.swift in Sources */,
 				760000000000000000000001 /* AIRecap.swift in Sources */,
+				760000000000000000000008 /* AIRecapSettings.swift in Sources */,
 				72000000000000000000000D /* SavedRead.swift in Sources */,
 				710000000000000000000008 /* TextTokenizer.swift in Sources */,
 				710000000000000000000009 /* RSVPReadingEngine.swift in Sources */,
@@ -515,6 +522,7 @@
 				750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */,
 				760000000000000000000003 /* AIRecapStoreTests.swift in Sources */,
 				760000000000000000000005 /* AIRecapServiceTests.swift in Sources */,
+				760000000000000000000009 /* AIRecapSettingsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

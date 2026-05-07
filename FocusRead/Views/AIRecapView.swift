@@ -5,6 +5,7 @@ struct AIRecapView: View {
     @Environment(\.focusReadTheme) private var theme
     @StateObject private var viewModel: AIRecapViewModel
     @State private var readingRecap: AIRecap?
+    @AppStorage(AIRecapSettingsKey.isEnabled) private var aiRecapsEnabledPreference: Bool = AIRecapSettings.defaultEnabled()
 
     let onOpenRSVP: (AIRecap) -> Void
 
@@ -28,15 +29,15 @@ struct AIRecapView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     header
 
-                    if !viewModel.isLocalAIAvailable {
-                        infoBanner("AI Recap requires on-device Apple Intelligence support.")
-                    }
-
                     if let errorMessage = viewModel.errorMessage {
                         errorBanner(errorMessage)
                     }
 
-                    if viewModel.items.isEmpty {
+                    if !viewModel.isLocalAIAvailable {
+                        unavailableState
+                    } else if !isAIRecapsEnabled {
+                        disabledState
+                    } else if viewModel.items.isEmpty {
                         emptyState
                     } else {
                         VStack(spacing: 12) {
@@ -44,11 +45,12 @@ struct AIRecapView: View {
                                 AIRecapSessionRow(
                                     item: item,
                                     isGenerating: viewModel.generatingSessionID == item.id,
-                                    canGenerate: viewModel.isLocalAIAvailable && !viewModel.isGenerating,
+                                    canGenerate: isAIRecapsEnabled && viewModel.isLocalAIAvailable && !viewModel.isGenerating,
                                     onRead: { recap in
                                         readingRecap = recap
                                     },
                                     onRSVP: { recap in
+                                        guard isAIRecapsEnabled else { return }
                                         dismiss()
                                         onOpenRSVP(recap)
                                     },
@@ -88,9 +90,17 @@ struct AIRecapView: View {
         .sheet(item: $readingRecap) { recap in
             AIRecapTextView(recap: recap, bookTitle: viewModel.read.displayTitle)
         }
+        .onChange(of: aiRecapsEnabledPreference) {
+            viewModel.refresh()
+        }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .focusReadThemeRefresh()
+    }
+
+    private var isAIRecapsEnabled: Bool {
+        _ = aiRecapsEnabledPreference
+        return AIRecapSettings.isEnabled(localAIAvailable: viewModel.isLocalAIAvailable)
     }
 
     private var header: some View {
@@ -124,7 +134,7 @@ struct AIRecapView: View {
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
 
-            Text("Read a little in RSVP mode, then come back to generate a short on-device recap.")
+            Text(viewModel.hasOnlyTooShortSessions ? "This reading session is too short to summarize." : "Read a little in RSVP mode, then come back to generate a short on-device recap.")
                 .font(.callout)
                 .foregroundStyle(theme.secondaryText)
                 .multilineTextAlignment(.center)
@@ -134,13 +144,38 @@ struct AIRecapView: View {
         .padding(20)
     }
 
-    private func infoBanner(_ text: String) -> some View {
-        Label(text, systemImage: "iphone")
-            .font(.footnote.weight(.medium))
-            .foregroundStyle(theme.secondaryText)
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(theme.controlBackground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    private var disabledState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(theme.secondaryText)
+                .frame(width: 54, height: 54)
+                .background(theme.controlBackground, in: Circle())
+
+            Text("AI Recaps are disabled in Settings.")
+                .font(.headline)
+                .foregroundStyle(theme.primaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 260)
+        .padding(20)
+    }
+
+    private var unavailableState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "iphone")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(theme.secondaryText)
+                .frame(width: 54, height: 54)
+                .background(theme.controlBackground, in: Circle())
+
+            Text("AI Recap requires on-device Apple Intelligence support.")
+                .font(.headline)
+                .foregroundStyle(theme.primaryText)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 260)
+        .padding(20)
     }
 
     private func errorBanner(_ text: String) -> some View {

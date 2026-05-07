@@ -50,12 +50,12 @@ final class AIRecapServiceTests: XCTestCase {
 
         let source = try extractor.source(for: read, sessionEvent: session)
 
-        XCTAssertEqual(source.sourceStartWordIndex, 10)
-        XCTAssertEqual(source.sourceEndWordIndex, 30)
+        XCTAssertEqual(source.sourceStartWordIndex, 60)
+        XCTAssertEqual(source.sourceEndWordIndex, 80)
         XCTAssertEqual(source.wordCount, 20)
         XCTAssertTrue(source.isCapped)
-        XCTAssertTrue(source.text.hasPrefix("word10 word11"))
-        XCTAssertTrue(source.text.hasSuffix("word29"))
+        XCTAssertTrue(source.text.hasPrefix("word60 word61"))
+        XCTAssertTrue(source.text.hasSuffix("word79"))
     }
 
     func testSourceExtractionRecoversRangeLessSessionFromSavedProgress() throws {
@@ -124,8 +124,154 @@ final class AIRecapServiceTests: XCTestCase {
         }
     }
 
+    func testEnglishSourceGeneratesEnglishRecap() async throws {
+        let read = makeRead(text: englishText(wordCount: 280))
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: LanguageAwareFakeRecapModel()
+        )
+
+        let recap = try await service.generateRecap(for: read, sessionEvent: event(readID: read.id, range: 0..<280))
+
+        XCTAssertEqual(recap.generatedText, "This is an English recap.")
+        XCTAssertEqual(recap.sourceLanguageCode, "en")
+        XCTAssertEqual(recap.sourceLanguageName, "English")
+    }
+
+    func testFrenchSourceGeneratesFrenchRecap() async throws {
+        let read = makeRead(text: frenchText(wordCount: 280))
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: LanguageAwareFakeRecapModel()
+        )
+
+        let recap = try await service.generateRecap(for: read, sessionEvent: event(readID: read.id, range: 0..<280))
+
+        XCTAssertEqual(recap.generatedText, "Ceci est un résumé en français.")
+        XCTAssertEqual(recap.sourceLanguageCode, "fr")
+        XCTAssertEqual(recap.sourceLanguageName, "French")
+    }
+
+    func testShortFrenchSourceGeneratesFrenchRecapWhenAllowed() async throws {
+        let read = makeRead(text: frenchText(wordCount: 100))
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 1),
+            model: LanguageAwareFakeRecapModel()
+        )
+
+        let recap = try await service.generateRecap(for: read, sessionEvent: event(readID: read.id, range: 0..<100))
+
+        XCTAssertEqual(recap.generatedText, "Ceci est un résumé en français.")
+        XCTAssertEqual(recap.sourceLanguageCode, "fr")
+    }
+
+    func testMetadataLanguagePreferredWhenReliable() throws {
+        var read = makeRead(text: englishText(wordCount: 280))
+        read.languageCode = "fr"
+        let extractor = AIRecapSourceExtractor(minimumInputWordCount: 250)
+
+        let source = try extractor.source(for: read, sessionEvent: event(readID: read.id, range: 0..<280))
+
+        XCTAssertEqual(source.detectedLanguage?.code, "fr")
+        XCTAssertEqual(source.detectedLanguage?.source, .metadata)
+    }
+
+    func testPausePlayAfterTenSecondsMergesIntoSameLogicalRecapSession() {
+        let read = makeRead(wordCount: 400)
+        let first = event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:02:00Z"), range: 0..<180)
+        let second = event(readID: read.id, startedAt: date("2026-05-07T10:02:10Z"), endedAt: date("2026-05-07T10:04:00Z"), range: 180..<360)
+
+        let sessions = AIRecapSourceExtractor(minimumInputWordCount: 250).recentEligibleSessions(for: read, from: [first, second])
+
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions[0].sourceWordRange, 0..<360)
+    }
+
+    func testPausePlayAfterFiveMinutesMergesIntoSameLogicalRecapSession() {
+        let read = makeRead(wordCount: 500)
+        let first = event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:05:00Z"), range: 0..<200)
+        let second = event(readID: read.id, startedAt: date("2026-05-07T10:10:00Z"), endedAt: date("2026-05-07T10:15:00Z"), range: 200..<420)
+
+        let sessions = AIRecapSourceExtractor(minimumInputWordCount: 250).recentEligibleSessions(for: read, from: [first, second])
+
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions[0].sourceWordRange, 0..<420)
+    }
+
+    func testReturnAfterThirtyOneMinutesStartsNewLogicalRecapSession() {
+        let read = makeRead(wordCount: 700)
+        let first = event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:10:00Z"), range: 0..<300)
+        let second = event(readID: read.id, startedAt: date("2026-05-07T10:41:00Z"), endedAt: date("2026-05-07T10:50:00Z"), range: 300..<620)
+
+        let sessions = AIRecapSourceExtractor(minimumInputWordCount: 250).recentEligibleSessions(for: read, from: [first, second])
+
+        XCTAssertEqual(sessions.count, 2)
+        XCTAssertEqual(sessions.map(\.sourceWordRange), [300..<620, 0..<300])
+    }
+
+    func testMultipleShortSegmentsWithinThirtyMinutesMergeIntoEligibleSession() {
+        let read = makeRead(wordCount: 400)
+        let segments = [
+            event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:01:00Z"), range: 0..<90),
+            event(readID: read.id, startedAt: date("2026-05-07T10:06:00Z"), endedAt: date("2026-05-07T10:07:00Z"), range: 90..<180),
+            event(readID: read.id, startedAt: date("2026-05-07T10:12:00Z"), endedAt: date("2026-05-07T10:13:00Z"), range: 180..<270)
+        ]
+
+        let sessions = AIRecapSourceExtractor(minimumInputWordCount: 250).recentEligibleSessions(for: read, from: segments)
+
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions[0].sourceWordRange, 0..<270)
+    }
+
+    func testOneWordSessionIsNotRecapable() {
+        let read = makeRead(wordCount: 300)
+        let session = event(readID: read.id, range: 0..<1)
+
+        let sessions = AIRecapSourceExtractor().recentEligibleSessions(for: read, from: [session])
+
+        XCTAssertEqual(sessions, [])
+    }
+
+    func testOneHundredWordSessionIsNotRecapable() {
+        let read = makeRead(wordCount: 300)
+        let session = event(readID: read.id, range: 0..<100)
+
+        let sessions = AIRecapSourceExtractor().recentEligibleSessions(for: read, from: [session])
+
+        XCTAssertEqual(sessions, [])
+    }
+
+    func testTwoHundredFiftyWordSessionIsRecapable() {
+        let read = makeRead(wordCount: 300)
+        let session = event(readID: read.id, range: 0..<250)
+
+        let sessions = AIRecapSourceExtractor().recentEligibleSessions(for: read, from: [session])
+
+        XCTAssertEqual(sessions.count, 1)
+        XCTAssertEqual(sessions[0].sourceWordRange, 0..<250)
+    }
+
+    func testSixThousandWordSessionCapsToMostRecentFiveThousandWords() throws {
+        let read = makeRead(wordCount: 6_200)
+        let extractor = AIRecapSourceExtractor()
+
+        let source = try extractor.source(for: read, sessionEvent: event(readID: read.id, range: 0..<6_000))
+
+        XCTAssertEqual(source.sourceStartWordIndex, 1_000)
+        XCTAssertEqual(source.sourceEndWordIndex, 6_000)
+        XCTAssertEqual(source.sourceWordCountBeforeCap, 6_000)
+        XCTAssertEqual(source.wordCount, 5_000)
+        XCTAssertTrue(source.isCapped)
+        XCTAssertTrue(source.text.hasPrefix("word1000 word1001"))
+        XCTAssertTrue(source.text.hasSuffix("word5999"))
+    }
+
     private func makeRead(wordCount: Int) -> SavedRead {
         let text = (0..<wordCount).map { "word\($0)" }.joined(separator: " ")
+        return makeRead(text: text)
+    }
+
+    private func makeRead(text: String) -> SavedRead {
         let tokens = TextTokenizer().tokenize(text)
         return SavedReadMapper.makeSavedRead(from: text, tokens: tokens, now: date("2026-05-07T09:00:00Z"))
     }
@@ -135,9 +281,23 @@ final class AIRecapServiceTests: XCTestCase {
         endedAt: Date = Date(),
         range: Range<Int>?
     ) -> ReadingSessionEvent {
-        ReadingSessionEvent(
+        event(
             readID: readID,
             startedAt: endedAt.addingTimeInterval(-600),
+            endedAt: endedAt,
+            range: range
+        )
+    }
+
+    private func event(
+        readID: UUID,
+        startedAt: Date,
+        endedAt: Date,
+        range: Range<Int>?
+    ) -> ReadingSessionEvent {
+        ReadingSessionEvent(
+            readID: readID,
+            startedAt: startedAt,
             endedAt: endedAt,
             wordsRead: range.map { $0.count } ?? 50,
             averageWPM: 300,
@@ -149,6 +309,18 @@ final class AIRecapServiceTests: XCTestCase {
     private func date(_ string: String) -> Date {
         ISO8601DateFormatter().date(from: string)!
     }
+
+    private func englishText(wordCount: Int) -> String {
+        repeatedWords(["the", "reader", "follows", "a", "clear", "English", "chapter", "about", "memory", "and", "attention"], count: wordCount)
+    }
+
+    private func frenchText(wordCount: Int) -> String {
+        repeatedWords(["le", "lecteur", "suit", "un", "chapitre", "français", "sur", "la", "mémoire", "et", "l’attention"], count: wordCount)
+    }
+
+    private func repeatedWords(_ words: [String], count: Int) -> String {
+        (0..<count).map { words[$0 % words.count] }.joined(separator: " ")
+    }
 }
 
 private struct FakeRecapModel: AIRecapModelGenerating {
@@ -159,5 +331,19 @@ private struct FakeRecapModel: AIRecapModelGenerating {
 
     func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
         output
+    }
+}
+
+private struct LanguageAwareFakeRecapModel: AIRecapModelGenerating {
+    var isAvailable = true
+    var modelName: String { "Fake Local Model" }
+    var modelVersion: String { "test" }
+
+    func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
+        if source.detectedLanguage?.code == "fr" {
+            return "Ceci est un résumé en français."
+        }
+
+        return "This is an English recap."
     }
 }

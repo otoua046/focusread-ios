@@ -77,11 +77,32 @@ final class AIRecapStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.recaps(for: readID), [])
     }
 
+    @MainActor
+    func testStoredRecapPreservesGeneratedLanguage() {
+        let directory = temporaryDirectory()
+        let readID = UUID()
+        let recap = makeRecap(
+            readID: readID,
+            text: "Ceci est un résumé.",
+            sourceLanguageCode: "fr",
+            sourceLanguageName: "French"
+        )
+
+        let store = LocalAIRecapStore(storageDirectory: directory)
+        store.save(recap)
+
+        let reloaded = LocalAIRecapStore(storageDirectory: directory)
+        XCTAssertEqual(reloaded.recaps(for: readID).first?.sourceLanguageCode, "fr")
+        XCTAssertEqual(reloaded.recaps(for: readID).first?.sourceLanguageName, "French")
+    }
+
     private func makeRecap(
         readID: UUID,
         sessionID: UUID = UUID(),
         sessionEndedAt: Date = Date(),
-        text: String
+        text: String,
+        sourceLanguageCode: String? = nil,
+        sourceLanguageName: String? = nil
     ) -> AIRecap {
         AIRecap(
             readID: readID,
@@ -94,6 +115,8 @@ final class AIRecapStoreTests: XCTestCase {
             createdAt: sessionEndedAt.addingTimeInterval(60),
             inputWordCount: 100,
             outputWordCount: text.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count,
+            sourceLanguageCode: sourceLanguageCode,
+            sourceLanguageName: sourceLanguageName,
             modelName: "Apple Foundation Models",
             modelVersion: "test"
         )

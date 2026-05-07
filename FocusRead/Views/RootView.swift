@@ -42,8 +42,10 @@ struct RootView: View {
     @State private var readerViewModel: ReaderViewModel?
     @State private var selectedTab: MainTab = .home
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
+    @AppStorage(AIRecapSettingsKey.isEnabled) private var aiRecapsEnabledPreference: Bool = AIRecapSettings.defaultEnabled()
     @Environment(\.focusReadTheme) private var theme
     private let tokenizer = TextTokenizer()
+    private let aiRecapCapabilityService = AIRecapService()
 
     var body: some View {
         Group {
@@ -72,6 +74,7 @@ struct RootView: View {
                         store: readingHistoryStore,
                         readingStatsStore: readingStatsStore,
                         recapStore: recapStore,
+                        showsAIRecapEntryPoint: showsAIRecapEntryPoints,
                         onResume: { read in
                             resume(read)
                         },
@@ -128,6 +131,13 @@ struct RootView: View {
             selectedTab = .library
             documentOpenInViewModel.importDocument(from: url)
         }
+    }
+
+    private var showsAIRecapEntryPoints: Bool {
+        _ = aiRecapsEnabledPreference
+        return AIRecapSettings.shouldShowEntryPoints(
+            localAIAvailable: aiRecapCapabilityService.isAvailable
+        )
     }
 
     private func startReading() {
@@ -197,6 +207,8 @@ struct RootView: View {
     }
 
     private func startRecapRSVP(for read: SavedRead, recap: AIRecap) {
+        guard showsAIRecapEntryPoints else { return }
+
         let tokens = tokenizer.tokenize(recap.generatedText)
         guard !tokens.isEmpty else { return }
 

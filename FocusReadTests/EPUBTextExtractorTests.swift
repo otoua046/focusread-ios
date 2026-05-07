@@ -7,6 +7,7 @@ final class EPUBTextExtractorTests: XCTestCase {
 
         XCTAssertEqual(document.displayTitle, "Sample .epub Book")
         XCTAssertEqual(document.author, "Thomas Hansen")
+        XCTAssertEqual(document.languageCode, "en")
     }
 
     func testEPUBMetadataSurvivesSmartCleanup() async throws {
@@ -33,6 +34,7 @@ final class EPUBTextExtractorTests: XCTestCase {
         XCTAssertEqual(savedRead.originalFileName, "minimal.epub")
         XCTAssertEqual(savedRead.sourceType, .epub)
         XCTAssertEqual(savedRead.author, "Thomas Hansen")
+        XCTAssertEqual(savedRead.languageCode, "en")
     }
 
     func testMinimalEPUBUsesNavigationBoundariesAndSkipsCopyright() async throws {
