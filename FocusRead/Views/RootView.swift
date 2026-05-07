@@ -34,7 +34,6 @@ struct RootView: View {
         }
     }
 
-    @StateObject private var inputViewModel = InputViewModel()
     @StateObject private var readingHistoryStore = LocalReadingHistoryStore()
     @StateObject private var readingStatsStore = LocalReadingStatsStore()
     @StateObject private var recapStore = LocalAIRecapStore()
@@ -59,12 +58,13 @@ struct RootView: View {
             } else {
                 TabView(selection: $selectedTab) {
                     TextInputView(
-                        viewModel: inputViewModel
-                    ) {
-                        startReading()
-                    } onStartImportedDocument: { document in
-                        startReading(importedDocument: document)
-                    }
+                        onStartDemo: {
+                            startDemoReading()
+                        },
+                        onStartImportedDocument: { document in
+                            startReading(importedDocument: document)
+                        }
+                    )
                     .tabItem {
                         Label(MainTab.home.title, systemImage: MainTab.home.systemImage)
                     }
@@ -140,22 +140,30 @@ struct RootView: View {
         )
     }
 
-    private func startReading() {
-        let tokens = tokenizer.tokenize(inputViewModel.text)
+    private func startDemoReading() {
+        let tokens = tokenizer.tokenize(FocusReadHomeDemoContent.readerSampleText)
         guard !tokens.isEmpty else { return }
+        let document = ReadingDocument(
+            title: "FocusRead Demo",
+            fileName: "FocusRead Demo",
+            sourceType: .txt,
+            sections: [
+                ReadingDocumentSection(
+                    index: 0,
+                    title: nil,
+                    pageNumber: nil,
+                    chapterNumber: nil,
+                    wordRange: nil
+                )
+            ]
+        )
         let session = ReadingSession(
             tokens: tokens,
-            document: .pastedText(),
+            document: document,
             wordsPerMinute: defaultWPM
         )
-        let savedRead = SavedReadMapper.makeSavedRead(from: inputViewModel.text, tokens: tokens)
-        readingHistoryStore.save(savedRead)
-        attachThumbnail(for: savedRead, previewImageData: nil)
         readerViewModel = ReaderViewModel(
-            session: session,
-            readingHistoryStore: readingHistoryStore,
-            readingStatsStore: readingStatsStore,
-            savedReadID: savedRead.id
+            session: session
         )
     }
 
