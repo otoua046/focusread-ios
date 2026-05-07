@@ -69,6 +69,8 @@
 		760000000000000000000001 /* AIRecap.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000101 /* AIRecap.swift */; };
 		760000000000000000000002 /* AIRecapStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000102 /* AIRecapStore.swift */; };
 		760000000000000000000003 /* AIRecapStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000103 /* AIRecapStoreTests.swift */; };
+		760000000000000000000004 /* AIRecapService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000104 /* AIRecapService.swift */; };
+		760000000000000000000005 /* AIRecapServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000105 /* AIRecapServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -146,6 +148,8 @@
 		760000000000000000000101 /* AIRecap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecap.swift; sourceTree = "<group>"; };
 		760000000000000000000102 /* AIRecapStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapStore.swift; sourceTree = "<group>"; };
 		760000000000000000000103 /* AIRecapStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapStoreTests.swift; sourceTree = "<group>"; };
+		760000000000000000000104 /* AIRecapService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapService.swift; sourceTree = "<group>"; };
+		760000000000000000000105 /* AIRecapServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -241,6 +245,7 @@
 				72000000000000000000010F /* LocalReadingHistoryStore.swift */,
 				750000000000000000000102 /* ReadingStatsStore.swift */,
 				760000000000000000000102 /* AIRecapStore.swift */,
+				760000000000000000000104 /* AIRecapService.swift */,
 				720000000000000000000110 /* SavedReadMapper.swift */,
 				720000000000000000000120 /* ThumbnailGeneratorService.swift */,
 				720000000000000000000112 /* WordLookupService.swift */,
@@ -300,6 +305,7 @@
 				740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */,
 				750000000000000000000104 /* ReadingStatsStoreTests.swift */,
 				760000000000000000000103 /* AIRecapStoreTests.swift */,
+				760000000000000000000105 /* AIRecapServiceTests.swift */,
 				740000000000000000000041 /* Fixtures */,
 			);
 			path = FocusReadTests;
@@ -469,6 +475,7 @@
 				72000000000000000000000F /* LocalReadingHistoryStore.swift in Sources */,
 				750000000000000000000002 /* ReadingStatsStore.swift in Sources */,
 				760000000000000000000002 /* AIRecapStore.swift in Sources */,
+				760000000000000000000004 /* AIRecapService.swift in Sources */,
 				720000000000000000000010 /* SavedReadMapper.swift in Sources */,
 				720000000000000000000012 /* WordLookupService.swift in Sources */,
 				720000000000000000000017 /* ReaderSearchService.swift in Sources */,
@@ -499,6 +506,7 @@
 				740000000000000000000009 /* ThumbnailImageNormalizerTests.swift in Sources */,
 				750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */,
 				760000000000000000000003 /* AIRecapStoreTests.swift in Sources */,
+				760000000000000000000005 /* AIRecapServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
