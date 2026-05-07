@@ -152,6 +152,20 @@ final class AIRecapServiceTests: XCTestCase {
         XCTAssertEqual(recap.sourceLanguageName, "French")
     }
 
+    func testCleanFrenchSevenHundredWordSampleGeneratesFrenchRecap() async throws {
+        let read = makeRead(text: frenchText(wordCount: 700))
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: LanguageAwareFakeRecapModel()
+        )
+
+        let recap = try await service.generateRecap(for: read, sessionEvent: event(readID: read.id, range: 0..<700))
+
+        XCTAssertEqual(recap.generatedText, "Ceci est un résumé en français.")
+        XCTAssertEqual(recap.sourceLanguageCode, "fr")
+        XCTAssertEqual(recap.inputWordCount, 700)
+    }
+
     func testShortFrenchSourceGeneratesFrenchRecapWhenAllowed() async throws {
         let read = makeRead(text: frenchText(wordCount: 100))
         let service = AIRecapService(
@@ -174,6 +188,81 @@ final class AIRecapServiceTests: XCTestCase {
 
         XCTAssertEqual(source.detectedLanguage?.code, "fr")
         XCTAssertEqual(source.detectedLanguage?.source, .metadata)
+    }
+
+    func testFrenchEPUBSourceTextIsCleanedAndPreservesAccents() throws {
+        let read = makeImportedRead(
+            text: dirtyFrenchEPUBText(wordCount: 700),
+            sourceType: .epub,
+            languageCode: "fr"
+        )
+        let extractor = AIRecapSourceExtractor(minimumInputWordCount: 250)
+        let source = try extractor.source(for: read, sessionEvent: event(readID: read.id, range: 0..<read.totalWordCount))
+
+        XCTAssertEqual(source.detectedLanguage?.code, "fr")
+        XCTAssertEqual(source.documentSourceType, .epub)
+        XCTAssertGreaterThan(source.rawTextLength, source.cleanedTextLength)
+        XCTAssertFalse(source.text.contains("<p>"))
+        XCTAssertFalse(source.text.contains("</em>"))
+        XCTAssertFalse(source.text.contains("&eacute;"))
+        XCTAssertFalse(source.text.contains("\u{200B}"))
+        XCTAssertTrue(source.text.contains("Élise"))
+        XCTAssertTrue(source.text.contains("mémoire"))
+        XCTAssertTrue(source.text.contains("œuvre"))
+        XCTAssertTrue(source.text.contains("garçon"))
+    }
+
+    func testFrenchEPUBSevenHundredWordLogicalSessionGeneratesRecap() async throws {
+        let read = makeImportedRead(
+            text: dirtyFrenchEPUBText(wordCount: 700),
+            sourceType: .epub,
+            languageCode: "fr"
+        )
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: LanguageAwareFakeRecapModel()
+        )
+
+        let recap = try await service.generateRecap(
+            for: read,
+            sessionEvent: event(readID: read.id, range: 0..<read.totalWordCount)
+        )
+
+        XCTAssertEqual(recap.generatedText, "Ceci est un résumé en français.")
+        XCTAssertEqual(recap.sourceLanguageCode, "fr")
+        XCTAssertEqual(recap.inputWordCount, 700)
+    }
+
+    func testFrenchUnsupportedByLocalModelFailsWithSpecificError() async {
+        let read = makeImportedRead(
+            text: frenchText(wordCount: 700),
+            sourceType: .epub,
+            languageCode: "fr"
+        )
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: LanguageSupportFakeRecapModel(unsupportedLanguageCodes: ["fr"])
+        )
+
+        do {
+            _ = try await service.generateRecap(for: read, sessionEvent: event(readID: read.id, range: 0..<700))
+            XCTFail("Expected unsupportedLanguage")
+        } catch {
+            XCTAssertEqual(error as? AIRecapGenerationError, .unsupportedLanguage)
+        }
+    }
+
+    func testFrenchPromptUsesSimpleInstructionWithoutRedetection() throws {
+        let read = makeRead(text: frenchText(wordCount: 280))
+        let source = try AIRecapSourceExtractor(minimumInputWordCount: 250)
+            .source(for: read, sessionEvent: event(readID: read.id, range: 0..<280))
+
+        let prompt = AIRecapPromptBuilder.makePrompt(for: source, outputWordLimit: 500)
+
+        XCTAssertTrue(prompt.instructions.contains("Summarize the following reading session in French."))
+        XCTAssertFalse(prompt.instructions.localizedCaseInsensitiveContains("detect"))
+        XCTAssertFalse(prompt.logDescription.contains(source.text))
+        XCTAssertTrue(prompt.logDescription.contains("[omitted"))
     }
 
     func testPausePlayAfterTenSecondsMergesIntoSameLogicalRecapSession() {
@@ -276,6 +365,23 @@ final class AIRecapServiceTests: XCTestCase {
         return SavedReadMapper.makeSavedRead(from: text, tokens: tokens, now: date("2026-05-07T09:00:00Z"))
     }
 
+    private func makeImportedRead(
+        text: String,
+        sourceType: DocumentSourceType,
+        languageCode: String?
+    ) -> SavedRead {
+        let document = ImportedDocument(
+            fileName: "french.epub",
+            displayTitle: "Livre français",
+            author: "Autrice",
+            text: text,
+            sourceType: sourceType,
+            languageCode: languageCode
+        )
+        let tokens = TextTokenizer().tokenize(document)
+        return SavedReadMapper.makeSavedRead(from: document, tokens: tokens, now: date("2026-05-07T09:00:00Z"))
+    }
+
     private func event(
         readID: UUID,
         endedAt: Date = Date(),
@@ -315,7 +421,34 @@ final class AIRecapServiceTests: XCTestCase {
     }
 
     private func frenchText(wordCount: Int) -> String {
-        repeatedWords(["le", "lecteur", "suit", "un", "chapitre", "français", "sur", "la", "mémoire", "et", "l’attention"], count: wordCount)
+        repeatedWords(["le", "lecteur", "suit", "un", "chapitre", "français", "sur", "la", "mémoire", "et", "l’attention", "où", "Élise", "écrit", "à", "François", "une", "œuvre", "claire", "pour", "le", "garçon"], count: wordCount)
+    }
+
+    private func dirtyFrenchEPUBText(wordCount: Int) -> String {
+        repeatedWords([
+            "<p>Élise",
+            "décrit",
+            "la",
+            "mémoire",
+            "d’un",
+            "garçon</p>",
+            "<em>&eacute;tonné</em>",
+            "par",
+            "l’œuvre",
+            "à",
+            "côté",
+            "du",
+            "marché\u{200B}",
+            "et",
+            "François",
+            "écoute",
+            "sans",
+            "bruit.",
+            "Le",
+            "cœur",
+            "reste",
+            "clair"
+        ], count: wordCount)
     }
 
     private func repeatedWords(_ words: [String], count: Int) -> String {
@@ -345,5 +478,21 @@ private struct LanguageAwareFakeRecapModel: AIRecapModelGenerating {
         }
 
         return "This is an English recap."
+    }
+}
+
+private struct LanguageSupportFakeRecapModel: AIRecapModelGenerating {
+    var isAvailable = true
+    var unsupportedLanguageCodes: Set<String>
+    var modelName: String { "Fake Local Model" }
+    var modelVersion: String { "test" }
+    var availabilityDebugDescription: String { "available supportedLanguages=en" }
+
+    func supportsLanguage(_ code: String) -> Bool? {
+        !unsupportedLanguageCodes.contains(code)
+    }
+
+    func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
+        "This should not be generated."
     }
 }

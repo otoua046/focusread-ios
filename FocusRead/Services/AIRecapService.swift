@@ -42,6 +42,8 @@ struct AIRecapSource: Equatable, Sendable {
     let sourceStartWordIndex: Int
     let sourceEndWordIndex: Int
     let sourceWordCountBeforeCap: Int
+    let rawTextLength: Int
+    let cleanedTextLength: Int
     let text: String
     let wordCount: Int
     let isCapped: Bool
@@ -53,6 +55,7 @@ enum AIRecapGenerationError: Error, Equatable {
     case noEligibleSession
     case sourceUnavailable
     case notEnoughText
+    case unsupportedLanguage
     case generationFailed
 }
 
@@ -60,8 +63,20 @@ protocol AIRecapModelGenerating: Sendable {
     var isAvailable: Bool { get }
     var modelName: String { get }
     var modelVersion: String { get }
+    var availabilityDebugDescription: String { get }
 
+    func supportsLanguage(_ code: String) -> Bool?
     func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String
+}
+
+extension AIRecapModelGenerating {
+    var availabilityDebugDescription: String {
+        isAvailable ? "available" : "unavailable"
+    }
+
+    func supportsLanguage(_ code: String) -> Bool? {
+        nil
+    }
 }
 
 struct AIRecapSourceExtractor: Sendable {
@@ -120,10 +135,10 @@ struct AIRecapSourceExtractor: Sendable {
         let sourceWordCountBeforeCap = upperBound - lowerBound
         let cappedLowerBound = max(lowerBound, upperBound - maximumInputWordCount)
         let sourceTokens = tokens[cappedLowerBound..<upperBound]
-        let sourceText = sourceTokens
+        let rawSourceText = sourceTokens
             .map { $0.rawText.isEmpty ? $0.text : $0.rawText }
             .joined(separator: " ")
-            .focusReadNormalizedDocumentText
+        let sourceText = AIRecapSourceTextCleaner.clean(rawSourceText)
         let wordCount = Self.wordCount(sourceText)
         guard wordCount >= minimumInputWordCount else {
             throw AIRecapGenerationError.notEnoughText
@@ -138,6 +153,8 @@ struct AIRecapSourceExtractor: Sendable {
             sourceStartWordIndex: cappedLowerBound,
             sourceEndWordIndex: upperBound,
             sourceWordCountBeforeCap: sourceWordCountBeforeCap,
+            rawTextLength: rawSourceText.count,
+            cleanedTextLength: sourceText.count,
             text: sourceText,
             wordCount: wordCount,
             isCapped: sourceWordCountBeforeCap > maximumInputWordCount,
@@ -329,6 +346,19 @@ struct AIRecapSourceExtractor: Sendable {
     }
 }
 
+enum AIRecapSourceTextCleaner {
+    static func clean(_ text: String) -> String {
+        text
+            .precomposedStringWithCanonicalMapping
+            .replacingOccurrences(of: #"<[^>]+>"#, with: " ", options: .regularExpression)
+            .focusReadDecodedHTMLEntities
+            .focusReadRemovingControlCharacters
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .precomposedStringWithCanonicalMapping
+    }
+}
+
 struct AIRecapService: Sendable {
     static let maximumOutputWordCount = 500
     private static let logger = Logger(subsystem: "FocusRead", category: "AIRecap")
@@ -352,9 +382,9 @@ struct AIRecapService: Sendable {
     }
 
     func generateRecap(for read: SavedRead, recapSession: AIRecapSession) async throws -> AIRecap {
-        Self.logger.debug("AI recap generation requested. localAIAvailable=\(model.isAvailable, privacy: .public) documentType=\(read.sourceType.debugLogName, privacy: .public)")
+        Self.logger.debug("AI recap generation requested. localAIAvailable=\(model.isAvailable, privacy: .public) availability=\(model.availabilityDebugDescription, privacy: .public) documentType=\(read.sourceType.debugLogName, privacy: .public)")
         guard model.isAvailable else {
-            Self.logger.error("AI recap generation blocked. reason=localAIUnavailable documentType=\(read.sourceType.debugLogName, privacy: .public)")
+            Self.logger.error("AI recap generation blocked. reason=localAIUnavailable availability=\(model.availabilityDebugDescription, privacy: .public) documentType=\(read.sourceType.debugLogName, privacy: .public)")
             throw AIRecapGenerationError.localAIUnavailable
         }
 
@@ -366,8 +396,16 @@ struct AIRecapService: Sendable {
             throw error
         }
 
-        Self.logger.debug("AI recap generation starting. documentType=\(source.documentSourceType.debugLogName, privacy: .public) sourceWordsBeforeCap=\(source.sourceWordCountBeforeCap, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(source.detectedLanguage?.code ?? "unknown", privacy: .public) isCapped=\(source.isCapped, privacy: .public)")
+        if let languageCode = source.detectedLanguage?.code,
+           model.supportsLanguage(languageCode) == false {
+            Self.logger.error("AI recap generation blocked. reason=unsupportedLanguage documentType=\(source.documentSourceType.debugLogName, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(languageCode, privacy: .public) availability=\(model.availabilityDebugDescription, privacy: .public)")
+            throw AIRecapGenerationError.unsupportedLanguage
+        }
 
+        let prompt = AIRecapPromptBuilder.makePrompt(for: source, outputWordLimit: Self.maximumOutputWordCount)
+        Self.logger.debug("AI recap generation starting. documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsBeforeCap=\(source.sourceWordCountBeforeCap, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(source.detectedLanguage?.code ?? "unknown", privacy: .public) isCapped=\(source.isCapped, privacy: .public) cleanedSourcePreview=\(Self.loggableSnippet(source.text, limit: 500), privacy: .public) promptPreview=\(prompt.logDescription, privacy: .public)")
+
+        let generationStartedAt = Date()
         do {
             let generatedText = try await model.generateRecap(
                 from: source,
@@ -375,11 +413,13 @@ struct AIRecapService: Sendable {
             )
             let sanitizedText = Self.sanitizedSummary(generatedText, wordLimit: Self.maximumOutputWordCount)
             guard !sanitizedText.isEmpty else {
-                Self.logger.error("AI recap generation failed. reason=emptyOutput documentType=\(source.documentSourceType.debugLogName, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public)")
+                let duration = Date().timeIntervalSince(generationStartedAt)
+                Self.logger.error("AI recap generation failed. reason=emptyOutput documentType=\(source.documentSourceType.debugLogName, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
                 throw AIRecapGenerationError.generationFailed
             }
 
-            Self.logger.debug("AI recap generation finished. documentType=\(source.documentSourceType.debugLogName, privacy: .public) outputWords=\(Self.wordCount(sanitizedText), privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public)")
+            let duration = Date().timeIntervalSince(generationStartedAt)
+            Self.logger.debug("AI recap generation finished. documentType=\(source.documentSourceType.debugLogName, privacy: .public) outputWords=\(Self.wordCount(sanitizedText), privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
 
             return AIRecap(
                 readID: read.id,
@@ -398,7 +438,12 @@ struct AIRecapService: Sendable {
                 modelVersion: model.modelVersion
             )
         } catch {
-            Self.logger.error("AI recap generation failed. reason=\(String(describing: error), privacy: .public) documentType=\(source.documentSourceType.debugLogName, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public)")
+            let mappedError = Self.mappedGenerationError(error)
+            let duration = Date().timeIntervalSince(generationStartedAt)
+            Self.logger.error("AI recap generation failed. reason=\(Self.debugDescription(for: error), privacy: .public) mappedReason=\(String(describing: mappedError), privacy: .public) documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
+            if mappedError == .unsupportedLanguage {
+                throw mappedError
+            }
             throw error
         }
     }
@@ -429,6 +474,87 @@ struct AIRecapService: Sendable {
     private static func wordCount(_ text: String) -> Int {
         text.split { $0.isWhitespace || $0.isNewline }.count
     }
+
+    private static func loggableSnippet(_ text: String, limit: Int) -> String {
+        let snippet = String(text.prefix(max(limit, 0)))
+        return snippet.replacingOccurrences(of: "\n", with: "\\n")
+    }
+
+    private static func mappedGenerationError(_ error: Error) -> AIRecapGenerationError {
+        if let recapError = error as? AIRecapGenerationError {
+            return recapError
+        }
+
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *),
+           let generationError = error as? LanguageModelSession.GenerationError {
+            if case .unsupportedLanguageOrLocale = generationError {
+                return .unsupportedLanguage
+            }
+        }
+        #endif
+
+        return .generationFailed
+    }
+
+    private static func debugDescription(for error: Error) -> String {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *),
+           let generationError = error as? LanguageModelSession.GenerationError {
+            return [
+                String(describing: generationError),
+                generationError.failureReason.map { "failureReason=\($0)" },
+                generationError.recoverySuggestion.map { "recoverySuggestion=\($0)" }
+            ]
+                .compactMap { $0 }
+                .joined(separator: " ")
+        }
+        #endif
+
+        return String(describing: error)
+    }
+}
+
+struct AIRecapPromptPayload: Equatable, Sendable {
+    let instructions: String
+    let prompt: String
+    let logDescription: String
+}
+
+enum AIRecapPromptBuilder {
+    static func makePrompt(for source: AIRecapSource, outputWordLimit: Int) -> AIRecapPromptPayload {
+        let languageName = source.detectedLanguage?.name
+        let targetLanguage = languageName.map { "in \($0)" } ?? "in the same language as the source text"
+        let instructions = """
+        Summarize the following reading session \(targetLanguage). Keep the recap clear, concise, and useful for remembering what was read.
+        Return plain prose only. Do not include a title, markdown, bullets, or labels.
+        """
+
+        let prompt = """
+        Source word count: \(source.wordCount)
+        Output word limit: \(outputWordLimit)
+
+        Reading session text:
+        \(source.text)
+        """
+
+        let logDescription = """
+        Instructions:
+        \(instructions)
+
+        Prompt:
+        Source word count: \(source.wordCount)
+        Output word limit: \(outputWordLimit)
+        Reading session text: [omitted \(source.cleanedTextLength) characters]
+        """
+            .replacingOccurrences(of: "\n", with: "\\n")
+
+        return AIRecapPromptPayload(
+            instructions: instructions,
+            prompt: prompt,
+            logDescription: logDescription
+        )
+    }
 }
 
 private struct FoundationModelAIRecapModel: AIRecapModelGenerating {
@@ -450,6 +576,30 @@ private struct FoundationModelAIRecapModel: AIRecapModelGenerating {
         "foundation-models-ios26"
     }
 
+    var availabilityDebugDescription: String {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            let model = SystemLanguageModel.default
+            return [
+                "availability=\(String(describing: model.availability))",
+                "supportedLanguages=\(model.supportedLanguages.map(\.minimalIdentifier).sorted().joined(separator: ","))"
+            ].joined(separator: " ")
+        }
+        #endif
+
+        return "FoundationModelsUnavailable"
+    }
+
+    func supportsLanguage(_ code: String) -> Bool? {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            return SystemLanguageModel.default.supportsLocale(Locale(identifier: code))
+        }
+        #endif
+
+        return nil
+    }
+
     func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
         #if canImport(FoundationModels)
         if #available(iOS 26.0, *), SystemLanguageModel.default.isAvailable {
@@ -468,26 +618,14 @@ private struct FoundationModelAIRecapModel: AIRecapModelGenerating {
 @available(iOS 26.0, *)
 private enum FoundationModelAIRecapGenerator {
     static func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
-        let instructions = """
-        You create concise reading-session recaps on this device.
-        Use only the supplied excerpt. Do not add facts, guesses, spoilers from outside the excerpt, citations, or chatbot-style commentary.
-        Write the recap in the same language as the source text.
-        \(source.detectedLanguage.map { "The source text language appears to be \($0.name). Write the recap in \($0.name)." } ?? "")
-        Return plain prose only, around 250-500 words, with short paragraphs.
-        Make the recap useful for quickly remembering what happened or what ideas were covered.
-        Do not include a title, markdown, bullets, or labels such as "AI Recap".
-        """
-
-        let prompt = """
-        Book/session excerpt word count: \(source.wordCount)
-        Output word limit: \(outputWordLimit)
-        Detected language: \(source.detectedLanguage?.name ?? "unknown")
-        Excerpt:
-        \(source.text)
-        """
-
-        let session = LanguageModelSession(instructions: instructions)
-        let response = try await session.respond(to: prompt)
+        let promptPayload = AIRecapPromptBuilder.makePrompt(for: source, outputWordLimit: outputWordLimit)
+        let session = LanguageModelSession(instructions: promptPayload.instructions)
+        let options = GenerationOptions(
+            sampling: .greedy,
+            temperature: nil,
+            maximumResponseTokens: max(outputWordLimit * 2, 300)
+        )
+        let response = try await session.respond(to: promptPayload.prompt, options: options)
         return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

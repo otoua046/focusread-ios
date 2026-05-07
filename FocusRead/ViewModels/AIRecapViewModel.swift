@@ -155,6 +155,8 @@ final class AIRecapViewModel: ObservableObject {
             return "Couldn’t find enough saved text for this session."
         case .notEnoughText:
             return "This reading session is too short to summarize."
+        case .unsupportedLanguage:
+            return "AI Recap could not be generated for this language on this device."
         case .generationFailed, nil:
             return "Couldn’t generate recap. Try again."
         }
