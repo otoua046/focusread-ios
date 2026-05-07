@@ -71,6 +71,8 @@
 		760000000000000000000003 /* AIRecapStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000103 /* AIRecapStoreTests.swift */; };
 		760000000000000000000004 /* AIRecapService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000104 /* AIRecapService.swift */; };
 		760000000000000000000005 /* AIRecapServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000105 /* AIRecapServiceTests.swift */; };
+		760000000000000000000006 /* AIRecapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000106 /* AIRecapViewModel.swift */; };
+		760000000000000000000007 /* AIRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000107 /* AIRecapView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -150,6 +152,8 @@
 		760000000000000000000103 /* AIRecapStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapStoreTests.swift; sourceTree = "<group>"; };
 		760000000000000000000104 /* AIRecapService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapService.swift; sourceTree = "<group>"; };
 		760000000000000000000105 /* AIRecapServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapServiceTests.swift; sourceTree = "<group>"; };
+		760000000000000000000106 /* AIRecapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapViewModel.swift; sourceTree = "<group>"; };
+		760000000000000000000107 /* AIRecapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -262,6 +266,7 @@
 				720000000000000000000109 /* DocumentImportViewModel.swift */,
 				720000000000000000000118 /* GoToViewModel.swift */,
 				72000000000000000000011A /* LibraryViewModel.swift */,
+				760000000000000000000106 /* AIRecapViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -278,9 +283,10 @@
 				72000000000000000000010A /* DocumentImportView.swift */,
 				720000000000000000000115 /* CameraCaptureView.swift */,
 				720000000000000000000116 /* PhotoLibraryPicker.swift */,
-				720000000000000000000111 /* HistorySidebarView.swift */,
-				720000000000000000000113 /* DictionaryLookupView.swift */,
-				720000000000000000000119 /* GoToNavigationView.swift */,
+					720000000000000000000111 /* HistorySidebarView.swift */,
+					760000000000000000000107 /* AIRecapView.swift */,
+					720000000000000000000113 /* DictionaryLookupView.swift */,
+					720000000000000000000119 /* GoToNavigationView.swift */,
 				72000000000000000000011C /* NativeSearchBarView.swift */,
 				750000000000000000000103 /* StatsView.swift */,
 			);
@@ -460,6 +466,7 @@
 				71000000000000000000000A /* ReaderViewModel.swift in Sources */,
 				71000000000000000000000B /* InputViewModel.swift in Sources */,
 				720000000000000000000009 /* DocumentImportViewModel.swift in Sources */,
+				760000000000000000000006 /* AIRecapViewModel.swift in Sources */,
 				71000000000000000000000C /* TypographySettings.swift in Sources */,
 				720000000000000000000002 /* DocumentTextExtractor.swift in Sources */,
 				720000000000000000000003 /* DocumentPickerService.swift in Sources */,
@@ -484,6 +491,7 @@
 				720000000000000000000015 /* CameraCaptureView.swift in Sources */,
 				720000000000000000000016 /* PhotoLibraryPicker.swift in Sources */,
 				720000000000000000000011 /* HistorySidebarView.swift in Sources */,
+				760000000000000000000007 /* AIRecapView.swift in Sources */,
 				720000000000000000000013 /* DictionaryLookupView.swift in Sources */,
 				720000000000000000000018 /* GoToViewModel.swift in Sources */,
 				720000000000000000000019 /* GoToNavigationView.swift in Sources */,

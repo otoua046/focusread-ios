@@ -133,6 +133,11 @@ struct CurrentLocationPreviewPart: Equatable, Sendable {
     let role: Role
 }
 
+enum ReaderDisplayContext: Equatable, Sendable {
+    case book
+    case aiRecap(bookTitle: String)
+}
+
 @MainActor
 final class ReaderViewModel: ObservableObject {
     @Published private(set) var session: ReadingSession
@@ -145,6 +150,7 @@ final class ReaderViewModel: ObservableObject {
     private let structureAnalyzerService: DocumentStructureAnalyzerService
     private let readingHistoryStore: ReadingHistoryStore?
     private let readingStatsStore: ReadingStatsStore?
+    private let displayContext: ReaderDisplayContext
     private let dateProvider: () -> Date
     private let haptics = UIImpactFeedbackGenerator(style: .light)
     private var behaviorSettings: ReaderBehaviorSettings
@@ -180,6 +186,7 @@ final class ReaderViewModel: ObservableObject {
         readingHistoryStore: ReadingHistoryStore? = nil,
         readingStatsStore: ReadingStatsStore? = nil,
         savedReadID: UUID? = nil,
+        displayContext: ReaderDisplayContext = .book,
         dateProvider: @escaping () -> Date = Date.init
     ) {
         self.session = session
@@ -190,6 +197,7 @@ final class ReaderViewModel: ObservableObject {
         self.structureAnalyzerService = structureAnalyzerService
         self.readingHistoryStore = readingHistoryStore
         self.readingStatsStore = readingStatsStore
+        self.displayContext = displayContext
         self.dateProvider = dateProvider
         self.behaviorSettings = Self.storedBehaviorSettings()
         self.importedDocument = importedDocument
@@ -324,7 +332,19 @@ final class ReaderViewModel: ObservableObject {
     }
 
     var progressLabel: String {
-        "Word \(currentWordNumber)/\(session.tokens.count)"
+        if case .aiRecap = displayContext {
+            return "Recap word \(currentWordNumber)/\(session.tokens.count)"
+        }
+
+        return "Word \(currentWordNumber)/\(session.tokens.count)"
+    }
+
+    var readerModeBadge: String? {
+        if case .aiRecap = displayContext {
+            return "Recap Mode"
+        }
+
+        return nil
     }
 
     var currentLocationPreview: CurrentLocationPreview {
@@ -339,6 +359,10 @@ final class ReaderViewModel: ObservableObject {
     }
 
     var locationIndicatorTitle: String {
+        if case .aiRecap = displayContext {
+            return "AI Recap"
+        }
+
         switch session.document.sourceType {
         case .pastedText:
             return "Pasted Text"

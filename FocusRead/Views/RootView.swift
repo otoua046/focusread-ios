@@ -37,6 +37,7 @@ struct RootView: View {
     @StateObject private var inputViewModel = InputViewModel()
     @StateObject private var readingHistoryStore = LocalReadingHistoryStore()
     @StateObject private var readingStatsStore = LocalReadingStatsStore()
+    @StateObject private var recapStore = LocalAIRecapStore()
     @StateObject private var documentOpenInViewModel = DocumentImportViewModel()
     @State private var readerViewModel: ReaderViewModel?
     @State private var selectedTab: MainTab = .home
@@ -69,6 +70,8 @@ struct RootView: View {
 
                     LibraryView(
                         store: readingHistoryStore,
+                        readingStatsStore: readingStatsStore,
+                        recapStore: recapStore,
                         onResume: { read in
                             resume(read)
                         },
@@ -77,6 +80,9 @@ struct RootView: View {
                         },
                         onStartImportedDocument: { document in
                             startReading(importedDocument: document)
+                        },
+                        onOpenRecapRSVP: { read, recap in
+                            startRecapRSVP(for: read, recap: recap)
                         }
                     )
                     .tabItem {
@@ -187,6 +193,36 @@ struct RootView: View {
             readingHistoryStore: readingHistoryStore,
             readingStatsStore: readingStatsStore,
             savedReadID: updatedRead.id
+        )
+    }
+
+    private func startRecapRSVP(for read: SavedRead, recap: AIRecap) {
+        let tokens = tokenizer.tokenize(recap.generatedText)
+        guard !tokens.isEmpty else { return }
+
+        let document = ReadingDocument(
+            id: recap.id,
+            title: "AI Recap",
+            fileName: read.displayTitle,
+            sourceType: .pastedText,
+            sections: [
+                ReadingDocumentSection(
+                    index: 0,
+                    title: "AI Recap",
+                    pageNumber: nil,
+                    chapterNumber: nil,
+                    wordRange: nil
+                )
+            ]
+        )
+        let session = ReadingSession(
+            tokens: tokens,
+            document: document,
+            wordsPerMinute: defaultWPM
+        )
+        readerViewModel = ReaderViewModel(
+            session: session,
+            displayContext: .aiRecap(bookTitle: read.displayTitle)
         )
     }
 
