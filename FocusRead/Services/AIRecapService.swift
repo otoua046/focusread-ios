@@ -59,14 +59,42 @@ struct AIRecapSourceExtractor: Sendable {
             .map { $0 }
     }
 
-    func source(for read: SavedRead, sessionEvent: ReadingSessionEvent) throws -> AIRecapSource {
-        guard let sessionRange = sessionEvent.sourceWordRange else {
-            throw AIRecapGenerationError.noEligibleSession
-        }
+    func recentEligibleSessions(
+        for read: SavedRead,
+        from events: [ReadingSessionEvent],
+        limit: Int = 3
+    ) -> [ReadingSessionEvent] {
+        var hasIncludedRecoveredRange = false
+        let sortedEvents = events
+            .filter { $0.readID == read.id }
+            .sorted { $0.endedAt > $1.endedAt }
 
+        return sortedEvents.compactMap { event in
+            if event.sourceWordRange != nil {
+                return event
+            }
+
+            guard !hasIncludedRecoveredRange,
+                  recoveredSourceWordRange(for: read, sessionEvent: event) != nil else {
+                return nil
+            }
+
+            hasIncludedRecoveredRange = true
+            return event
+        }
+        .prefix(max(limit, 0))
+        .map { $0 }
+    }
+
+    func source(for read: SavedRead, sessionEvent: ReadingSessionEvent) throws -> AIRecapSource {
         let tokens = tokens(for: read)
         guard !tokens.isEmpty else {
             throw AIRecapGenerationError.sourceUnavailable
+        }
+
+        guard let sessionRange = sessionEvent.sourceWordRange
+                ?? recoveredSourceWordRange(for: read, sessionEvent: sessionEvent, tokenCount: tokens.count) else {
+            throw AIRecapGenerationError.noEligibleSession
         }
 
         let lowerBound = min(max(sessionRange.lowerBound, 0), tokens.count)
@@ -105,6 +133,27 @@ struct AIRecapSourceExtractor: Sendable {
         }
 
         return tokenizer.tokenize(SavedReadMapper.text(from: read))
+    }
+
+    private func recoveredSourceWordRange(
+        for read: SavedRead,
+        sessionEvent: ReadingSessionEvent,
+        tokenCount: Int? = nil
+    ) -> Range<Int>? {
+        guard sessionEvent.readID == read.id,
+              sessionEvent.wordsRead > 0 else {
+            return nil
+        }
+
+        let totalWordCount = max(tokenCount ?? read.totalWordCount, read.totalWordCount, 0)
+        let rawUpperBound = read.progressPercent >= 100 ? totalWordCount : read.currentWordIndex
+        let upperBound = min(max(rawUpperBound, 0), totalWordCount)
+        let lowerBound = max(upperBound - sessionEvent.wordsRead, 0)
+        guard upperBound > lowerBound else {
+            return nil
+        }
+
+        return lowerBound..<upperBound
     }
 
     private static func wordCount(_ text: String) -> Int {

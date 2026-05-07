@@ -23,6 +23,26 @@ final class AIRecapServiceTests: XCTestCase {
         ])
     }
 
+    func testRecentEligibleSessionsRecoversOnlyMostRecentRangeLessSessionForSavedRead() {
+        var read = makeRead(wordCount: 200)
+        read.currentWordIndex = 120
+        let extractor = AIRecapSourceExtractor(minimumInputWordCount: 1)
+        let olderMissingRange = event(readID: read.id, endedAt: date("2026-05-01T10:00:00Z"), range: nil)
+        let ranged = event(readID: read.id, endedAt: date("2026-05-02T10:00:00Z"), range: 50..<80)
+        let newestMissingRange = event(readID: read.id, endedAt: date("2026-05-03T10:00:00Z"), range: nil)
+
+        let eligible = extractor.recentEligibleSessions(for: read, from: [
+            olderMissingRange,
+            ranged,
+            newestMissingRange
+        ])
+
+        XCTAssertEqual(eligible.map(\.id), [
+            newestMissingRange.id,
+            ranged.id
+        ])
+    }
+
     func testSourceExtractionUsesSessionRangeAndCapsLongInput() throws {
         let read = makeRead(wordCount: 120)
         let extractor = AIRecapSourceExtractor(maximumInputWordCount: 20, minimumInputWordCount: 1)
@@ -36,6 +56,21 @@ final class AIRecapServiceTests: XCTestCase {
         XCTAssertTrue(source.isCapped)
         XCTAssertTrue(source.text.hasPrefix("word10 word11"))
         XCTAssertTrue(source.text.hasSuffix("word29"))
+    }
+
+    func testSourceExtractionRecoversRangeLessSessionFromSavedProgress() throws {
+        var read = makeRead(wordCount: 200)
+        read.currentWordIndex = 120
+        let extractor = AIRecapSourceExtractor(maximumInputWordCount: 100, minimumInputWordCount: 1)
+        let session = event(readID: read.id, range: nil)
+
+        let source = try extractor.source(for: read, sessionEvent: session)
+
+        XCTAssertEqual(source.sourceStartWordIndex, 70)
+        XCTAssertEqual(source.sourceEndWordIndex, 120)
+        XCTAssertEqual(source.wordCount, 50)
+        XCTAssertTrue(source.text.hasPrefix("word70 word71"))
+        XCTAssertTrue(source.text.hasSuffix("word119"))
     }
 
     func testSourceExtractionRejectsVeryShortSessionText() {

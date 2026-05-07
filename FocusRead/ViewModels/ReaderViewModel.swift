@@ -1043,6 +1043,8 @@ final class ReaderViewModel: ObservableObject {
         let averageWPM = wordsRead > 0
             ? Int((Double(readingStatsSessionWeightedWPM) / Double(wordsRead)).rounded())
             : session.wordsPerMinute
+        let sourceStartWordIndex = readingStatsSessionStartWordIndex
+        let sourceEndWordIndex = readingStatsSessionEndWordIndex
         resetReadingStatsSession()
 
         guard wordsRead > 0 else { return }
@@ -1053,8 +1055,8 @@ final class ReaderViewModel: ObservableObject {
             endedAt: endedAt,
             wordsRead: wordsRead,
             averageWPM: averageWPM,
-            sourceStartWordIndex: readingStatsSessionStartWordIndex,
-            sourceEndWordIndex: readingStatsSessionEndWordIndex
+            sourceStartWordIndex: sourceStartWordIndex,
+            sourceEndWordIndex: sourceEndWordIndex
         )
         readingStatsStore?.record(event)
         addReadingTimeToSavedRead(event.readingSeconds)

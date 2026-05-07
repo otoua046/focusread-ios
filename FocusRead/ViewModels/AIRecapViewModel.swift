@@ -52,7 +52,7 @@ final class AIRecapViewModel: ObservableObject {
 
     func refresh() {
         let eligibleSessions = service.extractor.recentEligibleSessions(
-            for: read.id,
+            for: read,
             from: readingStatsStore.sessionEvents,
             limit: 3
         )
