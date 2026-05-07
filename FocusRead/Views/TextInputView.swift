@@ -2,34 +2,24 @@ import SwiftUI
 import UIKit
 
 enum FocusReadHomeDemoContent {
-    static let readerSampleText = """
-    Most reading asks your eyes to chase line after line.
+    static var readerSampleText: String {
+        L10n.string(.homeDemoSample)
+    }
 
-    FocusRead keeps the target still. Words arrive at the center, punctuation breathes, and your attention has fewer places to wander.
+    static var heroWords: [String] {
+        localizedWords(for: .homeHeroWords)
+    }
 
-    This short demo is local to the app. Adjust the pace, pause anytime, and feel how reading changes when the words move instead of your eyes.
-    """
+    static var comparisonWords: [String] {
+        localizedWords(for: .homeComparisonWords)
+    }
 
-    static let heroWords = [
-        "Most",
-        "reading",
-        "apps",
-        "move",
-        "your",
-        "eyes.",
-        "FocusRead",
-        "moves",
-        "the",
-        "words."
-    ]
-
-    static let comparisonWords = [
-        "Less",
-        "eye",
-        "movement.",
-        "More",
-        "attention."
-    ]
+    private static func localizedWords(for key: L10n.Key) -> [String] {
+        L10n.string(key)
+            .components(separatedBy: "|")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
 }
 
 private enum HomeSettingsKey {
@@ -48,15 +38,15 @@ private enum HomeReadingGoal: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .study:
-            return "Study"
+            return L10n.string(.homeGoalStudy)
         case .books:
-            return "Books"
+            return L10n.string(.homeGoalBooks)
         case .focus:
-            return "Focus"
+            return L10n.string(.homeGoalFocus)
         case .work:
-            return "Work"
+            return L10n.string(.homeGoalWork)
         case .languages:
-            return "Languages"
+            return L10n.string(.homeGoalLanguages)
         }
     }
 
@@ -127,10 +117,10 @@ struct TextInputView: View {
                 viewModel: documentImportViewModel,
                 onStartImportedDocument: onStartImportedDocument
             )
-            .alert("Premium Preview", isPresented: $showingPremiumPlaceholder) {
-                Button("OK", role: .cancel) {}
+            .alert(L10n.string(.homePremiumPreviewTitle), isPresented: $showingPremiumPlaceholder) {
+                Button(.commonOK, role: .cancel) {}
             } message: {
-                Text("Premium is not wired yet. This action is ready for the subscription flow when product configuration is added.")
+                Text(.homePremiumMessage)
             }
         }
         .focusReadThemeRefresh()
@@ -160,6 +150,8 @@ private struct HomeHeroDemoView: View {
     @State private var currentWordIndex = 0
 
     var body: some View {
+        let heroWords = FocusReadHomeDemoContent.heroWords
+
         VStack(spacing: 18) {
             VStack(spacing: 10) {
                 Text("FocusRead")
@@ -167,7 +159,7 @@ private struct HomeHeroDemoView: View {
                     .foregroundStyle(AppTheme.primaryText)
                     .multilineTextAlignment(.center)
 
-                Text("Most reading apps move your eyes.\nFocusRead moves the words.")
+                Text(.homeHeroSubtitle)
                     .font(.system(.title2, design: .serif, weight: .medium))
                     .foregroundStyle(AppTheme.primaryText)
                     .multilineTextAlignment(.center)
@@ -188,17 +180,19 @@ private struct HomeHeroDemoView: View {
 
                 RSVPStageBackground()
 
-                HomeRSVPWordView(
-                    word: FocusReadHomeDemoContent.heroWords[currentWordIndex],
-                    size: 46
-                )
-                .id(currentWordIndex)
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                .padding(.horizontal, 28)
+                if !heroWords.isEmpty {
+                    HomeRSVPWordView(
+                        word: heroWords[currentWordIndex % heroWords.count],
+                        size: 46
+                    )
+                    .id(currentWordIndex)
+                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    .padding(.horizontal, 28)
+                }
             }
             .frame(height: 174)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Animated FocusRead word demo")
+            .accessibilityLabel(L10n.string(.homeAnimatedDemoAccessibility))
         }
         .task(id: reduceMotion) {
             if reduceMotion {
@@ -214,7 +208,8 @@ private struct HomeHeroDemoView: View {
 
                 await MainActor.run {
                     withAnimation(.smooth(duration: 0.34)) {
-                        currentWordIndex = (currentWordIndex + 1) % FocusReadHomeDemoContent.heroWords.count
+                        let wordCount = max(FocusReadHomeDemoContent.heroWords.count, 1)
+                        currentWordIndex = (currentWordIndex + 1) % wordCount
                     }
                 }
             }
@@ -266,9 +261,9 @@ private struct ReadingComparisonCard: View {
         var title: String {
             switch self {
             case .normal:
-                return "Normal"
+                return L10n.string(.homeModeNormal)
             case .focusRead:
-                return "FocusRead"
+                return L10n.string(.homeModeFocusRead)
             }
         }
     }
@@ -279,7 +274,7 @@ private struct ReadingComparisonCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
-                Text("See the shift")
+                Text(.homeSeeShift)
                     .font(.headline)
                     .foregroundStyle(AppTheme.primaryText)
 
@@ -351,7 +346,7 @@ private struct NormalReadingComparisonView: View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 VStack(alignment: .leading, spacing: 11) {
-                    Text("Your eyes travel across each line, then jump back to begin again.")
+                    Text(.homeNormalReadingDescription)
                         .font(.callout)
                         .foregroundStyle(AppTheme.primaryText)
                         .lineLimit(3)
@@ -414,6 +409,8 @@ private struct FocusReadingComparisonView: View {
     let reduceMotion: Bool
 
     var body: some View {
+        let comparisonWords = FocusReadHomeDemoContent.comparisonWords
+
         ZStack {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(AppTheme.controlBackground.opacity(0.72))
@@ -425,14 +422,14 @@ private struct FocusReadingComparisonView: View {
             RSVPStageBackground()
                 .opacity(0.72)
 
-            if reduceMotion {
-                HomeRSVPWordView(word: FocusReadHomeDemoContent.comparisonWords[0], size: 34)
+            if reduceMotion, let firstWord = comparisonWords.first {
+                HomeRSVPWordView(word: firstWord, size: 34)
                     .padding(.horizontal, 20)
             } else {
                 TimelineView(.animation) { context in
                     let rawIndex = Int(context.date.timeIntervalSinceReferenceDate / 0.78)
-                    let word = FocusReadHomeDemoContent.comparisonWords[
-                        rawIndex % FocusReadHomeDemoContent.comparisonWords.count
+                    let word = comparisonWords.isEmpty ? "" : comparisonWords[
+                        rawIndex % comparisonWords.count
                     ]
 
                     HomeRSVPWordView(word: word, size: 34)
@@ -450,7 +447,7 @@ private struct ReadingGoalPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("What are you reading for?")
+            Text(.homeReadingGoalPrompt)
                 .font(.headline)
                 .foregroundStyle(AppTheme.primaryText)
 
@@ -494,7 +491,7 @@ private struct ReadingGoalPicker: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityValue(selectedGoal == goal ? "Selected" : "Not selected")
+                    .accessibilityValue(selectedGoal == goal ? L10n.string(.commonSelected) : L10n.string(.commonNotSelected))
                 }
             }
         }
@@ -530,11 +527,11 @@ private struct AIRecapPreviewCard: View {
             }
 
             HStack(spacing: 9) {
-                RecapFlowStep(title: "Read", systemImageName: "book.pages")
+                RecapFlowStep(title: L10n.string(.homeRecapFlowRead), systemImageName: "book.pages")
                 FlowChevron()
-                RecapFlowStep(title: "Recap", systemImageName: "sparkles")
+                RecapFlowStep(title: L10n.string(.homeRecapFlowRecap), systemImageName: "sparkles")
                 FlowChevron()
-                RecapFlowStep(title: "Key ideas", systemImageName: "checklist")
+                RecapFlowStep(title: L10n.string(.homeRecapFlowKeyIdeas), systemImageName: "checklist")
             }
         }
         .homeCard()
@@ -542,22 +539,22 @@ private struct AIRecapPreviewCard: View {
 
     private var cardTitle: String {
         if aiRecapsEnabled {
-            return "Finish a session. Get a clear recap."
+            return L10n.string(.homeAIRecapEnabledTitle)
         }
 
-        return "Recaps are ready when local AI is."
+        return L10n.string(.homeAIRecapUnavailableTitle)
     }
 
     private var statusText: String {
         if aiRecapsEnabled {
-            return "On-device AI recaps are enabled."
+            return L10n.string(.homeAIRecapEnabledStatus)
         }
 
         if localAIAvailable {
-            return "AI Recaps are available and can be enabled in Settings."
+            return L10n.string(.homeAIRecapAvailableStatus)
         }
 
-        return "Requires on-device Apple Intelligence support."
+        return L10n.string(.homeAIRecapRequiresStatus)
     }
 }
 
@@ -587,7 +584,7 @@ private struct RecapFlowStep: View {
 
 private struct FlowChevron: View {
     var body: some View {
-        Image(systemName: "chevron.right")
+        Image(systemName: "chevron.forward")
             .font(.caption.weight(.semibold))
             .foregroundStyle(AppTheme.tertiaryText)
             .frame(width: 10)
@@ -613,13 +610,13 @@ private struct ThemePreviewStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Reading space")
+                    Text(.homeReadingSpace)
                     .font(.headline)
                     .foregroundStyle(AppTheme.primaryText)
 
                 Spacer()
 
-                Text("Themes")
+                Text(.homeThemes)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppTheme.secondaryText)
             }
@@ -711,7 +708,7 @@ private struct ThemePreviewTile: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(theme.name)
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityValue(isSelected ? L10n.string(.commonSelected) : L10n.string(.commonNotSelected))
     }
 }
 
@@ -722,7 +719,7 @@ private struct HomeCTASection: View {
     var body: some View {
         VStack(spacing: 10) {
             Button(action: onStartDemo) {
-                Label("Try FocusRead", systemImage: "play.fill")
+                Label(.homeTryFocusRead, systemImage: "play.fill")
                     .font(.headline)
                     .foregroundStyle(AppTheme.primaryButtonForeground)
                     .frame(maxWidth: .infinity)
@@ -735,7 +732,7 @@ private struct HomeCTASection: View {
                 viewModel: documentImportViewModel,
                 onSourceSelected: {}
             ) {
-                Label("Import a Book", systemImage: "square.and.arrow.down")
+                Label(.homeImportBook, systemImage: "square.and.arrow.down")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)
@@ -764,7 +761,7 @@ private struct PremiumTeaserCard: View {
                     .background(AppTheme.controlBackground, in: Circle())
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Unlock unlimited AI recaps, advanced focus modes, and full library features.")
+                    Text(.homePremiumTeaser)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(AppTheme.primaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -772,7 +769,7 @@ private struct PremiumTeaserCard: View {
             }
 
             Button(action: onViewPremium) {
-                Label("View Premium", systemImage: "sparkles")
+                Label(.homeViewPremium, systemImage: "sparkles")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)

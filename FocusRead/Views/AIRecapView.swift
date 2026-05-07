@@ -69,18 +69,18 @@ struct AIRecapView: View {
                 .padding(.vertical, 20)
             }
             .background(FocusReadBackground())
-            .navigationTitle("AI Recap")
+            .navigationTitle(L10n.key(.aiRecapTitle))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
+                    Button(.commonDone) {
                         dismiss()
                     }
                 }
 
                 if viewModel.isGenerating {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Cancel") {
+                        Button(.commonCancel) {
                             viewModel.cancelGeneration()
                         }
                     }
@@ -111,7 +111,7 @@ struct AIRecapView: View {
                 .lineLimit(2)
 
             if viewModel.hasEligibleSessions {
-                Label("Generated from your last reading session", systemImage: "sparkles")
+                Label(.aiRecapGeneratedFromLastSession, systemImage: "sparkles")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppTheme.primaryButtonForeground)
                     .padding(.horizontal, 10)
@@ -130,11 +130,11 @@ struct AIRecapView: View {
                 .frame(width: 54, height: 54)
                 .background(theme.controlBackground, in: Circle())
 
-            Text("No recap-ready sessions yet")
+            Text(.aiRecapNoReadySessions)
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
 
-            Text(viewModel.hasOnlyTooShortSessions ? "This reading session is too short to summarize." : "Read a little in RSVP mode, then come back to generate a short on-device recap.")
+            Text(viewModel.hasOnlyTooShortSessions ? L10n.string(.aiRecapTooShort) : L10n.string(.aiRecapEmptyHint))
                 .font(.callout)
                 .foregroundStyle(theme.secondaryText)
                 .multilineTextAlignment(.center)
@@ -152,7 +152,7 @@ struct AIRecapView: View {
                 .frame(width: 54, height: 54)
                 .background(theme.controlBackground, in: Circle())
 
-            Text("AI Recaps are disabled in Settings.")
+            Text(.aiRecapDisabled)
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
                 .multilineTextAlignment(.center)
@@ -169,7 +169,7 @@ struct AIRecapView: View {
                 .frame(width: 54, height: 54)
                 .background(theme.controlBackground, in: Circle())
 
-            Text("AI Recap requires on-device Apple Intelligence support.")
+            Text(.aiRecapUnavailable)
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
                 .multilineTextAlignment(.center)
@@ -203,7 +203,7 @@ private struct AIRecapSessionRow: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 10) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.isMostRecent ? "Last session" : "Recent session")
+                    Text(item.isMostRecent ? L10n.string(.aiRecapLastSession) : L10n.string(.aiRecapRecentSession))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
 
@@ -219,7 +219,7 @@ private struct AIRecapSessionRow: View {
                     ProgressView()
                         .tint(theme.primaryText)
                 } else if item.recap != nil {
-                    Text("Ready")
+                    Text(.aiRecapReady)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(theme.accent)
                         .padding(.horizontal, 8)
@@ -229,7 +229,7 @@ private struct AIRecapSessionRow: View {
             }
 
             if isGenerating {
-                Text("Generating recap on device...")
+                Text(.aiRecapGenerating)
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(theme.secondaryText)
             } else if let recap = item.recap {
@@ -250,12 +250,12 @@ private struct AIRecapSessionRow: View {
                 Button {
                     onGenerate()
                 } label: {
-                    Label("Generate Recap", systemImage: "sparkles")
+                    Label(.aiRecapGenerate, systemImage: "sparkles")
                 }
                 .buttonStyle(.aiRecapPrimary)
                 .disabled(!canGenerate)
             } else {
-                Text("No recap generated for this session.")
+                Text(.aiRecapNoGenerated)
                     .font(.footnote)
                     .foregroundStyle(theme.secondaryText)
             }
@@ -277,17 +277,17 @@ private struct AIRecapSessionRow: View {
 
     private func horizontalActionButtons(for recap: AIRecap) -> some View {
         HStack(spacing: 10) {
-            Button("Read Recap") {
+            Button(.aiRecapRead) {
                 onRead(recap)
             }
             .buttonStyle(.aiRecapPrimary)
 
-            Button("RSVP Recap") {
+            Button(.aiRecapRSVP) {
                 onRSVP(recap)
             }
             .buttonStyle(.aiRecapSecondary)
 
-            Button("Regenerate") {
+            Button(.aiRecapRegenerate) {
                 onRegenerate()
             }
             .buttonStyle(.aiRecapSecondary)
@@ -297,17 +297,17 @@ private struct AIRecapSessionRow: View {
 
     private func verticalActionButtons(for recap: AIRecap) -> some View {
         Group {
-            Button("Read Recap") {
+            Button(.aiRecapRead) {
                 onRead(recap)
             }
             .buttonStyle(.aiRecapPrimary)
 
-            Button("RSVP Recap") {
+            Button(.aiRecapRSVP) {
                 onRSVP(recap)
             }
             .buttonStyle(.aiRecapSecondary)
 
-            Button("Regenerate") {
+            Button(.aiRecapRegenerate) {
                 onRegenerate()
             }
             .buttonStyle(.aiRecapSecondary)
@@ -331,7 +331,7 @@ private struct AIRecapTextView: View {
                         .font(.headline)
                         .foregroundStyle(theme.primaryText)
 
-                    Label("AI-generated recap", systemImage: "sparkles")
+                    Label(.aiRecapGeneratedLabel, systemImage: "sparkles")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(AppTheme.primaryButtonForeground)
                         .padding(.horizontal, 10)
@@ -349,11 +349,11 @@ private struct AIRecapTextView: View {
                 .padding(.vertical, 20)
             }
             .background(FocusReadBackground())
-            .navigationTitle("AI Recap")
+            .navigationTitle(L10n.key(.aiRecapTitle))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
+                    Button(.commonDone) {
                         dismiss()
                     }
                 }

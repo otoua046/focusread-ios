@@ -192,11 +192,11 @@ struct ReadingContributionCalendar: Equatable, Sendable {
     func weekdayLabel(for row: Int) -> String {
         switch row {
         case 1:
-            return "Mon"
+            return L10n.string(.statsWeekdayMonday)
         case 3:
-            return "Wed"
+            return L10n.string(.statsWeekdayWednesday)
         case 5:
-            return "Fri"
+            return L10n.string(.statsWeekdayFriday)
         default:
             return ""
         }

@@ -9,6 +9,7 @@ struct FocusReadApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(themeManager)
+                .focusReadLocalizationRefresh()
                 .preferredColorScheme(AppAppearance(rawValue: appearance)?.colorScheme)
                 .focusReadThemeEnvironment()
                 .focusReadSystemChrome()

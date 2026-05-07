@@ -257,7 +257,7 @@ enum DocumentSourceType: Equatable, Sendable {
         case .epub:
             "EPUB"
         case .image:
-            "Image OCR"
+            L10n.string(.importSourceImageOCR)
         }
     }
 }
@@ -272,11 +272,11 @@ enum ImportSource: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .files:
-            "Files"
+            L10n.string(.importSourceFiles)
         case .camera:
-            "Camera"
+            L10n.string(.importSourceCamera)
         case .photoLibrary:
-            "Photo Library"
+            L10n.string(.importSourcePhotoLibrary)
         }
     }
 
@@ -298,17 +298,19 @@ struct DocumentImportProgress: Equatable, Sendable {
     let totalUnitCount: Int?
     let unitName: String
 
-    static let starting = DocumentImportProgress(
-        message: "Extracting text...",
-        completedUnitCount: nil,
-        totalUnitCount: nil
-    )
+    static var starting: DocumentImportProgress {
+        DocumentImportProgress(
+            message: L10n.string(.importProgressExtractingText),
+            completedUnitCount: nil,
+            totalUnitCount: nil
+        )
+    }
 
     init(
         message: String,
         completedUnitCount: Int?,
         totalUnitCount: Int?,
-        unitName: String = "pages"
+        unitName: String = L10n.string(.importUnitPages)
     ) {
         self.message = message
         self.completedUnitCount = completedUnitCount
@@ -333,7 +335,7 @@ struct DocumentImportProgress: Equatable, Sendable {
             return nil
         }
 
-        return "\(completedUnitCount) of \(totalUnitCount) \(unitName)"
+        return L10n.format(.importProgressDetailFormat, completedUnitCount, totalUnitCount, unitName)
     }
 }
 
@@ -356,66 +358,66 @@ enum DocumentImportError: LocalizedError, Equatable, Sendable {
     var title: String {
         switch self {
         case .cancelled:
-            "Import Cancelled"
+            L10n.string(.importErrorCancelledTitle)
         case .fileCopyFailed:
-            "Could Not Read File"
+            L10n.string(.importErrorFileCopyTitle)
         case .invalidTextEncoding:
-            "Unsupported Text Encoding"
+            L10n.string(.importErrorInvalidTextEncodingTitle)
         case .unreadablePDF:
-            "Could Not Read PDF"
+            L10n.string(.importErrorUnreadablePDFTitle)
         case .noReadableText:
-            "No Readable Text Found"
+            L10n.string(.importErrorNoReadableTextTitle)
         case .ocrFailed:
-            "OCR Failed"
+            L10n.string(.importErrorOCRFailedTitle)
         case .invalidEPUB:
-            "Invalid EPUB File"
+            L10n.string(.importErrorInvalidEPUBTitle)
         case .epubContentsNotFound:
-            "Could Not Find Book Contents"
+            L10n.string(.importErrorEPUBContentsNotFoundTitle)
         case .epubNoReadableText:
-            "EPUB Contains No Readable Text"
+            L10n.string(.importErrorEPUBNoReadableTextTitle)
         case .epubExtractionFailed:
-            "EPUB Extraction Failed"
+            L10n.string(.importErrorEPUBExtractionFailedTitle)
         case .cameraUnavailable:
-            "Camera Unavailable"
+            L10n.string(.importErrorCameraUnavailableTitle)
         case .cameraAccessDenied:
-            "Camera Access Needed"
+            L10n.string(.importErrorCameraAccessDeniedTitle)
         case .imageImportFailed:
-            "Could Not Import Image"
+            L10n.string(.importErrorImageImportFailedTitle)
         case .unsupportedFileType:
-            "Unsupported File"
+            L10n.string(.importErrorUnsupportedFileTitle)
         }
     }
 
     var message: String {
         switch self {
         case .cancelled:
-            "No file was selected."
+            L10n.string(.importErrorCancelledMessage)
         case .fileCopyFailed:
-            "FocusRead could not safely copy this file for reading."
+            L10n.string(.importErrorFileCopyMessage)
         case .invalidTextEncoding:
-            "This text file is not valid UTF-8."
+            L10n.string(.importErrorInvalidTextEncodingMessage)
         case .unreadablePDF:
-            "FocusRead could not open this PDF."
+            L10n.string(.importErrorUnreadablePDFMessage)
         case .noReadableText:
-            "No readable text found."
+            L10n.string(.importErrorNoReadableTextMessage)
         case .ocrFailed:
-            "FocusRead could not recognize text from this scanned PDF."
+            L10n.string(.importErrorOCRFailedMessage)
         case .invalidEPUB:
-            "FocusRead could not read this as a valid EPUB archive."
+            L10n.string(.importErrorInvalidEPUBMessage)
         case .epubContentsNotFound:
-            "FocusRead could not find the EPUB package, manifest, or reading order."
+            L10n.string(.importErrorEPUBContentsNotFoundMessage)
         case .epubNoReadableText:
-            "FocusRead opened the EPUB but did not find readable chapter text."
+            L10n.string(.importErrorEPUBNoReadableTextMessage)
         case .epubExtractionFailed:
-            "FocusRead could not extract text from this EPUB."
+            L10n.string(.importErrorEPUBExtractionFailedMessage)
         case .cameraUnavailable:
-            "This device does not have an available camera."
+            L10n.string(.importErrorCameraUnavailableMessage)
         case .cameraAccessDenied:
-            "Allow camera access in Settings to scan text with FocusRead."
+            L10n.string(.importErrorCameraAccessDeniedMessage)
         case .imageImportFailed:
-            "FocusRead could not load the selected image."
+            L10n.string(.importErrorImageImportFailedMessage)
         case .unsupportedFileType:
-            "This file type is not supported yet."
+            L10n.string(.importErrorUnsupportedFileMessage)
         }
     }
 

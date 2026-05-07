@@ -95,8 +95,8 @@ final class DocumentImportViewModel: ObservableObject {
         isCameraCapturePresented = false
         guard let request = makeImageImportRequest(
             from: [image],
-            title: "Camera Scan",
-            fileNamePrefix: "Camera Scan"
+            title: L10n.string(.importCameraScan),
+            fileNamePrefix: L10n.string(.importCameraScan)
         ) else {
             state = .failed(.imageImportFailed)
             isImportSheetPresented = true
@@ -112,8 +112,8 @@ final class DocumentImportViewModel: ObservableObject {
         isPhotoLibraryPickerPresented = false
         guard let request = makeImageImportRequest(
             from: images,
-            title: "Photo Import",
-            fileNamePrefix: "Photo Import"
+            title: L10n.string(.importPhotoImport),
+            fileNamePrefix: L10n.string(.importPhotoImport)
         ) else {
             state = .failed(.imageImportFailed)
             isImportSheetPresented = true
@@ -214,10 +214,10 @@ final class DocumentImportViewModel: ObservableObject {
         let importID = UUID()
         activeImportID = importID
         state = .loading(DocumentImportProgress(
-            message: "Recognizing text...",
+            message: L10n.string(.importProgressRecognizingText),
             completedUnitCount: 0,
             totalUnitCount: request.images.count,
-            unitName: "images"
+            unitName: L10n.string(.importUnitImages)
         ))
         isImportSheetPresented = true
         let cleanupMode = SmartCleanupAvailability.effectiveMode(savedRawValue: smartCleanupMode)

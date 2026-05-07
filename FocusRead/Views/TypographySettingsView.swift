@@ -23,6 +23,7 @@ struct TypographySettingsView: View {
     @AppStorage(ReaderBehaviorSettingsKey.anchorLetterEnabled) private var anchorLetterEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
     @AppStorage(AIRecapSettingsKey.isEnabled) private var aiRecapsEnabledPreference: Bool = AIRecapSettings.defaultEnabled()
+    @AppStorage(AppLanguageStorageKey.selectedLanguage) private var selectedLanguageRawValue: String = AppLanguage.systemDefault.rawValue
 
     private let aiRecapCapabilityService = AIRecapService()
 
@@ -41,11 +42,11 @@ struct TypographySettingsView: View {
             if showsDismissButton {
                 NavigationStack {
                     settingsContent
-                        .navigationTitle("Settings")
+                        .navigationTitle(L10n.key(.settingsTitle))
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") {
+                                Button(.commonDone) {
                                     dismiss()
                                 }
                             }
@@ -54,7 +55,7 @@ struct TypographySettingsView: View {
             } else {
                 NavigationStack {
                     settingsContent
-                        .navigationTitle("Settings")
+                        .navigationTitle(L10n.key(.settingsTitle))
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar(.hidden, for: .navigationBar)
                 }
@@ -68,12 +69,12 @@ struct TypographySettingsView: View {
                 ScrollView {
                     VStack(spacing: 16) {
                         if showsPageHeader {
-                            FocusReadPageHeader(title: "Settings")
+                            FocusReadPageHeader(titleKey: .settingsTitle)
                                 .padding(.bottom, 4)
                         }
 
-                settingsSection("App Appearance") {
-                    Picker("Appearance", selection: $appearance) {
+                settingsSection(L10n.string(.settingsAppAppearance)) {
+                    Picker(L10n.key(.settingsAppearance), selection: $appearance) {
                         ForEach(AppAppearance.allCases) { mode in
                             Text(mode.title).tag(mode.rawValue)
                         }
@@ -81,18 +82,22 @@ struct TypographySettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                settingsSection("Theme") {
+                settingsSection(L10n.string(.settingsAppLanguage)) {
+                    languageNavigationRow
+                }
+
+                settingsSection(L10n.string(.settingsTheme)) {
                     themeNavigationRow
                 }
 
-                settingsSection("Typography") {
+                settingsSection(L10n.string(.settingsTypography)) {
                     typographyNavigationRow
                 }
 
-                settingsSection("Reader Behavior") {
+                settingsSection(L10n.string(.settingsReaderBehavior)) {
                     // Camera Control is intentionally absent: Apple's public capture-event APIs
                     // are limited to active media-capture experiences, not reader controls.
-                    settingsRow("Default WPM") {
+                    settingsRow(L10n.string(.settingsDefaultWPM)) {
                         HStack {
                             Slider(value: defaultWPMBinding, in: 100...1_200, step: 25)
                                 .tint(AppTheme.primaryText)
@@ -107,8 +112,8 @@ struct TypographySettingsView: View {
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    settingsRow("Display Mode") {
-                        Picker("Display Mode", selection: $displayMode) {
+                    settingsRow(L10n.string(.settingsDisplayMode)) {
+                        Picker(L10n.key(.settingsDisplayMode), selection: $displayMode) {
                             ForEach(ReaderDisplayMode.allCases) { mode in
                                 Text(mode.title).tag(mode.rawValue)
                             }
@@ -118,28 +123,28 @@ struct TypographySettingsView: View {
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    Toggle("Anchor Letter", isOn: $anchorLetterEnabled)
+                    Toggle(L10n.string(.settingsAnchorLetter), isOn: $anchorLetterEnabled)
                         .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    Toggle("Haptics", isOn: $hapticsEnabled)
+                    Toggle(L10n.string(.settingsHaptics), isOn: $hapticsEnabled)
                         .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    Toggle("Reverse WPM Drag", isOn: $reverseWPMDialDirection)
+                    Toggle(L10n.string(.settingsReverseWPMDrag), isOn: $reverseWPMDialDirection)
                         .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    Toggle("Punctuation Pauses", isOn: $punctuationPausesEnabled)
+                    Toggle(L10n.string(.settingsPunctuationPauses), isOn: $punctuationPausesEnabled)
                         .tint(AppTheme.accent)
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    settingsRow("Long Word Delay") {
-                        Picker("Long Word Delay", selection: $longWordDelayMode) {
+                    settingsRow(L10n.string(.settingsLongWordDelay)) {
+                        Picker(L10n.key(.settingsLongWordDelay), selection: $longWordDelayMode) {
                             ForEach(LongWordDelayMode.allCases) { mode in
                                 Text(mode.title).tag(mode.rawValue)
                             }
@@ -150,18 +155,18 @@ struct TypographySettingsView: View {
                     Divider().foregroundStyle(AppTheme.border)
 
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Display Mode controls how many words are shown at a time.")
-                        Text("Anchor Letter highlights an optical fixation point to help your eyes stay focused.")
-                        Text("Punctuation pauses add natural reading pauses after commas, periods, and paragraph breaks.")
-                        Text("Long-word delay gives extra time for longer words, names, and numbers.")
+                        Text(.settingsDisplayModeHelp)
+                        Text(.settingsAnchorLetterHelp)
+                        Text(.settingsPunctuationPausesHelp)
+                        Text(.settingsLongWordDelayHelp)
                     }
                     .font(.footnote)
                     .foregroundStyle(AppTheme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
                 }
 
-                settingsSection("Progress") {
-                    settingsRow("Daily Goal") {
+                settingsSection(L10n.string(.settingsProgress)) {
+                    settingsRow(L10n.string(.settingsDailyGoal)) {
                         Stepper(
                             value: dailyGoalBinding,
                             in: 100...100_000,
@@ -173,7 +178,7 @@ struct TypographySettingsView: View {
                                     .foregroundStyle(AppTheme.primaryText)
                                     .monospacedDigit()
 
-                                Text("words")
+                                Text(.commonWords)
                                     .font(.subheadline)
                                     .foregroundStyle(AppTheme.secondaryText)
                             }
@@ -181,9 +186,9 @@ struct TypographySettingsView: View {
                     }
                 }
 
-                settingsSection("Text Cleanup") {
-                    settingsRow("Imported Text") {
-                        Picker("Imported Text", selection: cleanupModeBinding) {
+                settingsSection(L10n.string(.settingsTextCleanup)) {
+                    settingsRow(L10n.string(.settingsImportedText)) {
+                        Picker(L10n.key(.settingsImportedText), selection: cleanupModeBinding) {
                             ForEach(availableCleanupModes) { mode in
                                 Text(mode.title).tag(mode.rawValue)
                             }
@@ -195,7 +200,7 @@ struct TypographySettingsView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(availableCleanupModes) { mode in
-                            Text("\(mode.title): \(mode.description)")
+                            Text(L10n.format(.settingsCleanupDescriptionFormat, mode.title, mode.description))
                         }
                     }
                     .font(.footnote)
@@ -203,19 +208,19 @@ struct TypographySettingsView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 }
 
-                settingsSection("AI Features") {
-                    settingsRow("AI Recaps") {
-                        Toggle("Enable AI Recaps", isOn: aiRecapsEnabledBinding)
+                settingsSection(L10n.string(.settingsAIFeatures)) {
+                    settingsRow(L10n.string(.settingsAIRecaps)) {
+                        Toggle(L10n.string(.settingsEnableAIRecaps), isOn: aiRecapsEnabledBinding)
                             .tint(AppTheme.accent)
                             .disabled(!isAIRecapCapabilityAvailable)
 
-                        Text("Show AI-generated reading session recaps for books.")
+                        Text(.settingsAIRecapsDescription)
                             .font(.footnote)
                             .foregroundStyle(AppTheme.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
 
                         if !isAIRecapCapabilityAvailable {
-                            Text("AI Recaps require on-device Apple Intelligence support.")
+                            Text(.settingsAIRecapsUnavailable)
                                 .font(.footnote)
                                 .foregroundStyle(AppTheme.secondaryText)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -223,9 +228,9 @@ struct TypographySettingsView: View {
                     }
                 }
 
-                settingsSection("About / Reset") {
+                settingsSection(L10n.string(.settingsAboutReset)) {
                     settingsActionRow(
-                        title: "Reset Typography",
+                        title: L10n.string(.settingsResetTypography),
                         systemImage: "textformat.size",
                         action: resetTypography
                     )
@@ -233,7 +238,7 @@ struct TypographySettingsView: View {
                     Divider().foregroundStyle(AppTheme.border)
 
                     settingsActionRow(
-                        title: "Reset All Settings",
+                        title: L10n.string(.settingsResetAll),
                         systemImage: "arrow.counterclockwise",
                         action: resetAllSettings
                     )
@@ -266,7 +271,7 @@ struct TypographySettingsView: View {
                 .toolbar(.visible, for: .navigationBar)
         } label: {
             HStack(spacing: 12) {
-                Text("Theme")
+                Text(.settingsTheme)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppTheme.primaryText)
 
@@ -277,7 +282,33 @@ struct TypographySettingsView: View {
                     .foregroundStyle(AppTheme.secondaryText)
                     .lineLimit(1)
 
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppTheme.tertiaryText)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var languageNavigationRow: some View {
+        NavigationLink {
+            AppLanguageSettingsView(selectedLanguageRawValue: $selectedLanguageRawValue)
+                .toolbar(.visible, for: .navigationBar)
+        } label: {
+            HStack(spacing: 12) {
+                Text(.settingsAppLanguage)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryText)
+
+                Spacer(minLength: 12)
+
+                Text((AppLanguage(rawValue: selectedLanguageRawValue) ?? .systemDefault).displayName)
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .lineLimit(1)
+
+                Image(systemName: "chevron.forward")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(AppTheme.tertiaryText)
             }
@@ -292,7 +323,7 @@ struct TypographySettingsView: View {
                 .toolbar(.visible, for: .navigationBar)
         } label: {
             HStack(spacing: 12) {
-                Text("Typography")
+                Text(.settingsTypography)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppTheme.primaryText)
 
@@ -303,7 +334,7 @@ struct TypographySettingsView: View {
                     .foregroundStyle(AppTheme.secondaryText)
                     .lineLimit(1)
 
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(AppTheme.tertiaryText)
             }
@@ -316,7 +347,7 @@ struct TypographySettingsView: View {
         let family = ReaderFontFamily(rawValue: fontFamily) ?? .serif
         let weight = ReaderFontWeight(rawValue: fontWeight) ?? .regular
         let color = ReaderTextColor(rawValue: textColor) ?? .primary
-        let italicSuffix = isItalic ? ", Italic" : ""
+        let italicSuffix = isItalic ? ", \(L10n.string(.typographySummaryItalic))" : ""
         return "\(family.title), \(Int(fontSize)) pt, \(weight.title), \(color.title)\(italicSuffix)"
     }
 
@@ -397,6 +428,7 @@ struct TypographySettingsView: View {
         anchorLetterEnabled = true
         displayMode = ReaderDisplayMode.oneWord.rawValue
         aiRecapsEnabledPreference = AIRecapSettings.defaultEnabled(localAIAvailable: isAIRecapCapabilityAvailable)
+        selectedLanguageRawValue = AppLanguage.systemDefault.rawValue
         resetTypography()
     }
 
@@ -456,7 +488,7 @@ struct TypographySettingsView: View {
                     .frame(width: 20)
                 Text(title)
                 Spacer()
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(AppTheme.secondaryText)
             }
@@ -479,9 +511,9 @@ struct TypographyDetailSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                settingsSection("Font") {
-                    settingsInlineRow("Font Family") {
-                        Picker("Font Family", selection: $fontFamily) {
+                settingsSection(L10n.string(.typographyFont)) {
+                    settingsInlineRow(L10n.string(.typographyFontFamily)) {
+                        Picker(L10n.key(.typographyFontFamily), selection: $fontFamily) {
                             ForEach(ReaderFontFamily.allCases) { family in
                                 Text(family.title).tag(family.rawValue)
                             }
@@ -491,7 +523,7 @@ struct TypographyDetailSettingsView: View {
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    settingsRow("Font Size") {
+                    settingsRow(L10n.string(.typographyFontSize)) {
                         HStack {
                             Slider(value: $fontSize, in: 24...96, step: 1)
                                 .tint(AppTheme.primaryText)
@@ -506,8 +538,8 @@ struct TypographyDetailSettingsView: View {
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    settingsRow("Font Weight") {
-                        Picker("Font Weight", selection: $fontWeight) {
+                    settingsRow(L10n.string(.typographyFontWeight)) {
+                        Picker(L10n.key(.typographyFontWeight), selection: $fontWeight) {
                             ForEach(ReaderFontWeight.allCases) { weight in
                                 Text(weight.title).tag(weight.rawValue)
                             }
@@ -517,11 +549,11 @@ struct TypographyDetailSettingsView: View {
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    Toggle("Italic", isOn: $isItalic)
+                    Toggle(L10n.string(.typographyItalic), isOn: $isItalic)
                         .tint(AppTheme.accent)
                 }
 
-                settingsSection("Text Color") {
+                settingsSection(L10n.string(.typographyTextColor)) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
                             ForEach(ReaderTextColor.allCases) { color in
@@ -552,8 +584,8 @@ struct TypographyDetailSettingsView: View {
                     }
                 }
 
-                settingsSection("Preview") {
-                    Text("Focus")
+                settingsSection(L10n.string(.typographyPreview)) {
+                    Text(.typographyPreviewWord)
                         .frame(maxWidth: .infinity, alignment: .center)
                         .minimumScaleFactor(0.5)
                         .lineLimit(1)
@@ -573,7 +605,7 @@ struct TypographyDetailSettingsView: View {
             .padding(.vertical, 16)
         }
         .background(AppTheme.background.ignoresSafeArea())
-        .navigationTitle("Typography")
+        .navigationTitle(L10n.key(.settingsTypography))
         .navigationBarTitleDisplayMode(.inline)
         .tint(AppTheme.accent)
         .focusReadThemeRefresh()
@@ -649,7 +681,7 @@ struct ThemeSettingsView: View {
             .padding(.vertical, 16)
         }
         .background(AppTheme.background.ignoresSafeArea())
-        .navigationTitle("Theme")
+        .navigationTitle(L10n.key(.settingsTheme))
         .navigationBarTitleDisplayMode(.inline)
         .tint(AppTheme.accent)
         .focusReadThemeRefresh()
@@ -735,7 +767,7 @@ private struct ThemePreviewCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(theme.name)
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .accessibilityValue(isSelected ? L10n.string(.commonSelected) : L10n.string(.commonNotSelected))
     }
 
     private var previewSurface: some View {

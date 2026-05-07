@@ -14,9 +14,9 @@ enum FocusReadThemeCategory: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .accent:
-            return "Accent Themes"
+            return L10n.string(.themeCategoryAccent)
         case .full:
-            return "Full Themes"
+            return L10n.string(.themeCategoryFull)
         }
     }
 }
@@ -773,9 +773,11 @@ enum AppTheme {
 
 struct FocusReadThemeRefreshModifier: ViewModifier {
     @ObservedObject private var themeManager = FocusReadThemeManager.shared
+    @AppStorage(AppLanguageStorageKey.selectedLanguage) private var selectedLanguageRawValue: String = AppLanguage.systemDefault.rawValue
 
     func body(content: Content) -> some View {
         let _ = themeManager.selectedThemeID
+        let _ = selectedLanguageRawValue
         content
     }
 }
@@ -927,17 +929,33 @@ extension ButtonStyle where Self == TopReaderButtonStyle {
 }
 
 struct FocusReadPageHeader: View {
-    let title: String
-    var subtitle: String? = nil
+    private let title: String?
+    private let subtitle: String?
+    private let titleKey: L10n.Key?
+    private let subtitleKey: L10n.Key?
+
+    init(title: String, subtitle: String? = nil) {
+        self.title = title
+        self.subtitle = subtitle
+        self.titleKey = nil
+        self.subtitleKey = nil
+    }
+
+    init(titleKey: L10n.Key, subtitleKey: L10n.Key? = nil) {
+        self.title = nil
+        self.subtitle = nil
+        self.titleKey = titleKey
+        self.subtitleKey = subtitleKey
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
+            Text(resolvedTitle)
                 .font(.system(.largeTitle, design: .serif, weight: .semibold))
                 .foregroundStyle(AppTheme.primaryText)
 
-            if let subtitle {
-                Text(subtitle)
+            if let resolvedSubtitle {
+                Text(resolvedSubtitle)
                     .font(.callout)
                     .foregroundStyle(AppTheme.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -945,6 +963,20 @@ struct FocusReadPageHeader: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 2)
+    }
+
+    private var resolvedTitle: String {
+        if let titleKey {
+            return L10n.string(titleKey)
+        }
+        return title ?? ""
+    }
+
+    private var resolvedSubtitle: String? {
+        if let subtitleKey {
+            return L10n.string(subtitleKey)
+        }
+        return subtitle
     }
 }
 

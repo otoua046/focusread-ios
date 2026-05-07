@@ -16,11 +16,11 @@ struct GoToNavigationView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(FocusReadBackground())
-            .navigationTitle("Search Word")
+            .navigationTitle(L10n.key(.searchTitle))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
+                    Button(.commonDone) {
                         dismiss()
                     }
                 }
@@ -34,8 +34,8 @@ struct GoToNavigationView: View {
     }
 
     private var searchSection: some View {
-        Section("Search Word") {
-            TextField("Find words", text: Binding(
+        Section {
+            TextField(L10n.string(.searchFindWords), text: Binding(
                 get: { viewModel.searchQuery },
                 set: { viewModel.updateSearchQuery($0) }
             ))
@@ -49,13 +49,13 @@ struct GoToNavigationView: View {
                 HStack {
                     ProgressView()
                         .tint(AppTheme.progressIndicator)
-                    Text("Searching...")
+                    Text(.searchSearching)
                         .foregroundStyle(AppTheme.secondaryText)
                 }
                 .padding(.vertical, 8)
                 .listRowBackground(AppTheme.cardBackground)
             } else if viewModel.showNoSearchResults {
-                Text("No matches found")
+                Text(.searchNoMatches)
                     .foregroundStyle(AppTheme.secondaryText)
                     .padding(.vertical, 8)
                     .listRowBackground(AppTheme.cardBackground)
@@ -66,7 +66,7 @@ struct GoToNavigationView: View {
                         dismiss()
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Word \(result.index)")
+                            Text(L10n.format(.searchWordResultFormat, result.index))
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(AppTheme.secondaryText)
 
@@ -80,6 +80,8 @@ struct GoToNavigationView: View {
                     .listRowBackground(AppTheme.cardBackground)
                 }
             }
+        } header: {
+            Text(.searchTitle)
         }
     }
 

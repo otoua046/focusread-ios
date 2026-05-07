@@ -7,16 +7,16 @@ struct RootView: View {
         case stats
         case settings
 
-        var title: String {
+        var titleKey: L10n.Key {
             switch self {
             case .home:
-                return "Home"
+                return .tabHome
             case .library:
-                return "Library"
+                return .tabLibrary
             case .stats:
-                return "My Stats"
+                return .tabStats
             case .settings:
-                return "Settings"
+                return .tabSettings
             }
         }
 
@@ -66,7 +66,7 @@ struct RootView: View {
                         }
                     )
                     .tabItem {
-                        Label(MainTab.home.title, systemImage: MainTab.home.systemImage)
+                        Label(MainTab.home.titleKey, systemImage: MainTab.home.systemImage)
                     }
                     .tag(MainTab.home)
 
@@ -89,7 +89,7 @@ struct RootView: View {
                         }
                     )
                     .tabItem {
-                        Label(MainTab.library.title, systemImage: MainTab.library.systemImage)
+                        Label(MainTab.library.titleKey, systemImage: MainTab.library.systemImage)
                     }
                     .tag(MainTab.library)
 
@@ -98,7 +98,7 @@ struct RootView: View {
                         readingHistoryStore: readingHistoryStore
                     )
                     .tabItem {
-                        Label(MainTab.stats.title, systemImage: MainTab.stats.systemImage)
+                        Label(MainTab.stats.titleKey, systemImage: MainTab.stats.systemImage)
                     }
                     .tag(MainTab.stats)
 
@@ -108,7 +108,7 @@ struct RootView: View {
                         showsPageHeader: true
                     )
                     .tabItem {
-                        Label(MainTab.settings.title, systemImage: MainTab.settings.systemImage)
+                        Label(MainTab.settings.titleKey, systemImage: MainTab.settings.systemImage)
                     }
                     .tag(MainTab.settings)
                 }
@@ -118,6 +118,7 @@ struct RootView: View {
                 .transition(.opacity)
             }
         }
+        .focusReadLocalizationRefresh()
         .animation(.smooth(duration: 0.35), value: readerViewModel == nil)
         .documentImportFlow(
             viewModel: documentOpenInViewModel,
@@ -144,8 +145,8 @@ struct RootView: View {
         let tokens = tokenizer.tokenize(FocusReadHomeDemoContent.readerSampleText)
         guard !tokens.isEmpty else { return }
         let document = ReadingDocument(
-            title: "FocusRead Demo",
-            fileName: "FocusRead Demo",
+            title: L10n.string(.readerDemoTitle),
+            fileName: L10n.string(.readerDemoTitle),
             sourceType: .txt,
             sections: [
                 ReadingDocumentSection(
@@ -222,13 +223,13 @@ struct RootView: View {
 
         let document = ReadingDocument(
             id: recap.id,
-            title: "AI Recap",
+            title: L10n.string(.aiRecapTitle),
             fileName: read.displayTitle,
             sourceType: .pastedText,
             sections: [
                 ReadingDocumentSection(
                     index: 0,
-                    title: "AI Recap",
+                    title: L10n.string(.aiRecapTitle),
                     pageNumber: nil,
                     chapterNumber: nil,
                     wordRange: nil

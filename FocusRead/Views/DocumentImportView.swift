@@ -23,7 +23,7 @@ struct DocumentImportView: View {
                 }
                 .padding(22)
             }
-            .navigationTitle("Import")
+            .navigationTitle(L10n.key(.importTitle))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -35,7 +35,7 @@ struct DocumentImportView: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("Close import")
+                    .accessibilityLabel(L10n.string(.importCloseAccessibility))
                 }
             }
         }
@@ -69,7 +69,7 @@ struct DocumentImportView: View {
                     .foregroundStyle(AppTheme.primaryText)
                     .lineLimit(2)
 
-                Text("\(document.estimatedWordCount) words • \(document.sourceType.label)")
+                Text(L10n.format(.importDocumentDetailFormat, document.estimatedWordCount, document.sourceType.label))
                     .font(.subheadline)
                     .foregroundStyle(AppTheme.secondaryText)
             }
@@ -94,7 +94,7 @@ struct DocumentImportView: View {
             Button {
                 onStartReading(document)
             } label: {
-                Label("Start Reading", systemImage: "play.fill")
+                Label(.importStartReading, systemImage: "play.fill")
                     .font(.headline)
                     .foregroundStyle(AppTheme.primaryButtonForeground)
                     .frame(maxWidth: .infinity)
@@ -105,7 +105,7 @@ struct DocumentImportView: View {
             Button {
                 viewModel.chooseAnotherFile()
             } label: {
-                Label("Choose Another File", systemImage: "folder")
+                Label(.importChooseAnotherFile, systemImage: "folder")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)
@@ -147,7 +147,7 @@ struct DocumentImportView: View {
                     Button {
                         viewModel.retryImport()
                     } label: {
-                        Label("Retry", systemImage: "arrow.clockwise")
+                        Label(.commonRetry, systemImage: "arrow.clockwise")
                             .font(.headline)
                             .foregroundStyle(AppTheme.primaryButtonForeground)
                             .frame(maxWidth: .infinity)
@@ -159,7 +159,7 @@ struct DocumentImportView: View {
                 Button {
                     viewModel.chooseAnotherFile()
                 } label: {
-                    Label("Choose Another File", systemImage: "folder")
+                    Label(.importChooseAnotherFile, systemImage: "folder")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(AppTheme.primaryText)
                         .frame(maxWidth: .infinity)
