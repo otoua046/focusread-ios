@@ -4,6 +4,7 @@ import UIKit
 struct NativeSearchBarView: UIViewRepresentable {
     @Binding var text: String
     var placeholder: String
+    @Environment(\.focusReadTheme) private var theme
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -25,6 +26,8 @@ struct NativeSearchBarView: UIViewRepresentable {
     }
 
     func updateUIView(_ searchBar: UISearchBar, context: Context) {
+        applyTheme(to: searchBar)
+
         if searchBar.text != text {
             searchBar.text = text
         }
@@ -36,6 +39,23 @@ struct NativeSearchBarView: UIViewRepresentable {
         if text.isEmpty && !searchBar.searchTextField.isFirstResponder {
             searchBar.setShowsCancelButton(false, animated: true)
         }
+    }
+
+    private func applyTheme(to searchBar: UISearchBar) {
+        let palette = theme.palette
+        let textField = searchBar.searchTextField
+
+        searchBar.tintColor = palette.accent
+        textField.backgroundColor = palette.controlBackground
+        textField.textColor = palette.primaryText
+        textField.tintColor = palette.accent
+        textField.leftView?.tintColor = palette.secondaryText
+        textField.attributedPlaceholder = NSAttributedString(
+            string: placeholder,
+            attributes: [
+                .foregroundColor: palette.tertiaryText
+            ]
+        )
     }
 
     final class Coordinator: NSObject, UISearchBarDelegate {

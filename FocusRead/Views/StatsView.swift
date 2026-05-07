@@ -4,6 +4,7 @@ struct StatsView: View {
     @ObservedObject var statsStore: LocalReadingStatsStore
     @ObservedObject var readingHistoryStore: LocalReadingHistoryStore
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.focusReadTheme) private var theme
 
     private var widgetColumns: [GridItem] {
         if horizontalSizeClass == .compact {
@@ -90,13 +91,13 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Recent Days")
                 .font(.headline)
-                .foregroundStyle(AppTheme.primaryText)
+                .foregroundStyle(theme.primaryText)
                 .padding(.horizontal, 2)
 
             if recentDailyStats.isEmpty {
                 Text("Start a reading session to fill in your progress.")
                     .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondaryText)
+                    .foregroundStyle(theme.secondaryText)
                     .frame(maxWidth: .infinity, minHeight: 82)
                     .padding(16)
                     .widgetSurface(cornerRadius: 22)
@@ -185,13 +186,14 @@ struct StatsView: View {
 
 private struct ReadingActivityWidget: View {
     let activities: [ReadingDayActivity]
+    @Environment(\.focusReadTheme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text("Reading Activity")
                     .font(.headline)
-                    .foregroundStyle(AppTheme.primaryText)
+                    .foregroundStyle(theme.primaryText)
 
                 Spacer(minLength: 8)
 
@@ -216,20 +218,22 @@ private struct ReadingActivityWidget: View {
 }
 
 private struct ContributionLegend: View {
+    @Environment(\.focusReadTheme) private var theme
+
     var body: some View {
         HStack(spacing: 3) {
             Text("Less")
 
             ForEach(0...4, id: \.self) { level in
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(StatsWidgetStyle.contributionColor(for: level))
+                    .fill(theme.contributionColor(for: level))
                     .frame(width: 7, height: 7)
             }
 
             Text("More")
         }
         .font(.caption2.weight(.medium))
-        .foregroundStyle(AppTheme.tertiaryText)
+        .foregroundStyle(theme.tertiaryText)
         .lineLimit(1)
     }
 }
@@ -239,6 +243,7 @@ struct ReadingContributionGrid: View {
     var compactMode = false
     var showsMonthLabels = false
     var showsWeekdayLabels = false
+    @Environment(\.focusReadTheme) private var theme
 
     private let rows = 7
 
@@ -266,7 +271,7 @@ struct ReadingContributionGrid: View {
                                         cornerRadius: max(layout.cellSize * 0.24, 1.75),
                                         style: .continuous
                                     )
-                                    .fill(StatsWidgetStyle.contributionColor(for: cell.activity?.intensityLevel ?? 0))
+                                    .fill(theme.contributionColor(for: cell.activity?.intensityLevel ?? 0))
                                     .frame(width: layout.cellSize, height: layout.cellSize)
                                     .accessibilityLabel(accessibilityLabel(for: cell))
                                 }
@@ -289,7 +294,7 @@ struct ReadingContributionGrid: View {
             ForEach(layout.monthLabels) { label in
                 Text(label.text)
                     .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(AppTheme.tertiaryText)
+                    .foregroundStyle(theme.tertiaryText)
                     .fixedSize()
                     .offset(x: label.xOffset)
             }
@@ -307,7 +312,7 @@ struct ReadingContributionGrid: View {
             ForEach(0..<rows, id: \.self) { row in
                 Text(weekdayLabel(for: row))
                     .font(.system(size: 8, weight: .medium))
-                    .foregroundStyle(AppTheme.tertiaryText)
+                    .foregroundStyle(theme.tertiaryText)
                     .lineLimit(1)
                     .frame(width: 22, height: cellSize, alignment: .trailing)
             }
@@ -439,24 +444,25 @@ private struct DailyProgressMetricWidget: View {
     let progress: Double
     let formattedWords: String
     let formattedGoal: String
+    @Environment(\.focusReadTheme) private var theme
 
     var body: some View {
         VStack(spacing: 7) {
             ZStack {
                 Circle()
-                    .stroke(StatsWidgetStyle.ringTrack, lineWidth: 8)
+                    .stroke(theme.ringTrack, lineWidth: 8)
 
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(
-                        StatsWidgetStyle.accent,
+                        theme.progressIndicator,
                         style: StrokeStyle(lineWidth: 8, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
 
                 Text("\(Int((progress * 100).rounded()))%")
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryText)
+                    .foregroundStyle(theme.primaryText)
                     .monospacedDigit()
             }
             .frame(width: 58, height: 58)
@@ -464,14 +470,14 @@ private struct DailyProgressMetricWidget: View {
 
             Text("\(formattedWords) / \(formattedGoal)")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppTheme.primaryText)
+                .foregroundStyle(theme.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.66)
                 .monospacedDigit()
 
             Text("Daily Progress")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(AppTheme.secondaryText)
+                .foregroundStyle(theme.secondaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
@@ -488,33 +494,34 @@ private struct StatsMetricWidget: View {
     let value: String
     var detail: String? = nil
     let symbolName: String
+    @Environment(\.focusReadTheme) private var theme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Image(systemName: symbolName)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(StatsWidgetStyle.accent)
+                .foregroundStyle(theme.progressIndicator)
                 .frame(width: 30, height: 30)
-                .background(StatsWidgetStyle.iconBackground, in: Circle())
+                .background(theme.iconBackground, in: Circle())
 
             Spacer(minLength: 12)
 
             Text(value)
                 .font(.title2.weight(.semibold))
-                .foregroundStyle(AppTheme.primaryText)
+                .foregroundStyle(theme.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.68)
                 .monospacedDigit()
 
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(AppTheme.secondaryText)
+                .foregroundStyle(theme.secondaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
 
             Text(detail ?? " ")
                 .font(.caption2.weight(.medium))
-                .foregroundStyle(AppTheme.tertiaryText)
+                .foregroundStyle(theme.tertiaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
@@ -530,6 +537,7 @@ private struct DailyStatsRow: View {
     let formattedWords: String
     let formattedDuration: String
     let formattedDate: String
+    @Environment(\.focusReadTheme) private var theme
 
     var body: some View {
         HStack(spacing: 12) {
@@ -537,14 +545,14 @@ private struct DailyStatsRow: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text(formattedDate)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(AppTheme.primaryText)
+                        .foregroundStyle(theme.primaryText)
                         .lineLimit(1)
 
                     Spacer(minLength: 8)
 
                     Text("\(formattedWords) words")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(AppTheme.secondaryText)
+                        .foregroundStyle(theme.secondaryText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.76)
                         .monospacedDigit()
@@ -553,10 +561,10 @@ private struct DailyStatsRow: View {
                 GeometryReader { proxy in
                     ZStack(alignment: .leading) {
                         Capsule()
-                            .fill(StatsWidgetStyle.ringTrack)
+                            .fill(theme.ringTrack)
 
                         Capsule()
-                            .fill(StatsWidgetStyle.accent)
+                            .fill(theme.progressIndicator)
                             .frame(width: proxy.size.width * barProgress)
                     }
                 }
@@ -570,7 +578,7 @@ private struct DailyStatsRow: View {
                     }
                 }
                 .font(.caption2.weight(.medium))
-                .foregroundStyle(AppTheme.tertiaryText)
+                .foregroundStyle(theme.tertiaryText)
                 .monospacedDigit()
             }
         }
@@ -589,31 +597,9 @@ private extension View {
     }
 }
 
-private enum StatsWidgetStyle {
-    static let accent = AppTheme.accent
-    static let surface = Color(uiColor: .secondarySystemGroupedBackground)
-    static let iconBackground = Color(uiColor: .systemGray5)
-    static let ringTrack = Color(uiColor: .systemGray5)
-    static let stroke = Color(uiColor: .separator)
-
-    static func contributionColor(for level: Int) -> Color {
-        switch level {
-        case 1:
-            return accent.opacity(0.28)
-        case 2:
-            return accent.opacity(0.46)
-        case 3:
-            return accent.opacity(0.68)
-        case 4:
-            return accent
-        default:
-            return Color(uiColor: .systemGray5)
-        }
-    }
-}
-
 private struct StatsWidgetSurface: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.focusReadTheme) private var theme
 
     let cornerRadius: CGFloat
 
@@ -621,15 +607,15 @@ private struct StatsWidgetSurface: ViewModifier {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
         content
-            .background(StatsWidgetStyle.surface, in: shape)
+            .background(theme.cardBackground, in: shape)
             .overlay {
                 shape.strokeBorder(
-                    StatsWidgetStyle.stroke.opacity(colorScheme == .light ? 0.42 : 0.22),
+                    theme.border.opacity(colorScheme == .light ? 0.42 : 0.22),
                     lineWidth: 0.75
                 )
             }
             .shadow(
-                color: Color.black.opacity(colorScheme == .light ? 0.07 : 0),
+                color: theme.subtleShadow.opacity(colorScheme == .light ? 1 : 0),
                 radius: 6,
                 x: 0,
                 y: 3

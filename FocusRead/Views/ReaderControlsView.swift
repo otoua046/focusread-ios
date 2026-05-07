@@ -45,7 +45,7 @@ struct ReaderControlsView: View {
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(AppTheme.primaryButtonForeground)
                         .frame(width: 62, height: 62)
-                        .background(AppTheme.accent, in: Circle())
+                        .background(AppTheme.primaryButtonBackground, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
@@ -170,9 +170,9 @@ private struct WPMDialControl: View {
             .offset(x: rulerOffset)
 
             Capsule()
-                .fill(Color(uiColor: .systemYellow))
+                .fill(AppTheme.orpHighlight)
                 .frame(width: 2.2, height: 25)
-                .shadow(color: Color(uiColor: .systemYellow).opacity(isInteracting ? 0.28 : 0), radius: 4)
+                .shadow(color: AppTheme.orpHighlight.opacity(isInteracting ? 0.28 : 0), radius: 4)
         }
         .frame(width: 198, height: 30)
         .clipped()

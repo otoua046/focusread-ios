@@ -96,38 +96,45 @@ actor ThumbnailGeneratorService {
     private func renderThumbnail(for read: SavedRead, previewImageData: Data?) -> UIImage {
         if let previewImageData,
            let image = UIImage(data: previewImageData) {
-            return normalized(image: image)
+            return ThumbnailImageNormalizer.normalized(image: image)
         }
 
         return renderPlaceholderCover(for: read)
     }
+}
 
-    private func normalized(image: UIImage) -> UIImage {
-        let targetSize = CGSize(width: 840, height: 1120)
+enum ThumbnailImageNormalizer {
+    static func normalized(image: UIImage, maximumDimension: CGFloat = 1120) -> UIImage {
+        let imageSize = image.size
+        guard imageSize.width > 0, imageSize.height > 0 else {
+            return image
+        }
+
+        let longestSide = max(imageSize.width, imageSize.height)
+        let scale = min(maximumDimension / longestSide, 1)
+        let targetSize = CGSize(
+            width: max(1, round(imageSize.width * scale)),
+            height: max(1, round(imageSize.height * scale))
+        )
+
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
-        format.opaque = true
+        format.opaque = !image.hasAlpha
 
         let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
         return renderer.image { context in
-            UIColor.secondarySystemBackground.setFill()
-            context.fill(CGRect(origin: .zero, size: targetSize))
-
-            let imageSize = image.size
-            guard imageSize.width > 0, imageSize.height > 0 else {
-                return
+            let targetRect = CGRect(origin: .zero, size: targetSize)
+            if image.hasAlpha {
+                UIColor.secondarySystemBackground.setFill()
+                context.fill(targetRect)
             }
 
-            let scale = max(targetSize.width / imageSize.width, targetSize.height / imageSize.height)
-            let scaledSize = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-            let origin = CGPoint(
-                x: (targetSize.width - scaledSize.width) / 2,
-                y: (targetSize.height - scaledSize.height) / 2
-            )
-            image.draw(in: CGRect(origin: origin, size: scaledSize))
+            image.draw(in: targetRect)
         }
     }
+}
 
+private extension ThumbnailGeneratorService {
     private func renderPlaceholderCover(for read: SavedRead) -> UIImage {
         let size = CGSize(width: 840, height: 1120)
         let format = UIGraphicsImageRendererFormat()
@@ -219,5 +226,22 @@ actor ThumbnailGeneratorService {
 
     private func cacheKey(for read: SavedRead) -> String {
         read.id.uuidString
+    }
+}
+
+private extension UIImage {
+    var hasAlpha: Bool {
+        guard let alphaInfo = cgImage?.alphaInfo else {
+            return false
+        }
+
+        switch alphaInfo {
+        case .first, .last, .premultipliedFirst, .premultipliedLast, .alphaOnly:
+            return true
+        case .none, .noneSkipFirst, .noneSkipLast:
+            return false
+        @unknown default:
+            return false
+        }
     }
 }
