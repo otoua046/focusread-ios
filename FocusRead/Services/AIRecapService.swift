@@ -222,7 +222,8 @@ struct AIRecapSourceExtractor: Sendable {
             }
 
             let gap = segment.startedAt.timeIntervalSince(current.endedAt)
-            guard gap < Self.logicalSessionMergeGap else {
+            guard gap < Self.logicalSessionMergeGap,
+                  Self.sourceRangesCanMerge(current.sourceWordRange, segment.sourceWordRange) else {
                 sessions.append(current)
                 sessions.append(segment)
                 return
@@ -238,6 +239,10 @@ struct AIRecapSourceExtractor: Sendable {
             current.sourceEventIDs.append(contentsOf: segment.sourceEventIDs)
             sessions.append(current)
         }
+    }
+
+    private static func sourceRangesCanMerge(_ lhs: Range<Int>, _ rhs: Range<Int>) -> Bool {
+        lhs.lowerBound <= rhs.upperBound && rhs.lowerBound <= lhs.upperBound
     }
 
     private func tokens(for read: SavedRead) -> [ReadingToken] {

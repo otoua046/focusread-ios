@@ -287,6 +287,17 @@ final class AIRecapServiceTests: XCTestCase {
         XCTAssertEqual(sessions[0].sourceWordRange, 0..<420)
     }
 
+    func testNearbySessionsFromDistantSourceRangesDoNotMerge() {
+        let read = makeRead(wordCount: 1_000)
+        let first = event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:05:00Z"), range: 0..<120)
+        let second = event(readID: read.id, startedAt: date("2026-05-07T10:10:00Z"), endedAt: date("2026-05-07T10:15:00Z"), range: 900..<980)
+
+        let sessions = AIRecapSourceExtractor(minimumInputWordCount: 1).recentEligibleSessions(for: read, from: [first, second])
+
+        XCTAssertEqual(sessions.count, 2)
+        XCTAssertEqual(sessions.map(\.sourceWordRange), [900..<980, 0..<120])
+    }
+
     func testReturnAfterThirtyOneMinutesStartsNewLogicalRecapSession() {
         let read = makeRead(wordCount: 700)
         let first = event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:10:00Z"), range: 0..<300)
