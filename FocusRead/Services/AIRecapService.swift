@@ -408,7 +408,7 @@ struct AIRecapService: Sendable {
         }
 
         let prompt = AIRecapPromptBuilder.makePrompt(for: source, outputWordLimit: Self.maximumOutputWordCount)
-        Self.logger.debug("AI recap generation starting. documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsBeforeCap=\(source.sourceWordCountBeforeCap, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(source.detectedLanguage?.code ?? "unknown", privacy: .public) isCapped=\(source.isCapped, privacy: .public) cleanedSourcePreview=\(Self.loggableSnippet(source.text, limit: 500), privacy: .public) promptPreview=\(prompt.logDescription, privacy: .public)")
+        Self.logger.debug("AI recap generation starting. documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsBeforeCap=\(source.sourceWordCountBeforeCap, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(source.detectedLanguage?.code ?? "unknown", privacy: .public) isCapped=\(source.isCapped, privacy: .public) cleanedSourcePreview=\(Self.loggableSnippet(source.text, limit: 500), privacy: .private) promptPreview=\(prompt.logDescription, privacy: .private)")
 
         let generationStartedAt = Date()
         do {
