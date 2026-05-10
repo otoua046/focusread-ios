@@ -13,11 +13,11 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     private var persistenceSuspended = false
     private var hasLocalMutations = false
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, storageDirectory: URL? = nil) {
         self.fileManager = fileManager
         let supportDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
-        let directory = supportDirectory.appendingPathComponent("FocusRead", isDirectory: true)
+        let directory = storageDirectory ?? supportDirectory.appendingPathComponent("FocusRead", isDirectory: true)
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         self.storageDirectory = directory
         self.fileURL = directory.appendingPathComponent("SavedReads.json")
@@ -63,6 +63,27 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
 
     func read(withID id: UUID) -> SavedRead? {
         savedReads.first { $0.id == id }
+    }
+
+    func syncSnapshotItems(now: Date = Date()) -> [SyncedSavedRead] {
+        savedReads.map { SyncedSavedRead(read: $0, migratedAt: now) }
+    }
+
+    func applySyncMergedReads(_ syncedReads: [SyncedSavedRead]) {
+        let existingByID = Dictionary(savedReads.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let existingByFingerprint = Dictionary(
+            savedReads.map { (SyncedSavedRead.contentFingerprint(for: $0), $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let mergedReads = syncedReads.map { syncedRead in
+            let existing = existingByID[syncedRead.id] ?? existingByFingerprint[syncedRead.contentFingerprint]
+            return syncedRead.localRead(preservingDocumentTextFrom: existing)
+        }
+
+        guard mergedReads.sortedByHistoryRecency() != savedReads else { return }
+        hasLocalMutations = true
+        savedReads = mergedReads.sortedByHistoryRecency()
+        persist(durability: .immediate)
     }
 
     private func applyLoadResult(_ result: ReadingHistoryLoadResult) {

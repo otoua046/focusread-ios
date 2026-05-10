@@ -54,6 +54,24 @@ final class LocalAIRecapStore: ObservableObject, AIRecapStore {
         try? fileManager.removeItem(at: recapsFileURL(for: readID))
     }
 
+    func syncSnapshotRecaps(for readIDs: [UUID]) -> [AIRecap] {
+        readIDs.flatMap { recaps(for: $0) }
+            .sortedByRecapRecency()
+    }
+
+    func applySyncMergedRecaps(_ recaps: [AIRecap]) {
+        let grouped = Dictionary(grouping: recaps, by: \.readID)
+        for (readID, remoteRecaps) in grouped {
+            loadIfNeeded(readID: readID)
+            let existing = recapsByReadID[readID] ?? []
+            let merged = SyncConflictResolver.mergeAIRecaps(local: existing, cloud: remoteRecaps).value
+            let capped = Array(merged.sortedByRecapRecency().prefix(3))
+            guard capped != existing else { continue }
+            recapsByReadID[readID] = capped
+            persist(capped, for: readID)
+        }
+    }
+
     private func loadIfNeeded(readID: UUID) {
         guard !loadedReadIDs.contains(readID) else { return }
         loadedReadIDs.insert(readID)

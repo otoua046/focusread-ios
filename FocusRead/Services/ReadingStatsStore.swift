@@ -78,6 +78,34 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
         persist()
     }
 
+    func syncSnapshot(updatedAt: Date = Date()) -> SyncedReadingStats {
+        SyncedReadingStats(
+            dailyGoalWords: dailyGoalWords,
+            dailyStats: dailyStats,
+            sessionEvents: sessionEvents,
+            completedReadIDs: Array(completedReadIDs).sorted { $0.uuidString < $1.uuidString },
+            updatedAt: updatedAt
+        )
+    }
+
+    func applySyncMergedStats(_ syncedStats: SyncedReadingStats) {
+        let normalizedCompletedIDs = Set(syncedStats.completedReadIDs)
+        guard dailyGoalWords != syncedStats.dailyGoalWords
+            || dailyStats != syncedStats.dailyStats
+            || sessionEvents != syncedStats.sessionEvents
+            || completedReadIDs != normalizedCompletedIDs else {
+            return
+        }
+
+        dailyGoalWords = min(max(syncedStats.dailyGoalWords, 100), 100_000)
+        dailyStats = syncedStats.dailyStats
+        sessionEvents = syncedStats.sessionEvents
+        completedReadIDs = normalizedCompletedIDs
+        sortDailyStats()
+        recomputeSnapshot()
+        persist()
+    }
+
     func reconcileCompletedReads(from reads: [SavedRead]) {
         var didChange = false
         for read in reads where read.progressPercent >= 100 {
