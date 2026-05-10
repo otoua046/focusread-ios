@@ -99,25 +99,25 @@ struct LibraryView: View {
                 )
             }
             .confirmationDialog(
-                "Delete this read?",
+                L10n.string(.libraryDeleteReadTitle),
                 isPresented: $isDeleteConfirmationPresented,
                 titleVisibility: .visible,
                 presenting: deleteTarget
             ) { read in
-                Button("Delete", role: .destructive) {
+                Button(.commonDelete, role: .destructive) {
                     delete(read)
                 }
 
-                Button("Cancel", role: .cancel) {}
+                Button(.commonCancel, role: .cancel) {}
             } message: { _ in
-                Text("This removes the read and its local thumbnail.")
+                Text(.libraryDeleteReadMessage)
             }
             .alert(
-                selection.count == store.savedReads.count ? "Delete all reads from Library?" : "Delete selected reads?",
+                selection.count == store.savedReads.count ? L10n.string(.libraryDeleteAllTitle) : L10n.string(.libraryDeleteSelectedTitle),
                 isPresented: $isDeleteSelectedConfirmationPresented
             ) {
-                Button("Cancel", role: .cancel) {}
-                Button("Delete", role: .destructive) {
+                Button(.commonCancel, role: .cancel) {}
+                Button(.commonDelete, role: .destructive) {
                     let selectedIds = selection
                     deleteTarget = nil
                     selection.removeAll()
@@ -130,9 +130,10 @@ struct LibraryView: View {
                     }
                 }
             } message: {
-                Text("This removes saved reads and local files from this device. This cannot be undone.")
+                Text(.libraryDeleteSelectedMessage)
             }
         }
+        .focusReadLocalizationRefresh()
     }
 
     @ViewBuilder
@@ -198,10 +199,10 @@ struct LibraryView: View {
 
     private var headerRow: some View {
         HStack(alignment: .top) {
-            FocusReadPageHeader(title: "Library")
+            FocusReadPageHeader(titleKey: .libraryTitle)
             Spacer()
             if isSelectMode {
-                Button("Done") {
+                Button(.commonDone) {
                     isSelectMode = false
                     selection.removeAll()
                 }
@@ -220,7 +221,7 @@ struct LibraryView: View {
                             .frame(width: 44, height: 44)
                             .background(theme.controlBackground.opacity(0.8), in: Circle())
                     }
-                    .accessibilityLabel("Import")
+                    .accessibilityLabel(L10n.string(.libraryImportAccessibility))
 
                     LibraryControlsMenu(
                         viewMode: $viewMode,
@@ -236,7 +237,7 @@ struct LibraryView: View {
     }
 
     private var searchBar: some View {
-        NativeSearchBarView(text: $viewModel.searchText, placeholder: "Search books or authors")
+        NativeSearchBarView(text: $viewModel.searchText, placeholder: L10n.string(.librarySearchPlaceholder))
             .frame(height: 40)
             .padding(.horizontal, -8)
     }
@@ -244,7 +245,7 @@ struct LibraryView: View {
     private var selectionToolbar: some View {
         HStack {
             let allSelected = selection.count == viewModel.reads.count && !viewModel.reads.isEmpty
-            Button(allSelected ? "Deselect All" : "Select All") {
+            Button(allSelected ? L10n.string(.libraryDeselectAll) : L10n.string(.librarySelectAll)) {
                 if allSelected {
                     selection.removeAll()
                 } else {
@@ -255,7 +256,7 @@ struct LibraryView: View {
 
             Spacer()
 
-            Text("\(selection.count) Selected")
+            Text(L10n.format(.librarySelectedCountFormat, selection.count))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
             
@@ -280,7 +281,7 @@ struct LibraryView: View {
                 .frame(width: 56, height: 56)
                 .background(theme.controlBackground, in: Circle())
 
-            Text("No reads yet.")
+            Text(.libraryEmpty)
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
         }
@@ -296,11 +297,11 @@ struct LibraryView: View {
                 .frame(width: 54, height: 54)
                 .background(theme.controlBackground, in: Circle())
 
-            Text("No results")
+            Text(.libraryNoResults)
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
 
-            Text("Try a different title or author")
+            Text(.libraryNoResultsSuggestion)
                 .font(.callout)
                 .foregroundStyle(theme.secondaryText)
                 .multilineTextAlignment(.center)
@@ -576,26 +577,26 @@ struct LibraryItemMenu: View {
                 Button {
                     onAIRecap()
                 } label: {
-                    Label("AI Recap", systemImage: "sparkles")
+                    Label(.libraryAIRecap, systemImage: "sparkles")
                 }
             }
 
             Button {
                 onMarkFinished()
             } label: {
-                Label("Mark as Finished", systemImage: "checkmark.circle")
+                Label(.libraryMarkFinished, systemImage: "checkmark.circle")
             }
 
             Button {
                 onRename()
             } label: {
-                Label("Rename", systemImage: "textformat")
+                Label(.libraryRename, systemImage: "textformat")
             }
 
             Button(role: .destructive) {
                 onDelete()
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(.commonDelete, systemImage: "trash")
                     .foregroundStyle(theme.destructive)
             }
         } label: {
@@ -632,27 +633,29 @@ struct RenameReadSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Title") {
-                    TextField("Read title", text: $title)
+                Section {
+                    TextField(L10n.string(.libraryReadTitlePlaceholder), text: $title)
                         .textInputAutocapitalization(.words)
                         .foregroundStyle(theme.primaryText)
+                } header: {
+                    Text(.libraryRenameTitleSection)
                 }
                 .listRowBackground(theme.cardBackground)
             }
             .scrollContentBackground(.hidden)
             .background(FocusReadBackground())
-            .navigationTitle("Rename")
+            .navigationTitle(L10n.key(.libraryRename))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(.commonCancel) {
                         onCancel()
                         dismiss()
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button(.commonSave) {
                         onSave(title)
                         dismiss()
                     }
@@ -806,26 +809,30 @@ struct LibraryControlsMenu: View {
         Menu {
             Section {
                 Button(action: onSelectMode) {
-                    Label("Select", systemImage: "checkmark.circle")
+                    Label(.librarySelect, systemImage: "checkmark.circle")
                 }
             }
 
-            Section("View As") {
-                Picker("View As", selection: $viewMode) {
-                    Label("Grid", systemImage: "square.grid.2x2").tag(LibraryViewMode.grid)
-                    Label("List", systemImage: "list.bullet").tag(LibraryViewMode.list)
+            Section {
+                Picker(L10n.key(.libraryViewAs), selection: $viewMode) {
+                    Label(.libraryGrid, systemImage: "square.grid.2x2").tag(LibraryViewMode.grid)
+                    Label(.libraryList, systemImage: "list.bullet").tag(LibraryViewMode.list)
                 }
                 .pickerStyle(.inline)
+            } header: {
+                Text(.libraryViewAs)
             }
 
-            Section("Sort By") {
-                Picker("Sort By", selection: $sortMode) {
-                    Label("Recent", systemImage: "clock").tag(LibrarySortMode.recent)
-                    Label("Title", systemImage: "textformat").tag(LibrarySortMode.title)
-                    Label("Author", systemImage: "person").tag(LibrarySortMode.author)
-                    Label("Manual", systemImage: "line.3.horizontal").tag(LibrarySortMode.manual)
+            Section {
+                Picker(L10n.key(.librarySortBy), selection: $sortMode) {
+                    Label(.librarySortRecent, systemImage: "clock").tag(LibrarySortMode.recent)
+                    Label(.librarySortTitle, systemImage: "textformat").tag(LibrarySortMode.title)
+                    Label(.librarySortAuthor, systemImage: "person").tag(LibrarySortMode.author)
+                    Label(.librarySortManual, systemImage: "line.3.horizontal").tag(LibrarySortMode.manual)
                 }
                 .pickerStyle(.inline)
+            } header: {
+                Text(.librarySortBy)
             }
         } label: {
             Image(systemName: "ellipsis.circle")
@@ -857,15 +864,15 @@ private extension SavedReadSourceType {
     var libraryLabel: String {
         switch self {
         case .pastedText:
-            "Pasted"
+            L10n.string(.librarySourcePasted)
         case .txt:
-            "Text"
+            L10n.string(.librarySourceText)
         case .pdf:
             "PDF"
         case .epub:
             "EPUB"
         case .image:
-            "Image"
+            L10n.string(.librarySourceImage)
         }
     }
 }

@@ -7,16 +7,16 @@ struct RootView: View {
         case stats
         case settings
 
-        var title: String {
+        var titleKey: L10n.Key {
             switch self {
             case .home:
-                return "Home"
+                return .tabHome
             case .library:
-                return "Library"
+                return .tabLibrary
             case .stats:
-                return "My Stats"
+                return .tabStats
             case .settings:
-                return "Settings"
+                return .tabSettings
             }
         }
 
@@ -34,7 +34,6 @@ struct RootView: View {
         }
     }
 
-    @StateObject private var inputViewModel = InputViewModel()
     @StateObject private var readingHistoryStore = LocalReadingHistoryStore()
     @StateObject private var readingStatsStore = LocalReadingStatsStore()
     @StateObject private var recapStore = LocalAIRecapStore()
@@ -59,14 +58,15 @@ struct RootView: View {
             } else {
                 TabView(selection: $selectedTab) {
                     TextInputView(
-                        viewModel: inputViewModel
-                    ) {
-                        startReading()
-                    } onStartImportedDocument: { document in
-                        startReading(importedDocument: document)
-                    }
+                        onStartDemo: {
+                            startDemoReading()
+                        },
+                        onStartImportedDocument: { document in
+                            startReading(importedDocument: document)
+                        }
+                    )
                     .tabItem {
-                        Label(MainTab.home.title, systemImage: MainTab.home.systemImage)
+                        Label(MainTab.home.titleKey, systemImage: MainTab.home.systemImage)
                     }
                     .tag(MainTab.home)
 
@@ -89,7 +89,7 @@ struct RootView: View {
                         }
                     )
                     .tabItem {
-                        Label(MainTab.library.title, systemImage: MainTab.library.systemImage)
+                        Label(MainTab.library.titleKey, systemImage: MainTab.library.systemImage)
                     }
                     .tag(MainTab.library)
 
@@ -98,7 +98,7 @@ struct RootView: View {
                         readingHistoryStore: readingHistoryStore
                     )
                     .tabItem {
-                        Label(MainTab.stats.title, systemImage: MainTab.stats.systemImage)
+                        Label(MainTab.stats.titleKey, systemImage: MainTab.stats.systemImage)
                     }
                     .tag(MainTab.stats)
 
@@ -108,7 +108,7 @@ struct RootView: View {
                         showsPageHeader: true
                     )
                     .tabItem {
-                        Label(MainTab.settings.title, systemImage: MainTab.settings.systemImage)
+                        Label(MainTab.settings.titleKey, systemImage: MainTab.settings.systemImage)
                     }
                     .tag(MainTab.settings)
                 }
@@ -118,6 +118,7 @@ struct RootView: View {
                 .transition(.opacity)
             }
         }
+        .focusReadLocalizationRefresh()
         .animation(.smooth(duration: 0.35), value: readerViewModel == nil)
         .documentImportFlow(
             viewModel: documentOpenInViewModel,
@@ -140,17 +141,37 @@ struct RootView: View {
         )
     }
 
-    private func startReading() {
-        let tokens = tokenizer.tokenize(inputViewModel.text)
+    private func startDemoReading() {
+        let tokens = tokenizer.tokenize(FocusReadHomeDemoContent.readerSampleText)
         guard !tokens.isEmpty else { return }
+        let document = ReadingDocument(
+            title: L10n.string(.readerDemoTitle),
+            fileName: L10n.string(.readerDemoTitle),
+            sourceType: .txt,
+            sections: [
+                ReadingDocumentSection(
+                    index: 0,
+                    title: nil,
+                    pageNumber: nil,
+                    chapterNumber: nil,
+                    wordRange: nil
+                )
+            ]
+        )
         let session = ReadingSession(
             tokens: tokens,
-            document: .pastedText(),
+            document: document,
             wordsPerMinute: defaultWPM
         )
-        let savedRead = SavedReadMapper.makeSavedRead(from: inputViewModel.text, tokens: tokens)
+        var savedRead = SavedReadMapper.makeSavedRead(
+            from: FocusReadHomeDemoContent.readerSampleText,
+            tokens: tokens
+        )
+        savedRead.displayTitle = L10n.string(.readerDemoTitle)
+        savedRead.originalFileName = L10n.string(.readerDemoTitle)
+        savedRead.sourceType = .txt
         readingHistoryStore.save(savedRead)
-        attachThumbnail(for: savedRead, previewImageData: nil)
+
         readerViewModel = ReaderViewModel(
             session: session,
             readingHistoryStore: readingHistoryStore,
@@ -214,13 +235,13 @@ struct RootView: View {
 
         let document = ReadingDocument(
             id: recap.id,
-            title: "AI Recap",
+            title: L10n.string(.aiRecapTitle),
             fileName: read.displayTitle,
             sourceType: .pastedText,
             sections: [
                 ReadingDocumentSection(
                     index: 0,
-                    title: "AI Recap",
+                    title: L10n.string(.aiRecapTitle),
                     pageNumber: nil,
                     chapterNumber: nil,
                     wordRange: nil

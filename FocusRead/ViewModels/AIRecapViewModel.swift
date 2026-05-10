@@ -148,17 +148,17 @@ final class AIRecapViewModel: ObservableObject {
     private static func message(for error: Error) -> String {
         switch error as? AIRecapGenerationError {
         case .localAIUnavailable:
-            return "AI Recap requires on-device Apple Intelligence support."
+            return L10n.string(.aiRecapUnavailable)
         case .noEligibleSession:
-            return "No recent reading session is available for recap yet."
+            return L10n.string(.aiRecapNoEligibleSession)
         case .sourceUnavailable:
-            return "Couldn’t find enough saved text for this session."
+            return L10n.string(.aiRecapSourceUnavailable)
         case .notEnoughText:
-            return "This reading session is too short to summarize."
+            return L10n.string(.aiRecapTooShort)
         case .unsupportedLanguage:
-            return "AI Recap could not be generated for this language on this device."
+            return L10n.string(.aiRecapUnsupportedLanguage)
         case .generationFailed, nil:
-            return "Couldn’t generate recap. Try again."
+            return L10n.string(.aiRecapGenerationFailed)
         }
     }
 }

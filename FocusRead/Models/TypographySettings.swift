@@ -42,8 +42,8 @@ enum ReaderDisplayMode: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .oneWord: return "One Word"
-        case .twoWords: return "Two Words"
+        case .oneWord: return L10n.string(.displayModeOneWord)
+        case .twoWords: return L10n.string(.displayModeTwoWords)
         }
     }
 }
@@ -57,9 +57,9 @@ enum LongWordDelayMode: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .off: return "Off"
-        case .moderate: return "Moderate"
-        case .strong: return "Strong"
+        case .off: return L10n.string(.longWordDelayOff)
+        case .moderate: return L10n.string(.longWordDelayModerate)
+        case .strong: return L10n.string(.longWordDelayStrong)
         }
     }
 
@@ -106,20 +106,20 @@ enum SmartCleanupMode: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .off: return "Off"
-        case .smart: return "Smart Cleanup"
-        case .ai: return "AI Cleanup"
+        case .off: return L10n.string(.cleanupOff)
+        case .smart: return L10n.string(.cleanupSmart)
+        case .ai: return L10n.string(.cleanupAI)
         }
     }
 
     var description: String {
         switch self {
         case .off:
-            return "No cleanup applied."
+            return L10n.string(.cleanupOffDescription)
         case .smart:
-            return "Uses local rules to clean spacing, line breaks, headers, and OCR artifacts."
+            return L10n.string(.cleanupSmartDescription)
         case .ai:
-            return "Uses on-device intelligence when available to clean imported text while preserving meaning."
+            return L10n.string(.cleanupAIDescription)
         }
     }
 }
@@ -133,9 +133,9 @@ enum AppAppearance: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .system: return "System"
-        case .light: return "Light"
-        case .dark: return "Dark"
+        case .system: return L10n.string(.appearanceSystem)
+        case .light: return L10n.string(.appearanceLight)
+        case .dark: return L10n.string(.appearanceDark)
         }
     }
 
@@ -158,10 +158,10 @@ enum ReaderFontFamily: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .serif: return "Serif"
-        case .system: return "System"
-        case .rounded: return "Rounded"
-        case .monospaced: return "Monospaced"
+        case .serif: return L10n.string(.fontFamilySerif)
+        case .system: return L10n.string(.fontFamilySystem)
+        case .rounded: return L10n.string(.fontFamilyRounded)
+        case .monospaced: return L10n.string(.fontFamilyMonospaced)
         }
     }
 
@@ -184,9 +184,9 @@ enum ReaderFontWeight: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .regular: return "Regular"
-        case .medium: return "Medium"
-        case .bold: return "Bold"
+        case .regular: return L10n.string(.fontWeightRegular)
+        case .medium: return L10n.string(.fontWeightMedium)
+        case .bold: return L10n.string(.fontWeightBold)
         }
     }
 
@@ -210,11 +210,11 @@ enum ReaderTextColor: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .primary: return "Primary"
-        case .black: return "Black"
-        case .gray: return "Gray"
-        case .blue: return "Blue"
-        case .sepia: return "Sepia"
+        case .primary: return L10n.string(.textColorPrimary)
+        case .black: return L10n.string(.textColorBlack)
+        case .gray: return L10n.string(.textColorGray)
+        case .blue: return L10n.string(.textColorBlue)
+        case .sepia: return L10n.string(.textColorSepia)
         }
     }
 

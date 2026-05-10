@@ -46,7 +46,7 @@ struct ReaderActionPaletteView: View {
                 HStack(spacing: spacing) {
                     if isTranslateSupported {
                         ReaderActionItem(
-                            title: "Translate",
+                            title: L10n.string(.readerTranslate),
                             systemImage: "translate",
                             size: actionSize,
                             onPressedChange: updateInteractionState
@@ -56,7 +56,7 @@ struct ReaderActionPaletteView: View {
                     }
                     
                     ReaderActionItem(
-                        title: "Settings",
+                        title: L10n.string(.readerSettings),
                         systemImage: "gearshape",
                         size: actionSize,
                         onPressedChange: updateInteractionState
@@ -67,17 +67,17 @@ struct ReaderActionPaletteView: View {
 
                 HStack(spacing: spacing) {
                     ReaderActionItem(
-                        title: "Dictionary",
+                        title: L10n.string(.readerDictionary),
                         systemImage: "book",
                         size: actionSize,
                         onPressedChange: updateInteractionState
                     ) {
                         runAndClose(onDictionary)
                     }
-                    .accessibilityHint(currentWord.isEmpty ? "Open the current word in the dictionary." : "Open \"\(currentWord)\" in the dictionary.")
+                    .accessibilityHint(currentWord.isEmpty ? L10n.string(.readerDictionaryHint) : L10n.format(.readerDictionaryCurrentWordHintFormat, currentWord))
 
                     ReaderActionItem(
-                        title: "Lookup",
+                        title: L10n.string(.readerLookup),
                         systemImage: "magnifyingglass",
                         size: actionSize,
                         onPressedChange: updateInteractionState
@@ -113,8 +113,8 @@ struct ReaderActionPaletteView: View {
                 .shadow(color: AppTheme.overlayShadow.opacity(isPresented ? 1 : 0.58), radius: 14, x: 0, y: 8)
         }
         .buttonStyle(ReaderPaletteButtonStyle(onPressedChange: updateInteractionState))
-        .accessibilityLabel(isPresented ? "Close quick actions" : "Quick actions")
-        .accessibilityHint("Open reader actions.")
+        .accessibilityLabel(isPresented ? L10n.string(.readerCloseQuickActions) : L10n.string(.readerQuickActions))
+        .accessibilityHint(L10n.string(.readerQuickActionsHint))
     }
 
     private func closePalette() {
@@ -176,7 +176,7 @@ private struct ReaderActionItem: View {
         }
         .buttonStyle(ReaderPaletteButtonStyle(onPressedChange: onPressedChange))
         .accessibilityLabel(title)
-        .accessibilityHint("Double tap to open.")
+        .accessibilityHint(L10n.string(.readerActionOpenHint))
     }
 }
 

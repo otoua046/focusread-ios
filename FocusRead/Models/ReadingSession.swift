@@ -55,7 +55,7 @@ struct ReadingDocument: Identifiable, Equatable, Sendable {
 
     static func pastedText() -> ReadingDocument {
         ReadingDocument(
-            title: "Pasted Text",
+            title: L10n.string(.readerPastedText),
             fileName: nil,
             sourceType: .pastedText,
             sections: [

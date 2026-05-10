@@ -22,11 +22,11 @@ struct CurrentLocationPreview: Equatable, Sendable {
     let parts: [CurrentLocationPreviewPart]
 
     init(session: ReadingSession, currentSection: ReadingDocumentSection?) {
-        title = "Current Location"
+        title = L10n.string(.readerCurrentLocationTitle)
 
         let totalWordCount = session.tokens.count
         let wordNumber = totalWordCount == 0 ? 0 : min(session.currentIndex + 1, totalWordCount)
-        let wordLocation = "Word \(wordNumber) of \(totalWordCount)"
+        let wordLocation = L10n.format(.readerWordLocationFormat, wordNumber, totalWordCount)
         subtitle = Self.subtitle(
             for: session,
             currentSection: currentSection,
@@ -47,7 +47,7 @@ struct CurrentLocationPreview: Equatable, Sendable {
             guard let pageNumber = currentSection?.pageNumber ?? currentToken?.sourcePageNumber else {
                 return wordLocation
             }
-            return "Page \(pageNumber) · \(wordLocation)"
+            return L10n.format(.readerPageLocationFormat, pageNumber, wordLocation)
         case .epub:
             let chapterNumber = currentSection?.chapterNumber ?? currentToken?.sourceChapterNumber
             let chapterTitle = Self.trimmedNonEmpty(currentSection?.title)
@@ -55,9 +55,9 @@ struct CurrentLocationPreview: Equatable, Sendable {
             let chapterLocation: String?
 
             if let chapterNumber, let chapterTitle {
-                chapterLocation = "Chapter \(chapterNumber): \(chapterTitle)"
+                chapterLocation = L10n.format(.readerChapterWithTitleFormat, chapterNumber, chapterTitle)
             } else if let chapterNumber {
-                chapterLocation = "Chapter \(chapterNumber)"
+                chapterLocation = L10n.format(.readerChapterFormat, chapterNumber)
             } else {
                 chapterLocation = chapterTitle
             }
@@ -333,15 +333,15 @@ final class ReaderViewModel: ObservableObject {
 
     var progressLabel: String {
         if case .aiRecap = displayContext {
-            return "Recap word \(currentWordNumber)/\(session.tokens.count)"
+            return L10n.format(.readerRecapWordProgressFormat, currentWordNumber, session.tokens.count)
         }
 
-        return "Word \(currentWordNumber)/\(session.tokens.count)"
+        return L10n.format(.readerWordProgressFormat, currentWordNumber, session.tokens.count)
     }
 
     var readerModeBadge: String? {
         if case .aiRecap = displayContext {
-            return "Recap Mode"
+            return L10n.string(.readerRecapMode)
         }
 
         return nil
@@ -360,12 +360,12 @@ final class ReaderViewModel: ObservableObject {
 
     var locationIndicatorTitle: String {
         if case .aiRecap = displayContext {
-            return "AI Recap"
+            return L10n.string(.readerAIRecap)
         }
 
         switch session.document.sourceType {
         case .pastedText:
-            return "Pasted Text"
+            return L10n.string(.readerPastedText)
         case .txt:
             if let structureTitle = currentStructureLocationTitle {
                 return structureTitle
@@ -373,14 +373,14 @@ final class ReaderViewModel: ObservableObject {
             return session.document.fileName ?? session.document.title
         case .pdf:
             if let structureTitle = currentStructureLocationTitle {
-                return "\(session.document.fileName ?? session.document.title): \(structureTitle)"
+                return L10n.format(.readerDocumentLocationFormat, session.document.fileName ?? session.document.title, structureTitle)
             }
-            return "\(session.document.fileName ?? session.document.title): Page \(currentSectionNumber)"
+            return L10n.format(.readerDocumentLocationFormat, session.document.fileName ?? session.document.title, L10n.format(.readerPageFormat, currentSectionNumber))
         case .image:
-            return "\(session.document.fileName ?? session.document.title): Page \(currentSectionNumber)"
+            return L10n.format(.readerDocumentLocationFormat, session.document.fileName ?? session.document.title, L10n.format(.readerPageFormat, currentSectionNumber))
         case .epub:
-            let location = currentEPUBLocationTitle ?? "\(currentEPUBSectionKind) \(currentSectionNumber)"
-            return "\(session.document.fileName ?? session.document.title): \(location)"
+            let location = currentEPUBLocationTitle ?? L10n.format(currentEPUBSectionKindFormatKey, currentSectionNumber)
+            return L10n.format(.readerDocumentLocationFormat, session.document.fileName ?? session.document.title, location)
         }
     }
 
@@ -923,14 +923,14 @@ final class ReaderViewModel: ObservableObject {
         return title
     }
 
-    private var currentEPUBSectionKind: String {
+    private var currentEPUBSectionKindFormatKey: L10n.Key {
         switch currentSectionMetadata?.epubSectionRole {
         case .chapter:
-            return "Chapter"
+            return .readerChapterFormat
         case .part:
-            return "Part"
+            return .readerPartFormat
         case .frontMatter, .backMatter, .appendix, .reference, .body, nil:
-            return "Section"
+            return .readerSectionFormat
         }
     }
 
@@ -945,14 +945,14 @@ final class ReaderViewModel: ObservableObject {
         }
 
         if let chapterNumber = chunk.chapterNumber {
-            return "Chapter \(chapterNumber): \(label)"
+            return L10n.format(.readerChapterWithTitleFormat, chapterNumber, label)
         }
 
         if let pageRange = chunk.sourcePageRange {
             if pageRange.lowerBound == pageRange.upperBound {
-                return "Page \(pageRange.lowerBound): \(label)"
+                return L10n.format(.readerDocumentLocationFormat, L10n.format(.readerPageFormat, pageRange.lowerBound), label)
             }
-            return "Pages \(pageRange.lowerBound)-\(pageRange.upperBound): \(label)"
+            return L10n.format(.readerPagesRangeLocationFormat, pageRange.lowerBound, pageRange.upperBound, label)
         }
 
         return label

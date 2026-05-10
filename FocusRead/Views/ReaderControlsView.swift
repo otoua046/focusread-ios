@@ -16,12 +16,12 @@ struct ReaderControlsView: View {
         VStack(spacing: 18) {
             HStack(spacing: 14) {
                 if viewModel.sectionNavigationAvailable {
-                    edgeButton(systemName: "chevron.left.to.line") {
+                    edgeButton(systemName: "chevron.backward.to.line") {
                         viewModel.jumpToPreviousSection()
                     }
                     .disabled(!viewModel.canJumpToPreviousSection)
                     .opacity(viewModel.canJumpToPreviousSection ? 1 : 0.35)
-                    .accessibilityLabel("Previous section")
+                    .accessibilityLabel(L10n.string(.readerPreviousSection))
                 }
 
                 Button {
@@ -36,7 +36,7 @@ struct ReaderControlsView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Rewind word")
+                .accessibilityLabel(L10n.string(.readerRewindWord))
 
                 Button {
                     viewModel.togglePlayback()
@@ -48,7 +48,7 @@ struct ReaderControlsView: View {
                         .background(AppTheme.primaryButtonBackground, in: Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(viewModel.isPlaying ? "Pause" : "Play")
+                .accessibilityLabel(viewModel.isPlaying ? L10n.string(.readerPause) : L10n.string(.readerPlay))
 
                 Button {
                     viewModel.skipWord()
@@ -62,15 +62,15 @@ struct ReaderControlsView: View {
                         }
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Skip word")
+                .accessibilityLabel(L10n.string(.readerSkipWord))
 
                 if viewModel.sectionNavigationAvailable {
-                    edgeButton(systemName: "chevron.right.to.line") {
+                    edgeButton(systemName: "chevron.forward.to.line") {
                         viewModel.jumpToNextSection()
                     }
                     .disabled(!viewModel.canJumpToNextSection)
                     .opacity(viewModel.canJumpToNextSection ? 1 : 0.35)
-                    .accessibilityLabel("Next section")
+                    .accessibilityLabel(L10n.string(.readerNextSection))
                 }
             }
             .font(.headline)
@@ -116,13 +116,13 @@ private struct WPMDialControl: View {
 
     var body: some View {
         HStack(spacing: 1) {
-            nudgeButton(systemName: "minus", label: "Decrease speed") {
+            nudgeButton(systemName: "minus", label: L10n.string(.readerDecreaseSpeed)) {
                 nudge(direction: -1)
             }
 
             dialFace
 
-            nudgeButton(systemName: "plus", label: "Increase speed") {
+            nudgeButton(systemName: "plus", label: L10n.string(.readerIncreaseSpeed)) {
                 nudge(direction: 1)
             }
         }
@@ -138,7 +138,7 @@ private struct WPMDialControl: View {
                 .opacity(isInteracting ? 1 : 0.06)
                 .blur(radius: isInteracting ? 0 : 1.6)
 
-            Text("\(currentWPM) WPM")
+            Text(L10n.format(.readerWPMBadgeFormat, currentWPM))
                 .font(.system(.headline, design: .default, weight: .medium))
                 .foregroundStyle(AppTheme.secondaryText)
                 .monospacedDigit()
@@ -151,9 +151,9 @@ private struct WPMDialControl: View {
         .contentShape(Rectangle())
         .gesture(speedDragGesture)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Reading speed")
-        .accessibilityValue("\(currentWPM) words per minute")
-        .accessibilityHint("Drag left or right to adjust reading speed.")
+                .accessibilityLabel(L10n.string(.readerSpeed))
+                .accessibilityValue(L10n.format(.readerSpeedValueFormat, currentWPM))
+                .accessibilityHint(L10n.string(.readerSpeedHint))
     }
 
     private var tickRuler: some View {

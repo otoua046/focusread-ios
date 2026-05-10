@@ -5,7 +5,9 @@ enum AIRecapSettingsKey {
 }
 
 enum AIRecapSettings {
-    static let disabledMessage = "AI Recaps are disabled in Settings."
+    static var disabledMessage: String {
+        L10n.string(.aiRecapDisabled)
+    }
 
     static func defaultEnabled(localAIAvailable: Bool = AIRecapService().isAvailable) -> Bool {
         localAIAvailable

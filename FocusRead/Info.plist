@@ -61,6 +61,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<false/>
 	<key>NSCameraUsageDescription</key>
 	<string>FocusRead uses the camera to scan text for reading.</string>
 	<key>UIApplicationSceneManifest</key>

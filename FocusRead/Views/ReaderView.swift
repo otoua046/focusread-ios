@@ -96,8 +96,8 @@ struct ReaderView: View {
             DictionaryLookupView(term: request.term)
         }
         .translationPresentation(isPresented: $showingTranslation, text: viewModel.currentWordForTranslation)
-        .alert("No definition found.", isPresented: $viewModel.noDefinitionFound) {
-            Button("OK", role: .cancel) {}
+        .alert(L10n.string(.readerNoDefinitionFound), isPresented: $viewModel.noDefinitionFound) {
+            Button(.commonOK, role: .cancel) {}
         }
         .onAppear {
             syncBehaviorSettings()
@@ -135,7 +135,7 @@ struct ReaderView: View {
                     Image(systemName: "xmark")
                 }
                 .buttonStyle(.topReaderControl)
-                .accessibilityLabel("Close reader")
+                .accessibilityLabel(L10n.string(.readerClose))
                 .zIndex(1)
 
                 Spacer()
@@ -146,8 +146,8 @@ struct ReaderView: View {
                     Image(systemName: "doc.text.magnifyingglass")
                 }
                 .buttonStyle(.topReaderControl)
-                .accessibilityLabel("Current location")
-                .accessibilityHint("Shows nearby text around the current word")
+                .accessibilityLabel(L10n.string(.readerCurrentLocation))
+                .accessibilityHint(L10n.string(.readerCurrentLocationHint))
                 .zIndex(1)
             }
 
@@ -222,9 +222,9 @@ struct ReaderView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Reading progress")
-            .accessibilityHint("Tap to search words")
-            .accessibilityAction(named: "Search Word") {
+            .accessibilityLabel(L10n.string(.readerProgress))
+            .accessibilityHint(L10n.string(.readerProgressHint))
+            .accessibilityAction(named: Text(L10n.key(.readerSearchWordAction))) {
                     viewModel.prepareForSearchNavigation()
                     showingGoToNavigation = true
             }
@@ -345,7 +345,7 @@ struct CurrentLocationPreviewView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
+                    Button(.commonDone) {
                         dismiss()
                     }
                 }

@@ -5,6 +5,7 @@ struct StatsView: View {
     @ObservedObject var readingHistoryStore: LocalReadingHistoryStore
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.focusReadTheme) private var theme
+    @AppStorage(AppLanguageStorageKey.selectedLanguage) private var selectedLanguageRawValue: String = AppLanguage.systemDefault.rawValue
 
     private var widgetColumns: [GridItem] {
         if horizontalSizeClass == .compact {
@@ -22,7 +23,7 @@ struct StatsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                FocusReadPageHeader(title: "My Stats")
+                FocusReadPageHeader(titleKey: .statsTitle)
 
                 ReadingActivityWidget(
                     activities: readingActivityDays
@@ -38,34 +39,34 @@ struct StatsView: View {
                     )
 
                     StatsMetricWidget(
-                        title: "Daily Streak",
+                        title: L10n.string(.statsDailyStreak),
                         value: "\(statsStore.snapshot.currentStreakDays)",
                         detail: longestStreakText,
                         symbolName: "flame.fill"
                     )
 
                     StatsMetricWidget(
-                        title: "Average WPM",
+                        title: L10n.string(.statsAverageWPM),
                         value: statsStore.snapshot.averageWPM > 0 ? "\(statsStore.snapshot.averageWPM)" : "--",
                         symbolName: "speedometer"
                     )
 
                     StatsMetricWidget(
-                        title: "Reading Time",
+                        title: L10n.string(.statsReadingTime),
                         value: formattedDuration(statsStore.snapshot.totalReadingSeconds),
                         symbolName: "clock.fill"
                     )
 
                     StatsMetricWidget(
-                        title: "Books Completed",
+                        title: L10n.string(.statsBooksCompleted),
                         value: "\(statsStore.snapshot.booksCompleted)",
                         symbolName: "checkmark.circle.fill"
                     )
 
                     StatsMetricWidget(
-                        title: "Time Saved",
+                        title: L10n.string(.statsTimeSaved),
                         value: formattedDuration(statsStore.snapshot.estimatedTimeSavedSeconds),
-                        detail: "vs. normal reading",
+                        detail: L10n.string(.statsTimeSavedDetail),
                         symbolName: "forward.end.fill"
                     )
                 }
@@ -79,6 +80,7 @@ struct StatsView: View {
             .padding(.bottom, 28)
         }
         .background(FocusReadBackground())
+        .focusReadLocalizationRefresh()
         .onAppear {
             statsStore.reconcileCompletedReads(from: readingHistoryStore.savedReads)
         }
@@ -89,13 +91,13 @@ struct StatsView: View {
 
     private var recentDaysSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Recent Days")
+            Text(.statsRecentDays)
                 .font(.headline)
                 .foregroundStyle(theme.primaryText)
                 .padding(.horizontal, 2)
 
             if recentDailyStats.isEmpty {
-                Text("Start a reading session to fill in your progress.")
+                Text(.statsEmptyRecentDays)
                     .font(.subheadline)
                     .foregroundStyle(theme.secondaryText)
                     .frame(maxWidth: .infinity, minHeight: 82)
@@ -155,32 +157,36 @@ struct StatsView: View {
         return min(Double(statsStore.snapshot.todayWordsRead) / Double(statsStore.snapshot.dailyGoalWords), 1)
     }
 
+    private var selectedLocale: Locale {
+        (AppLanguage(rawValue: selectedLanguageRawValue) ?? .systemDefault).locale
+    }
+
     private var longestStreakText: String? {
         guard statsStore.snapshot.longestStreakDays > 0 else { return nil }
-        return "Best \(statsStore.snapshot.longestStreakDays)"
+        return L10n.format(.statsBestStreakFormat, statsStore.snapshot.longestStreakDays)
     }
 
     private func formattedInteger(_ value: Int) -> String {
-        value.formatted(.number.grouping(.automatic))
+        value.formatted(.number.grouping(.automatic).locale(selectedLocale))
     }
 
     private func formattedDuration(_ seconds: TimeInterval) -> String {
         let seconds = Int(seconds.rounded())
-        guard seconds > 0 else { return "0m" }
+        guard seconds > 0 else { return L10n.string(.statsDurationZero) }
 
         let hours = seconds / 3_600
         let minutes = (seconds % 3_600) / 60
         if hours > 0, minutes > 0 {
-            return "\(hours)h \(minutes)m"
+            return L10n.format(.statsDurationHoursMinutesFormat, hours, minutes)
         }
         if hours > 0 {
-            return "\(hours)h"
+            return L10n.format(.statsDurationHoursFormat, hours)
         }
-        return "\(max(minutes, 1))m"
+        return L10n.format(.statsDurationMinutesFormat, max(minutes, 1))
     }
 
     private func formattedDay(_ date: Date) -> String {
-        date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day())
+        date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().locale(selectedLocale))
     }
 }
 
@@ -191,7 +197,7 @@ private struct ReadingActivityWidget: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text("Reading Activity")
+                Text(.statsReadingActivity)
                     .font(.headline)
                     .foregroundStyle(theme.primaryText)
 
@@ -213,7 +219,7 @@ private struct ReadingActivityWidget: View {
         .padding(14)
         .widgetSurface(cornerRadius: 22)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Reading Activity, daily words read contribution grid")
+        .accessibilityLabel(L10n.string(.statsReadingActivityAccessibility))
     }
 }
 
@@ -222,7 +228,7 @@ private struct ContributionLegend: View {
 
     var body: some View {
         HStack(spacing: 3) {
-            Text("Less")
+            Text(.statsLess)
 
             ForEach(0...4, id: \.self) { level in
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
@@ -230,7 +236,7 @@ private struct ContributionLegend: View {
                     .frame(width: 7, height: 7)
             }
 
-            Text("More")
+            Text(.statsMore)
         }
         .font(.caption2.weight(.medium))
         .foregroundStyle(theme.tertiaryText)
@@ -244,8 +250,13 @@ struct ReadingContributionGrid: View {
     var showsMonthLabels = false
     var showsWeekdayLabels = false
     @Environment(\.focusReadTheme) private var theme
+    @AppStorage(AppLanguageStorageKey.selectedLanguage) private var selectedLanguageRawValue: String = AppLanguage.systemDefault.rawValue
 
     private let rows = 7
+
+    private var selectedLocale: Locale {
+        (AppLanguage(rawValue: selectedLanguageRawValue) ?? .systemDefault).locale
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -370,12 +381,12 @@ struct ReadingContributionGrid: View {
         )
 
         let monthLabels = contributionCalendar.monthMarkers(for: columns).map { marker in
-            ContributionMonthLayoutLabel(
-                id: marker.date,
-                text: marker.date.formatted(.dateTime.month(.abbreviated)),
-                xOffset: CGFloat(marker.columnIndex) * (cellSize + cellSpacing)
-            )
-        }
+                ContributionMonthLayoutLabel(
+                    id: marker.date,
+                    text: marker.date.formatted(.dateTime.month(.abbreviated).locale(selectedLocale)),
+                    xOffset: CGFloat(marker.columnIndex) * (cellSize + cellSpacing)
+                )
+            }
 
         let resolvedGridWidth = CGFloat(visibleWeeks) * cellSize + CGFloat(visibleWeeks - 1) * cellSpacing
         let resolvedGridHeight = CGFloat(rows) * cellSize + CGFloat(rows - 1) * cellSpacing
@@ -412,9 +423,9 @@ struct ReadingContributionGrid: View {
     }
 
     private func accessibilityLabel(for cell: ReadingContributionGridDay) -> String {
-        let formattedDate = cell.date.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        let formattedDate = cell.date.formatted(.dateTime.weekday(.wide).month(.wide).day().locale(selectedLocale))
         let wordsRead = cell.activity?.wordsRead ?? 0
-        return "\(formattedDate), \(wordsRead) words read"
+        return L10n.format(.statsContributionDayAccessibilityFormat, formattedDate, wordsRead)
     }
 }
 
@@ -475,7 +486,7 @@ private struct DailyProgressMetricWidget: View {
                 .minimumScaleFactor(0.66)
                 .monospacedDigit()
 
-            Text("Daily Progress")
+            Text(.statsDailyProgress)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(theme.secondaryText)
                 .lineLimit(1)
@@ -485,7 +496,7 @@ private struct DailyProgressMetricWidget: View {
         .padding(14)
         .widgetSurface(cornerRadius: 22)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Daily Progress, \(wordsRead) of \(goalWords) words")
+        .accessibilityLabel(L10n.format(.statsDailyProgressAccessibilityFormat, wordsRead, goalWords))
     }
 }
 
@@ -550,7 +561,7 @@ private struct DailyStatsRow: View {
 
                     Spacer(minLength: 8)
 
-                    Text("\(formattedWords) words")
+                    Text(L10n.format(.statsWordsReadFormat, formattedWords))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(theme.secondaryText)
                         .lineLimit(1)
