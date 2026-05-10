@@ -50,7 +50,10 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     }
 
     var locale: Locale {
-        Locale(identifier: resolvedLocaleIdentifier)
+        guard self != .systemDefault else {
+            return .autoupdatingCurrent
+        }
+        return Locale(identifier: resolvedLocaleIdentifier)
     }
 
     var displayName: String {
