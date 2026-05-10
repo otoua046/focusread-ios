@@ -73,11 +73,13 @@ final class CloudSyncManager: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self else { return }
-                settingsStore.markKnownSettingsUpdatedIfNeeded()
+                guard !isApplyingRemoteSnapshot else { return }
+                guard settingsStore.refreshTrackedSettings() else { return }
                 scheduleSync(reason: "settings changed")
             }
             .store(in: &cancellables)
 
+        settingsStore.refreshTrackedSettings()
         scheduleSync(reason: "startup")
     }
 
@@ -126,7 +128,7 @@ final class CloudSyncManager: ObservableObject {
 
         do {
             let now = Date()
-            settingsStore.markKnownSettingsUpdatedIfNeeded(now: now)
+            settingsStore.refreshTrackedSettings(now: now)
             let localSnapshot = makeLocalSnapshot(
                 readingHistoryStore: readingHistoryStore,
                 readingStatsStore: readingStatsStore,
@@ -156,7 +158,9 @@ final class CloudSyncManager: ObservableObject {
 
             try await cloudKitService.saveSnapshot(merged.value)
 
-            userDefaults.set(now, forKey: CloudSyncSettingsKey.lastSyncedAt)
+            writeSyncBookkeeping {
+                userDefaults.set(now, forKey: CloudSyncSettingsKey.lastSyncedAt)
+            }
             status = SyncStatus(kind: .synced, lastSyncedAt: now, message: nil)
             logDecisions(migration.logEntries + merged.decisions.map {
                 CloudSyncMigrationLogEntry(id: UUID(), createdAt: now, message: "\($0.entity)/\($0.id): \($0.message)")
@@ -206,6 +210,12 @@ final class CloudSyncManager: ObservableObject {
             logger.info("\(entry.message, privacy: .public)")
         }
     }
+
+    private func writeSyncBookkeeping(_ updates: () -> Void) {
+        isApplyingRemoteSnapshot = true
+        updates()
+        isApplyingRemoteSnapshot = false
+    }
 }
 
 @MainActor
@@ -240,13 +250,30 @@ struct SyncSettingsStore {
             guard value.updatedAt >= localUpdatedAt else { continue }
             apply(value)
             setSettingUpdatedAt(value.updatedAt, for: value.key)
+            setKnownValue(value.value, for: value.key)
         }
     }
 
-    func markKnownSettingsUpdatedIfNeeded(now: Date = Date()) {
-        for definition in Self.definitions where userDefaults.object(forKey: updatedAtKey(for: definition.key)) == nil {
+    @discardableResult
+    func refreshTrackedSettings(now: Date = Date()) -> Bool {
+        var didChange = false
+        for definition in Self.definitions {
+            let currentValue = storedString(for: definition)
+            if userDefaults.object(forKey: updatedAtKey(for: definition.key)) == nil {
+                setSettingUpdatedAt(now, for: definition.key)
+            }
+
+            guard let knownValue = knownValue(for: definition.key) else {
+                setKnownValue(currentValue, for: definition.key)
+                continue
+            }
+
+            guard knownValue != currentValue else { continue }
             setSettingUpdatedAt(now, for: definition.key)
+            setKnownValue(currentValue, for: definition.key)
+            didChange = true
         }
+        return didChange
     }
 
     private func storedString(for definition: Definition) -> String {
@@ -291,6 +318,18 @@ struct SyncSettingsStore {
 
     private func updatedAtKey(for key: String) -> String {
         CloudSyncSettingsKey.settingsUpdatedAtPrefix + key
+    }
+
+    private func knownValue(for key: String) -> String? {
+        userDefaults.string(forKey: knownValueKey(for: key))
+    }
+
+    private func setKnownValue(_ value: String, for key: String) {
+        userDefaults.set(value, forKey: knownValueKey(for: key))
+    }
+
+    private func knownValueKey(for key: String) -> String {
+        CloudSyncSettingsKey.settingsKnownValuePrefix + key
     }
 
     private static let definitions: [Definition] = [

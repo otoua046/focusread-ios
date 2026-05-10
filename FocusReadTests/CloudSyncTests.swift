@@ -90,6 +90,47 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertEqual(merged.values.first?.value, "72")
     }
 
+    @MainActor
+    func testTrackedSettingTimestampRefreshesWhenLocalValueChanges() throws {
+        let suiteName = "FocusReadCloudSyncSettingsTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let store = SyncSettingsStore(userDefaults: defaults)
+        let initialDate = date("2026-05-07T10:00:00Z")
+        let changedDate = date("2026-05-07T11:00:00Z")
+
+        XCTAssertFalse(store.refreshTrackedSettings(now: initialDate))
+        defaults.set(72.0, forKey: TypographySettingsKey.fontSize)
+
+        XCTAssertTrue(store.refreshTrackedSettings(now: changedDate))
+        let setting = try XCTUnwrap(store.snapshot(now: changedDate).values.first { $0.key == TypographySettingsKey.fontSize })
+        XCTAssertEqual(setting.value, "72.0")
+        XCTAssertEqual(setting.updatedAt, changedDate)
+    }
+
+    @MainActor
+    func testSyncBookkeepingDefaultsDoNotRefreshSettingTimestamps() throws {
+        let suiteName = "FocusReadCloudSyncSettingsTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let store = SyncSettingsStore(userDefaults: defaults)
+        let initialDate = date("2026-05-07T10:00:00Z")
+        let bookkeepingDate = date("2026-05-07T11:00:00Z")
+
+        XCTAssertFalse(store.refreshTrackedSettings(now: initialDate))
+        defaults.set(bookkeepingDate, forKey: CloudSyncSettingsKey.lastSyncedAt)
+
+        XCTAssertFalse(store.refreshTrackedSettings(now: bookkeepingDate))
+        let setting = try XCTUnwrap(store.snapshot(now: bookkeepingDate).values.first { $0.key == TypographySettingsKey.fontSize })
+        XCTAssertEqual(setting.updatedAt, initialDate)
+    }
+
     func testReadingProgressKeepsFurthestMeaningfulProgress() {
         let local = syncedRead(
             id: UUID(),

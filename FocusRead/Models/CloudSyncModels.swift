@@ -4,6 +4,7 @@ enum CloudSyncSettingsKey {
     static let isEnabled = "icloudSync.isEnabled"
     static let lastSyncedAt = "icloudSync.lastSyncedAt"
     static let settingsUpdatedAtPrefix = "icloudSync.settings.updatedAt."
+    static let settingsKnownValuePrefix = "icloudSync.settings.knownValue."
 }
 
 enum CloudSyncStatusKind: String, Codable, Equatable, Sendable {
