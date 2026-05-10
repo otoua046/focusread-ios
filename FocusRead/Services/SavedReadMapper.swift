@@ -12,6 +12,7 @@ enum SavedReadMapper {
             displayTitle: title(forPastedText: text),
             originalFileName: nil,
             sourceType: .pastedText,
+            languageCode: nil,
             thumbnailPath: nil,
             createdAt: now,
             updatedAt: now,
@@ -56,6 +57,7 @@ enum SavedReadMapper {
             displayTitle: document.displayTitle,
             originalFileName: document.fileName,
             sourceType: savedSourceType(from: document.sourceType),
+            languageCode: document.languageCode,
             thumbnailPath: nil,
             createdAt: now,
             updatedAt: now,
@@ -119,6 +121,7 @@ enum SavedReadMapper {
             displayTitle: read.displayTitle,
             author: read.author,
             sourceType: sourceType,
+            languageCode: read.languageCode,
             sections: read.sections.map(importedSection),
             cleanupMode: SmartCleanupMode(rawValue: read.cleanupModeUsed) ?? .off
         )

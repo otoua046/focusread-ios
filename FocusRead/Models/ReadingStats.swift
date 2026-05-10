@@ -210,6 +210,8 @@ struct ReadingSessionEvent: Identifiable, Codable, Equatable, Sendable {
     var endedAt: Date
     var wordsRead: Int
     var averageWPM: Int
+    var sourceStartWordIndex: Int?
+    var sourceEndWordIndex: Int?
 
     init(
         id: UUID = UUID(),
@@ -217,7 +219,9 @@ struct ReadingSessionEvent: Identifiable, Codable, Equatable, Sendable {
         startedAt: Date,
         endedAt: Date,
         wordsRead: Int,
-        averageWPM: Int
+        averageWPM: Int,
+        sourceStartWordIndex: Int? = nil,
+        sourceEndWordIndex: Int? = nil
     ) {
         self.id = id
         self.readID = readID
@@ -225,10 +229,22 @@ struct ReadingSessionEvent: Identifiable, Codable, Equatable, Sendable {
         self.endedAt = endedAt
         self.wordsRead = max(wordsRead, 0)
         self.averageWPM = ReadingSession.clampWPM(averageWPM)
+        self.sourceStartWordIndex = sourceStartWordIndex.map { max($0, 0) }
+        self.sourceEndWordIndex = sourceEndWordIndex.map { max($0, 0) }
     }
 
     var readingSeconds: TimeInterval {
         max(endedAt.timeIntervalSince(startedAt), 0)
+    }
+
+    var sourceWordRange: Range<Int>? {
+        guard let sourceStartWordIndex,
+              let sourceEndWordIndex,
+              sourceEndWordIndex > sourceStartWordIndex else {
+            return nil
+        }
+
+        return sourceStartWordIndex..<sourceEndWordIndex
     }
 }
 

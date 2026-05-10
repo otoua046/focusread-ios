@@ -11,6 +11,7 @@ struct ImportedDocument: Equatable, Sendable {
     let displayTitle: String
     let author: String?
     let sourceType: DocumentSourceType
+    let languageCode: String?
     let previewImageData: Data?
     let sections: [ImportedDocumentSection]
     let cleanupMode: SmartCleanupMode
@@ -22,6 +23,7 @@ struct ImportedDocument: Equatable, Sendable {
         author: String? = nil,
         text: String,
         sourceType: DocumentSourceType,
+        languageCode: String? = nil,
         previewImageData: Data? = nil,
         cleanupMode: SmartCleanupMode = .off,
         cleanupChunks: [DocumentCleanupChunk] = []
@@ -30,6 +32,7 @@ struct ImportedDocument: Equatable, Sendable {
         self.displayTitle = displayTitle ?? fileName
         self.author = author
         self.sourceType = sourceType
+        self.languageCode = languageCode
         self.previewImageData = previewImageData
         self.cleanupMode = cleanupMode
         self.cleanupChunks = cleanupChunks
@@ -50,6 +53,7 @@ struct ImportedDocument: Equatable, Sendable {
         displayTitle: String? = nil,
         author: String? = nil,
         sourceType: DocumentSourceType,
+        languageCode: String? = nil,
         sections: [ImportedDocumentSection],
         previewImageData: Data? = nil,
         cleanupMode: SmartCleanupMode = .off,
@@ -59,6 +63,7 @@ struct ImportedDocument: Equatable, Sendable {
         self.displayTitle = displayTitle ?? fileName
         self.author = author
         self.sourceType = sourceType
+        self.languageCode = languageCode
         self.previewImageData = previewImageData
         self.sections = sections
         self.cleanupMode = cleanupMode
@@ -76,6 +81,7 @@ struct ImportedDocument: Equatable, Sendable {
             displayTitle: displayTitle,
             author: author,
             sourceType: sourceType,
+            languageCode: languageCode,
             sections: sections,
             previewImageData: previewImageData,
             cleanupMode: cleanupMode,

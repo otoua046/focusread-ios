@@ -151,7 +151,17 @@ struct ReaderView: View {
                 .zIndex(1)
             }
 
-            VStack(spacing: 3) {
+            VStack(spacing: viewModel.readerModeBadge == nil ? 3 : 4) {
+                if let readerModeBadge = viewModel.readerModeBadge {
+                    Text(readerModeBadge)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(AppTheme.primaryButtonForeground)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(AppTheme.primaryButtonBackground, in: Capsule())
+                        .lineLimit(1)
+                }
+
                 Text(viewModel.locationIndicatorTitle)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
@@ -165,12 +175,12 @@ struct ReaderView: View {
             }
             .monospacedDigit()
             .frame(maxWidth: .infinity)
-            .frame(height: 38)
+            .frame(height: viewModel.readerModeBadge == nil ? 38 : 52)
             .padding(.horizontal, 58)
             .allowsHitTesting(false)
         }
         .padding(.horizontal, 2)
-        .frame(height: 44)
+        .frame(height: viewModel.readerModeBadge == nil ? 44 : 56)
     }
 
     private var wordStage: some View {

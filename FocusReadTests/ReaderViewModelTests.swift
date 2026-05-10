@@ -267,6 +267,26 @@ final class ReaderViewModelTests: XCTestCase {
         XCTAssertEqual(preview.parts.last?.text, "word10070")
     }
 
+    @MainActor
+    func testCleanupRecordsSourceWordRangeForPlaybackSession() async throws {
+        let readID = UUID()
+        let statsStore = ReadingStatsStoreProbe()
+        let viewModel = ReaderViewModel(
+            session: ReadingSession(tokens: Self.tokens(count: 20), currentIndex: 4, wordsPerMinute: 1_200),
+            readingStatsStore: statsStore,
+            savedReadID: readID
+        )
+
+        viewModel.play()
+        try await Task.sleep(for: .milliseconds(220))
+        viewModel.cleanup()
+
+        let event = try XCTUnwrap(statsStore.sessionEvents.first)
+        XCTAssertEqual(event.readID, readID)
+        XCTAssertEqual(event.sourceWordRange?.lowerBound, 4)
+        XCTAssertGreaterThan(event.sourceWordRange?.upperBound ?? 0, 4)
+    }
+
     private static func tokens(count: Int) -> [ReadingToken] {
         (0..<count).map { index in
             Self.token("word\(index)", id: index)
@@ -296,6 +316,21 @@ final class ReaderViewModelTests: XCTestCase {
             containsNumber: false
         )
     }
+}
+
+@MainActor
+private final class ReadingStatsStoreProbe: ReadingStatsStore {
+    var snapshot: ReadingStatsSnapshot = .empty
+    var dailyStats: [DailyReadingStats] = []
+    var sessionEvents: [ReadingSessionEvent] = []
+
+    func record(_ event: ReadingSessionEvent) {
+        sessionEvents.append(event)
+    }
+
+    func markReadCompleted(readID: UUID, completedAt: Date) {}
+
+    func updateDailyGoalWords(_ words: Int) {}
 }
 
 @MainActor

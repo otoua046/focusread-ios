@@ -6,6 +6,7 @@ struct SavedRead: Identifiable, Codable, Equatable, Sendable {
     var authorName: String?
     var originalFileName: String?
     var sourceType: SavedReadSourceType
+    var languageCode: String?
     var thumbnailPath: String?
     var createdAt: Date
     var updatedAt: Date
@@ -37,6 +38,21 @@ enum SavedReadSourceType: String, Codable, Equatable, Sendable {
     case pdf
     case epub
     case image
+
+    var debugLogName: String {
+        switch self {
+        case .pastedText:
+            return "Pasted Text"
+        case .txt:
+            return "TXT"
+        case .pdf:
+            return "PDF"
+        case .epub:
+            return "EPUB"
+        case .image:
+            return "Image"
+        }
+    }
 }
 
 struct SavedReadSection: Identifiable, Codable, Equatable, Sendable {

@@ -73,6 +73,7 @@ struct EPUBTextExtractor: DocumentTextExtractor {
                 displayTitle: package.metadataTitle,
                 author: package.metadataAuthor,
                 sourceType: .epub,
+                languageCode: package.metadataLanguageCode,
                 sections: sections,
                 previewImageData: previewImageData
             )
@@ -742,6 +743,7 @@ private struct EPUBPackage {
     let opfDirectory: String
     let metadataTitle: String?
     let metadataAuthor: String?
+    let metadataLanguageCode: String?
     let coverItemID: String?
     let manifest: [String: ManifestItem]
     let spine: [String]
@@ -894,6 +896,7 @@ private enum EPUBPackageParser {
             opfDirectory: opfPath.deletingLastPathComponent,
             metadataTitle: EPUBStructureBuilder.cleanedNavigationTitle(delegate.metadataTitle),
             metadataAuthor: EPUBStructureBuilder.cleanedNavigationTitle(delegate.metadataAuthor),
+            metadataLanguageCode: delegate.metadataLanguageCode,
             coverItemID: delegate.coverItemID,
             manifest: delegate.manifest,
             spine: delegate.spine,
@@ -1220,10 +1223,13 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
     var coverItemID: String?
     var metadataTitle: String?
     var metadataAuthor: String?
+    var metadataLanguageCode: String?
     private var capturingTitle = false
     private var capturingAuthor = false
+    private var capturingLanguage = false
     private var titleText = ""
     private var authorText = ""
+    private var languageText = ""
 
     init(opfPath: String) {
         self.opfPath = opfPath
@@ -1246,6 +1252,11 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
             if metadataAuthor == nil {
                 capturingAuthor = true
                 authorText = ""
+            }
+        case "language":
+            if metadataLanguageCode == nil {
+                capturingLanguage = true
+                languageText = ""
             }
         case "meta":
             if coverItemID == nil,
@@ -1288,6 +1299,8 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
             titleText.append(string)
         } else if capturingAuthor {
             authorText.append(string)
+        } else if capturingLanguage {
+            languageText.append(string)
         }
     }
 
@@ -1314,6 +1327,14 @@ private final class OPFXMLParser: NSObject, XMLParserDelegate {
             }
             capturingAuthor = false
             authorText = ""
+        case "language":
+            guard capturingLanguage else { return }
+            let language = cleanedMetadataText(languageText)
+            if !language.isEmpty {
+                metadataLanguageCode = language
+            }
+            capturingLanguage = false
+            languageText = ""
         default:
             return
         }
