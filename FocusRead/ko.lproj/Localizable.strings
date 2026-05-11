@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "정보 / 재설정";
 "settings.resetTypography" = "타이포그래피 재설정";
 "settings.resetAll" = "모든 설정 재설정";
+"settings.resetTypography.confirm.title" = "타이포그래피를 재설정할까요?";
+"settings.resetTypography.confirm.message" = "리더의 글꼴, 크기, 굵기, 기울임, 텍스트 색상을 기본값으로 되돌립니다.";
+"settings.resetAll.confirm.title" = "모든 설정을 재설정할까요?";
+"settings.resetAll.confirm.message" = "모양, 테마, 리더 동작, 텍스트 정리, AI 요약 환경설정, 언어, 타이포그래피를 기본값으로 되돌립니다.";
 
 "appearance.system" = "시스템";
 "appearance.light" = "라이트";

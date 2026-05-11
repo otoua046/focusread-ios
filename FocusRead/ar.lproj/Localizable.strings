@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "حول / إعادة تعيين";
 "settings.resetTypography" = "إعادة تعيين الخطوط";
 "settings.resetAll" = "إعادة تعيين كل الإعدادات";
+"settings.resetTypography.confirm.title" = "إعادة تعيين الخطوط؟";
+"settings.resetTypography.confirm.message" = "سيؤدي هذا إلى استعادة خط القارئ وحجمه ووزنه ونمطه المائل ولون النص إلى القيم الافتراضية.";
+"settings.resetAll.confirm.title" = "إعادة تعيين كل الإعدادات؟";
+"settings.resetAll.confirm.message" = "سيؤدي هذا إلى استعادة المظهر والسمة وسلوك القارئ وتنظيف النص وتفضيل ملخصات الذكاء الاصطناعي واللغة والخطوط إلى القيم الافتراضية.";
 
 "appearance.system" = "النظام";
 "appearance.light" = "فاتح";

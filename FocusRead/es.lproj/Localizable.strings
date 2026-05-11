@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "Acerca de / Restablecer";
 "settings.resetTypography" = "Restablecer tipografía";
 "settings.resetAll" = "Restablecer todos los ajustes";
+"settings.resetTypography.confirm.title" = "¿Restablecer tipografía?";
+"settings.resetTypography.confirm.message" = "Esto restaurará la fuente, el tamaño, el grosor, la cursiva y el color del texto del lector a sus valores predeterminados.";
+"settings.resetAll.confirm.title" = "¿Restablecer todos los ajustes?";
+"settings.resetAll.confirm.message" = "Esto restaurará la apariencia, el tema, el comportamiento del lector, la limpieza de texto, la preferencia de resúmenes IA, el idioma y la tipografía a sus valores predeterminados.";
 
 "appearance.system" = "Sistema";
 "appearance.light" = "Claro";

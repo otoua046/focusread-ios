@@ -77,7 +77,7 @@ struct CloudSyncSettingsView: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
         }
-        .background(AppTheme.background.ignoresSafeArea())
+        .focusReadSettingsPageChrome()
         .navigationTitle("iCloud Sync")
         .navigationBarTitleDisplayMode(.inline)
         .tint(AppTheme.accent)

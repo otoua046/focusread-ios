@@ -3,45 +3,19 @@ import SwiftUI
 struct AppLanguageSettingsView: View {
     @Binding var selectedLanguageRawValue: String
     @Environment(\.focusReadTheme) private var theme
-    @State private var searchText = ""
 
     private var selectedLanguage: AppLanguage {
         AppLanguage(rawValue: selectedLanguageRawValue) ?? .systemDefault
     }
 
-    private var visibleLanguages: [AppLanguage] {
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else {
-            return AppLanguage.selectableLanguages
-        }
-
-        return AppLanguage.selectableLanguages.filter { language in
-            let searchableParts = [
-                language.displayName,
-                language.nativeName,
-                language.shortCode
-            ]
-                .compactMap { $0 }
-                .joined(separator: " ")
-
-            return searchableParts.localizedCaseInsensitiveContains(query)
-        }
-    }
-
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                TextField(L10n.string(.languageSearchPlaceholder), text: $searchText)
-                    .textInputAutocapitalization(.never)
-                    .disableAutocorrection(true)
-                    .textFieldStyle(.roundedBorder)
-                    .padding(.bottom, 2)
-
+            VStack(alignment: .leading, spacing: 16) {
                 VStack(spacing: 0) {
-                    ForEach(Array(visibleLanguages.enumerated()), id: \.element.id) { index, language in
+                    ForEach(Array(AppLanguage.selectableLanguages.enumerated()), id: \.element.id) { index, language in
                         languageRow(language)
 
-                        if index < visibleLanguages.count - 1 {
+                        if index < AppLanguage.selectableLanguages.count - 1 {
                             Divider()
                                 .padding(.leading, 62)
                                 .opacity(0.45)
@@ -64,9 +38,10 @@ struct AppLanguageSettingsView: View {
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal, 18)
-            .padding(.vertical, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 16)
         }
-        .background(FocusReadBackground())
+        .focusReadSettingsPageChrome()
         .navigationTitle(L10n.key(.languageTitle))
         .navigationBarTitleDisplayMode(.inline)
         .tint(theme.accent)

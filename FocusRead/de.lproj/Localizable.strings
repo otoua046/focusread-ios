@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "Info / Zurücksetzen";
 "settings.resetTypography" = "Typografie zurücksetzen";
 "settings.resetAll" = "Alle Einstellungen zurücksetzen";
+"settings.resetTypography.confirm.title" = "Typografie zurücksetzen?";
+"settings.resetTypography.confirm.message" = "Dadurch werden Schriftart, Größe, Stärke, Kursivstil und Textfarbe des Readers auf die Standardwerte zurückgesetzt.";
+"settings.resetAll.confirm.title" = "Alle Einstellungen zurücksetzen?";
+"settings.resetAll.confirm.message" = "Dadurch werden Darstellung, Design, Reader-Verhalten, Textbereinigung, KI-Zusammenfassungspräferenz, Sprache und Typografie auf die Standardwerte zurückgesetzt.";
 
 "appearance.system" = "System";
 "appearance.light" = "Hell";

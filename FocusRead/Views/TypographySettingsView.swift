@@ -1,7 +1,11 @@
+import StoreKit
 import SwiftUI
 
 struct TypographySettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.focusReadTheme) private var theme
+    @Environment(\.openURL) private var openURL
+    @Environment(\.requestReview) private var requestReview
     @EnvironmentObject private var themeManager: FocusReadThemeManager
     @EnvironmentObject private var cloudSyncManager: CloudSyncManager
     @ObservedObject private var readingStatsStore: LocalReadingStatsStore
@@ -25,6 +29,12 @@ struct TypographySettingsView: View {
     @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
     @AppStorage(AIRecapSettingsKey.isEnabled) private var aiRecapsEnabledPreference: Bool = AIRecapSettings.defaultEnabled()
     @AppStorage(AppLanguageStorageKey.selectedLanguage) private var selectedLanguageRawValue: String = AppLanguage.systemDefault.rawValue
+    @State private var isResetTypographyConfirmationPresented = false
+    @State private var isResetAllConfirmationPresented = false
+    @State private var hasScrolledUnderTop = false
+    @State private var proCTAFeedbackTrigger = 0
+
+    private let scrollCoordinateSpaceName = "settingsScroll"
 
     private let aiRecapCapabilityService = AIRecapService()
 
@@ -67,318 +77,248 @@ struct TypographySettingsView: View {
     }
 
     private var settingsContent: some View {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        if showsPageHeader {
-                            FocusReadPageHeader(titleKey: .settingsTitle)
-                                .padding(.bottom, 4)
-                        }
+        settingsScrollView
+            .background(AppTheme.background.ignoresSafeArea())
+            .onAppear {
+                normalizeCleanupMode()
+            }
+    }
 
-                settingsSection(L10n.string(.settingsAppAppearance)) {
-                    Picker(L10n.key(.settingsAppearance), selection: $appearance) {
-                        ForEach(AppAppearance.allCases) { mode in
-                            Text(mode.title).tag(mode.rawValue)
-                        }
+    @ViewBuilder
+    private var settingsScrollView: some View {
+        let scrollView = ScrollView {
+            VStack(spacing: 22) {
+                FocusReadScrollTopTracker(coordinateSpaceName: scrollCoordinateSpaceName)
+
+                if showsPageHeader {
+                    FocusReadPageHeader(titleKey: .settingsTitle)
+                        .padding(.bottom, 2)
+                }
+
+                NavigationLink {
+                    FocusReadProSettingsView()
+                } label: {
+                    ProCTAHeaderView()
+                }
+                .buttonStyle(.proCTAHeader)
+                .sensoryFeedback(.selection, trigger: proCTAFeedbackTrigger)
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        proCTAFeedbackTrigger += 1
                     }
-                    .pickerStyle(.segmented)
-                }
+                )
 
-                settingsSection(L10n.string(.settingsAppLanguage)) {
+                settingsSection("Appearance") {
+                    settingsRow(
+                        title: L10n.string(.settingsAppearance)
+                    ) {
+                        Picker(L10n.key(.settingsAppearance), selection: $appearance) {
+                            ForEach(AppAppearance.allCases) { mode in
+                                Text(mode.title).tag(mode.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .labelsHidden()
+                        .frame(width: 214)
+                    }
+
+                    settingsDivider
+
                     languageNavigationRow
-                }
 
-                settingsSection(L10n.string(.settingsTheme)) {
+                    settingsDivider
+
                     themeNavigationRow
                 }
 
-                settingsSection(L10n.string(.settingsTypography)) {
+                settingsSection("Reading") {
                     typographyNavigationRow
-                }
 
-                settingsSection(L10n.string(.settingsReaderBehavior)) {
-                    // Camera Control is intentionally absent: Apple's public capture-event APIs
-                    // are limited to active media-capture experiences, not reader controls.
-                    settingsRow(L10n.string(.settingsDefaultWPM)) {
-                        HStack {
-                            Slider(value: defaultWPMBinding, in: 100...1_200, step: 25)
-                                .tint(AppTheme.primaryText)
+                    settingsDivider
 
-                            Text("\(defaultWPM)")
-                                .font(.subheadline.weight(.medium))
+                    readerBehaviorNavigationRow
+
+                    settingsDivider
+
+                    settingsRow(
+                        title: L10n.string(.settingsDailyGoal)
+                    ) {
+                        HStack(spacing: 10) {
+                            Text(dailyGoalSummary)
+                                .font(.subheadline)
                                 .foregroundStyle(AppTheme.secondaryText)
                                 .monospacedDigit()
-                                .frame(width: 54, alignment: .trailing)
-                        }
-                    }
+                                .lineLimit(1)
 
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    settingsRow(L10n.string(.settingsDisplayMode)) {
-                        Picker(L10n.key(.settingsDisplayMode), selection: $displayMode) {
-                            ForEach(ReaderDisplayMode.allCases) { mode in
-                                Text(mode.title).tag(mode.rawValue)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    Toggle(L10n.string(.settingsAnchorLetter), isOn: $anchorLetterEnabled)
-                        .tint(AppTheme.accent)
-
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    Toggle(L10n.string(.settingsHaptics), isOn: $hapticsEnabled)
-                        .tint(AppTheme.accent)
-
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    Toggle(L10n.string(.settingsReverseWPMDrag), isOn: $reverseWPMDialDirection)
-                        .tint(AppTheme.accent)
-
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    Toggle(L10n.string(.settingsPunctuationPauses), isOn: $punctuationPausesEnabled)
-                        .tint(AppTheme.accent)
-
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    settingsRow(L10n.string(.settingsLongWordDelay)) {
-                        Picker(L10n.key(.settingsLongWordDelay), selection: $longWordDelayMode) {
-                            ForEach(LongWordDelayMode.allCases) { mode in
-                                Text(mode.title).tag(mode.rawValue)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(.settingsDisplayModeHelp)
-                        Text(.settingsAnchorLetterHelp)
-                        Text(.settingsPunctuationPausesHelp)
-                        Text(.settingsLongWordDelayHelp)
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                }
-
-                settingsSection(L10n.string(.settingsProgress)) {
-                    settingsRow(L10n.string(.settingsDailyGoal)) {
-                        Stepper(
-                            value: dailyGoalBinding,
-                            in: 100...100_000,
-                            step: 100
-                        ) {
-                            HStack(alignment: .firstTextBaseline) {
-                                Text("\(readingStatsStore.snapshot.dailyGoalWords)")
-                                    .font(.title3.weight(.semibold))
-                                    .foregroundStyle(AppTheme.primaryText)
-                                    .monospacedDigit()
-
-                                Text(.commonWords)
-                                    .font(.subheadline)
-                                    .foregroundStyle(AppTheme.secondaryText)
-                            }
+                            dailyGoalControl
                         }
                     }
                 }
 
-                settingsSection(L10n.string(.settingsTextCleanup)) {
-                    settingsRow(L10n.string(.settingsImportedText)) {
-                        Picker(L10n.key(.settingsImportedText), selection: cleanupModeBinding) {
-                            ForEach(availableCleanupModes) { mode in
-                                Text(mode.title).tag(mode.rawValue)
+                VStack(alignment: .leading, spacing: 8) {
+                    settingsSection(textCleanupSectionTitle) {
+                        if isAIRecapCapabilityAvailable {
+                            settingsRow(
+                                title: L10n.string(.settingsAIRecaps),
+                                subtitle: L10n.string(.settingsAIRecapsDescription)
+                            ) {
+                                Toggle(L10n.string(.settingsAIRecaps), isOn: aiRecapsEnabledBinding)
+                                    .labelsHidden()
+                                    .tint(AppTheme.accent)
                             }
+
+                            settingsDivider
                         }
-                        .pickerStyle(.segmented)
+
+                        cleanupSettingsRow
                     }
 
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        ForEach(availableCleanupModes) { mode in
-                            Text(L10n.format(.settingsCleanupDescriptionFormat, mode.title, mode.description))
-                        }
-                    }
-                    .font(.footnote)
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
+                    Text(cleanupDescriptionText)
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 6)
+                        .lineSpacing(1)
                 }
 
-                settingsSection(L10n.string(.settingsAIFeatures)) {
-                    settingsRow(L10n.string(.settingsAIRecaps)) {
-                        Toggle(L10n.string(.settingsEnableAIRecaps), isOn: aiRecapsEnabledBinding)
-                            .tint(AppTheme.accent)
-                            .disabled(!isAIRecapCapabilityAvailable)
-
-                        Text(.settingsAIRecapsDescription)
-                            .font(.footnote)
-                            .foregroundStyle(AppTheme.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-
-                        if !isAIRecapCapabilityAvailable {
-                            Text(.settingsAIRecapsUnavailable)
-                                .font(.footnote)
-                                .foregroundStyle(AppTheme.secondaryText)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-                }
-
-                settingsSection("iCloud") {
+                settingsSection("Sync") {
                     cloudSyncNavigationRow
                 }
 
                 settingsSection(L10n.string(.settingsAboutReset)) {
                     settingsActionRow(
                         title: L10n.string(.settingsResetTypography),
-                        systemImage: "textformat.size",
-                        action: resetTypography
+                        action: { isResetTypographyConfirmationPresented = true }
                     )
 
-                    Divider().foregroundStyle(AppTheme.border)
+                    settingsDivider
 
                     settingsActionRow(
                         title: L10n.string(.settingsResetAll),
-                        systemImage: "arrow.counterclockwise",
-                        action: resetAllSettings
+                        action: { isResetAllConfirmationPresented = true }
                     )
-
-                    Divider().foregroundStyle(AppTheme.border)
-
-                    HStack {
-                        Text(appNameString)
-                        Spacer()
-                        Text(appVersionString)
-                            .foregroundStyle(AppTheme.secondaryText)
-                    }
-                    .font(.footnote)
                 }
+
+                settingsSection("Support") {
+                    settingsLinkButtonRow(title: "Rate Us") {
+                        requestReview()
+                    }
+
+                    settingsDivider
+
+                    ShareLink(item: shareMessage) {
+                        settingsLinkRow(title: "Share with friends")
+                    }
+                    .buttonStyle(.plain)
+
+                    settingsDivider
+
+                    settingsLinkButtonRow(title: "Share Feedback") {
+                        openURL(feedbackURL)
+                    }
+                }
+
+                settingsSection("Legal") {
+                    Link(destination: privacyPolicyURL) {
+                        settingsLinkRow(title: "Privacy Policy")
+                    }
+                    .buttonStyle(.plain)
+
+                    settingsDivider
+
+                    Link(destination: termsOfServiceURL) {
+                        settingsLinkRow(title: "Terms of Service")
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                appVersionFooter
+
+                madeInCanadaFooter
             }
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
-        .background(AppTheme.background.ignoresSafeArea())
-        .onAppear {
-            normalizeCleanupMode()
+        .coordinateSpace(name: scrollCoordinateSpaceName)
+        .onPreferenceChange(FocusReadScrollOffsetPreferenceKey.self) { offset in
+            hasScrolledUnderTop = offset < -1
+        }
+        .alert(L10n.string(.settingsResetTypographyConfirmTitle), isPresented: $isResetTypographyConfirmationPresented) {
+            Button(.commonCancel, role: .cancel) {}
+            Button(L10n.string(.settingsResetTypography), role: .destructive) {
+                resetTypography()
+            }
+        } message: {
+            Text(.settingsResetTypographyConfirmMessage)
+        }
+        .alert(L10n.string(.settingsResetAllConfirmTitle), isPresented: $isResetAllConfirmationPresented) {
+            Button(.commonCancel, role: .cancel) {}
+            Button(L10n.string(.settingsResetAll), role: .destructive) {
+                resetAllSettings()
+            }
+        } message: {
+            Text(.settingsResetAllConfirmMessage)
+        }
+
+        if showsPageHeader {
+            scrollView.focusReadTopSafeAreaMaterial(isElevated: hasScrolledUnderTop)
+        } else {
+            scrollView
         }
     }
 
     private var themeNavigationRow: some View {
-        NavigationLink {
+        settingsNavigationRow(
+            title: L10n.string(.settingsTheme),
+            value: themeManager.selectedTheme.name
+        ) {
             ThemeSettingsView()
                 .toolbar(.visible, for: .navigationBar)
-        } label: {
-            HStack(spacing: 12) {
-                Text(.settingsTheme)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryText)
-
-                Spacer(minLength: 12)
-
-                Text(themeManager.selectedTheme.name)
-                    .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .lineLimit(1)
-
-                Image(systemName: "chevron.forward")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(AppTheme.tertiaryText)
-            }
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     private var languageNavigationRow: some View {
-        NavigationLink {
+        settingsNavigationRow(
+            title: L10n.string(.settingsAppLanguage),
+            value: (AppLanguage(rawValue: selectedLanguageRawValue) ?? .systemDefault).displayName
+        ) {
             AppLanguageSettingsView(selectedLanguageRawValue: $selectedLanguageRawValue)
                 .toolbar(.visible, for: .navigationBar)
-        } label: {
-            HStack(spacing: 12) {
-                Text(.settingsAppLanguage)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryText)
-
-                Spacer(minLength: 12)
-
-                Text((AppLanguage(rawValue: selectedLanguageRawValue) ?? .systemDefault).displayName)
-                    .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .lineLimit(1)
-
-                Image(systemName: "chevron.forward")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(AppTheme.tertiaryText)
-            }
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     private var typographyNavigationRow: some View {
-        NavigationLink {
+        settingsNavigationRow(
+            title: L10n.string(.settingsTypography),
+            value: typographySummary
+        ) {
             TypographyDetailSettingsView()
                 .toolbar(.visible, for: .navigationBar)
-        } label: {
-            HStack(spacing: 12) {
-                Text(.settingsTypography)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryText)
-
-                Spacer(minLength: 12)
-
-                Text(typographySummary)
-                    .font(.subheadline)
-                    .foregroundStyle(AppTheme.secondaryText)
-                    .lineLimit(1)
-
-                Image(systemName: "chevron.forward")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(AppTheme.tertiaryText)
-            }
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+    }
+
+    private var readerBehaviorNavigationRow: some View {
+        settingsNavigationRow(
+            title: L10n.string(.settingsReaderBehavior),
+            value: readerBehaviorSummary
+        ) {
+            ReaderBehaviorSettingsView()
+                .toolbar(.visible, for: .navigationBar)
+        }
     }
 
     private var cloudSyncNavigationRow: some View {
-        NavigationLink {
+        settingsNavigationRow(
+            title: "iCloud Sync",
+            value: syncStatusText,
+            valueColor: syncStatusColor,
+            showsProgress: cloudSyncManager.status.kind == .syncing
+        ) {
             CloudSyncSettingsView()
                 .toolbar(.visible, for: .navigationBar)
-        } label: {
-            HStack(spacing: 12) {
-                Text("iCloud Sync")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryText)
-
-                Spacer(minLength: 12)
-
-                HStack(spacing: 7) {
-                    if cloudSyncManager.status.kind == .syncing {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-
-                    Text(syncStatusText)
-                        .font(.subheadline)
-                        .foregroundStyle(syncStatusColor)
-                        .lineLimit(1)
-                }
-
-                Image(systemName: "chevron.forward")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(AppTheme.tertiaryText)
-            }
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     private var typographySummary: String {
@@ -389,18 +329,56 @@ struct TypographySettingsView: View {
         return "\(family.title), \(Int(fontSize)) pt, \(weight.title), \(color.title)\(italicSuffix)"
     }
 
-    private var defaultWPMBinding: Binding<Double> {
-        Binding(
-            get: { Double(defaultWPM) },
-            set: { defaultWPM = Int($0.rounded()) }
-        )
+    private var readerBehaviorSummary: String {
+        let mode = ReaderDisplayMode(rawValue: displayMode) ?? .oneWord
+        return "\(defaultWPM) WPM, \(mode.title)"
     }
 
-    private var dailyGoalBinding: Binding<Int> {
-        Binding(
-            get: { readingStatsStore.snapshot.dailyGoalWords },
-            set: { readingStatsStore.updateDailyGoalWords($0) }
+    private var dailyGoalSummary: String {
+        let formattedGoal = NumberFormatter.localizedString(
+            from: NSNumber(value: readingStatsStore.snapshot.dailyGoalWords),
+            number: .decimal
         )
+        return "\(formattedGoal) \(L10n.string(.commonWords))"
+    }
+
+    private var dailyGoalControl: some View {
+        HStack(spacing: 0) {
+            Button {
+                let nextGoal = max(100, readingStatsStore.snapshot.dailyGoalWords - 100)
+                readingStatsStore.updateDailyGoalWords(nextGoal)
+            } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 14, weight: .bold))
+                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Decrease Daily Goal")
+
+            Rectangle()
+                .fill(AppTheme.border)
+                .frame(width: 1, height: 18)
+
+            Button {
+                let nextGoal = min(100_000, readingStatsStore.snapshot.dailyGoalWords + 100)
+                readingStatsStore.updateDailyGoalWords(nextGoal)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .bold))
+                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("Increase Daily Goal")
+        }
+        .frame(width: 118, height: 30, alignment: .center)
+        .foregroundStyle(AppTheme.primaryText)
+        .background(AppTheme.controlBackground, in: Capsule())
+        .overlay {
+            Capsule()
+                .strokeBorder(AppTheme.border, lineWidth: 1)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.string(.settingsDailyGoal))
     }
 
     private var availableCleanupModes: [SmartCleanupMode] {
@@ -416,6 +394,101 @@ struct TypographySettingsView: View {
                 smartCleanupMode = SmartCleanupAvailability.effectiveMode(savedRawValue: newValue).rawValue
             }
         )
+    }
+
+    private var cleanupDescriptionText: String {
+        availableCleanupModes
+            .map { mode in
+                "\(mode.title): \(mode.description)"
+            }
+            .joined(separator: "\n")
+    }
+
+    private var textCleanupSectionTitle: String {
+        isAIRecapCapabilityAvailable ? "Text & AI" : "Text Cleanup"
+    }
+
+    private var shareMessage: String {
+        "FocusRead helps you read with less eye movement and more focus."
+    }
+
+    private var feedbackURL: URL {
+        URL(string: "mailto:support@focusread.app?subject=FocusRead%20Feedback")!
+    }
+
+    private var privacyPolicyURL: URL {
+        URL(string: "https://focusread.app/privacy")!
+    }
+
+    private var termsOfServiceURL: URL {
+        URL(string: "https://focusread.app/terms")!
+    }
+
+    private var cleanupSettingsRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Imported Text Cleanup")
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.primaryText)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+            }
+
+            Picker("Imported Text Cleanup", selection: cleanupModeBinding) {
+                ForEach(availableCleanupModes) { mode in
+                    Text(mode.title).tag(mode.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    private var madeInCanadaFooter: some View {
+        HStack(spacing: 7) {
+            Text("Made in Canada")
+                .font(.system(.footnote, design: .default, weight: .medium))
+                .foregroundStyle(AppTheme.secondaryText.opacity(0.72))
+
+            Image(canadaFooterIconName)
+                .resizable()
+                .renderingMode(.original)
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .opacity(0.82)
+                .accessibilityHidden(true)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Made in Canada")
+        .frame(maxWidth: .infinity)
+        .padding(.top, 6)
+        .padding(.bottom, 32)
+    }
+
+    private var appVersionFooter: some View {
+        HStack(spacing: 6) {
+            Text(appNameString)
+
+            Text(appVersionString)
+        }
+        .font(.system(.footnote, design: .default, weight: .regular))
+        .foregroundStyle(AppTheme.secondaryText.opacity(0.64))
+        .lineLimit(1)
+        .minimumScaleFactor(0.86)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 2)
+        .padding(.bottom, -2)
+    }
+
+    private var canadaFooterIconName: String {
+        theme.colorScheme == .dark ? "CanadaIconWhite" : "CanadaIconGrey"
     }
 
     private var isAIRecapCapabilityAvailable: Bool {
@@ -503,63 +576,406 @@ struct TypographySettingsView: View {
         }
     }
 
-    private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func settingsSection<Content: View>(_: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                content()
+            }
+            .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(AppTheme.border.opacity(0.72), lineWidth: 1)
+            }
+        }
+    }
+
+    private var settingsDivider: some View {
+        Divider()
+            .foregroundStyle(AppTheme.border)
+            .padding(.leading, 14)
+    }
+
+    private func settingsRow<Accessory: View>(
+        title: String,
+        subtitle: String? = nil,
+        titleColor: Color = AppTheme.primaryText,
+        minHeight: CGFloat = 56,
+        @ViewBuilder accessory: () -> Accessory
+    ) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(titleColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .layoutPriority(1)
+
+            Spacer(minLength: 8)
+
+            accessory()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, subtitle == nil ? 8 : 9)
+        .frame(minHeight: minHeight)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    private func settingsRow(
+        title: String,
+        subtitle: String? = nil,
+        titleColor: Color = AppTheme.primaryText,
+        minHeight: CGFloat = 56
+    ) -> some View {
+        settingsRow(
+            title: title,
+            subtitle: subtitle,
+            titleColor: titleColor,
+            minHeight: minHeight
+        ) {
+            EmptyView()
+        }
+    }
+
+    private func settingsNavigationRow<Destination: View>(
+        title: String,
+        value: String,
+        valueColor: Color = AppTheme.secondaryText,
+        showsProgress: Bool = false,
+        @ViewBuilder destination: () -> Destination
+    ) -> some View {
+        NavigationLink {
+            destination()
+        } label: {
+            settingsRow(
+                title: title
+            ) {
+                HStack(spacing: 7) {
+                    if showsProgress {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    Text(value)
+                        .font(.subheadline)
+                        .foregroundStyle(valueColor)
+                        .lineLimit(1)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func settingsActionRow(
+        title: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            settingsRow(title: title, titleColor: .blue)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func settingsLinkButtonRow(
+        title: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            settingsLinkRow(title: title)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func settingsLinkRow(title: String) -> some View {
+        settingsRow(title: title) {
+            Image(systemName: "chevron.forward")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(AppTheme.secondaryText)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+struct ProCTAHeaderView: View {
+    @Environment(\.focusReadTheme) private var theme
+    @AppStorage(FocusReadProStorageKey.isActive) private var isProActive = false
+
+    private var title: String {
+        isProActive ? "FocusRead Pro Active" : "FocusRead Pro"
+    }
+
+    private var subtitle: String {
+        isProActive ? "Sync and intelligence are enabled" : "AI Recaps, Cloud Sync, and more"
+    }
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+
+        HStack(spacing: 14) {
+            proAvatar
+
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(theme.primaryText)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.86)
+
+                    proBadge
+                }
+
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(theme.secondaryText)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .layoutPriority(1)
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(theme.tertiaryText)
+                .frame(width: 18)
+                .accessibilityHidden(true)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            shape
+                .fill(theme.cardBackground.opacity(0.92))
+                .background(.regularMaterial, in: shape)
+                .shadow(color: theme.subtleShadow.opacity(0.72), radius: 14, x: 0, y: 6)
+        }
+        .overlay {
+            shape
+                .strokeBorder(theme.border.opacity(0.72), lineWidth: 1)
+        }
+        .contentShape(shape)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(subtitle)")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var proAvatar: some View {
+        ZStack {
+            Circle()
+                .fill(theme.controlBackground.opacity(0.82))
+                .background(.thinMaterial, in: Circle())
+
+            Circle()
+                .strokeBorder(theme.accent.opacity(0.28), lineWidth: 1)
+
+            Image(systemName: "crown.fill")
+                .font(.system(size: 21, weight: .semibold))
+                .foregroundStyle(theme.accent)
+                .offset(y: -1)
+        }
+        .frame(width: 52, height: 52)
+        .shadow(color: theme.accent.opacity(0.10), radius: 10, x: 0, y: 4)
+        .accessibilityHidden(true)
+    }
+
+    private var proBadge: some View {
+        Text("PRO")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(theme.accent)
+            .tracking(0.4)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(theme.accent.opacity(0.10), in: Capsule())
+            .overlay {
+                Capsule()
+                    .strokeBorder(theme.accent.opacity(0.18), lineWidth: 1)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+struct ProCTAHeaderButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.985 : 1)
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .animation(.smooth(duration: 0.16), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == ProCTAHeaderButtonStyle {
+    static var proCTAHeader: ProCTAHeaderButtonStyle { ProCTAHeaderButtonStyle() }
+}
+
+struct FocusReadProSettingsView: View {
+    @Environment(\.focusReadTheme) private var theme
+    @AppStorage(FocusReadProStorageKey.isActive) private var isProActive = false
+
+    private let features: [FocusReadProFeature] = [
+        FocusReadProFeature(title: "AI Recaps", detail: "Reading-session summaries", symbolName: "sparkles"),
+        FocusReadProFeature(title: "iCloud Sync", detail: "Library and progress across devices", symbolName: "icloud"),
+        FocusReadProFeature(title: "Advanced Cleanup", detail: "Cleaner imports for dense documents", symbolName: "wand.and.stars"),
+        FocusReadProFeature(title: "Reading Analytics", detail: "Deeper pace and consistency insights", symbolName: "chart.xyaxis.line"),
+        FocusReadProFeature(title: "Early Access", detail: "Future reading intelligence tools", symbolName: "leaf")
+    ]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                proIdentityCard
+
+                proSettingsSection("Included with Pro") {
+                    ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
+                        ProFeatureRow(feature: feature)
+
+                        if index < features.count - 1 {
+                            Divider()
+                                .foregroundStyle(theme.border)
+                                .padding(.leading, 54)
+                        }
+                    }
+                }
+
+                proSettingsSection("Status") {
+                    HStack(spacing: 12) {
+                        Text("Membership")
+                            .font(.subheadline)
+                            .foregroundStyle(theme.primaryText)
+
+                        Spacer(minLength: 12)
+
+                        Text(isProActive ? "Active" : "Not Active")
+                            .font(.subheadline)
+                            .foregroundStyle(isProActive ? theme.accent : theme.secondaryText)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .frame(minHeight: 54)
+                }
+            }
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 16)
+        }
+        .focusReadSettingsPageChrome()
+        .navigationTitle("FocusRead Pro")
+        .navigationBarTitleDisplayMode(.inline)
+        .tint(theme.accent)
+        .focusReadThemeRefresh()
+    }
+
+    private var proIdentityCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(theme.controlBackground)
+                        .frame(width: 48, height: 48)
+
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(theme.accent)
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(isProActive ? "FocusRead Pro Active" : "FocusRead Pro")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(theme.primaryText)
+
+                    Text("Advanced reading intelligence")
+                        .font(.subheadline)
+                        .foregroundStyle(theme.secondaryText)
+                }
+            }
+
+            Text("A quieter layer of AI, sync, and reading insight for longer sessions and larger libraries.")
+                .font(.footnote)
+                .foregroundStyle(theme.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(theme.cardBackground.opacity(0.94), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(theme.border.opacity(0.72), lineWidth: 1)
+        }
+    }
+
+    private func proSettingsSection<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
             Text(title)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(AppTheme.secondaryText)
+                .foregroundStyle(theme.secondaryText)
                 .textCase(.uppercase)
                 .tracking(0.08)
                 .padding(.horizontal, 6)
 
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(spacing: 0) {
                 content()
             }
-            .padding(18)
-            .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .background(theme.cardBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .strokeBorder(AppTheme.border, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(theme.border.opacity(0.72), lineWidth: 1)
             }
         }
     }
+}
 
-    private func settingsRow<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppTheme.primaryText)
-            content()
-        }
-    }
+private enum FocusReadProStorageKey {
+    static let isActive = "focusread.pro.isActive"
+}
 
-    private func settingsInlineRow<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+private struct FocusReadProFeature: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String
+    let symbolName: String
+}
+
+private struct ProFeatureRow: View {
+    @Environment(\.focusReadTheme) private var theme
+    let feature: FocusReadProFeature
+
+    var body: some View {
         HStack(spacing: 12) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppTheme.primaryText)
+            Image(systemName: feature.symbolName)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(theme.accent)
+                .frame(width: 32, height: 32)
+                .background(theme.controlBackground, in: Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(feature.title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(theme.primaryText)
+
+                Text(feature.detail)
+                    .font(.caption)
+                    .foregroundStyle(theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             Spacer(minLength: 12)
-
-            content()
         }
-    }
-
-    private func settingsActionRow(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .frame(width: 20)
-                Text(title)
-                Spacer()
-                Image(systemName: "chevron.forward")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(AppTheme.secondaryText)
-            }
-            .foregroundStyle(AppTheme.primaryText)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(minHeight: 56)
     }
 }
 
@@ -668,7 +1084,7 @@ struct TypographyDetailSettingsView: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
         }
-        .background(AppTheme.background.ignoresSafeArea())
+        .focusReadSettingsPageChrome()
         .navigationTitle(L10n.key(.settingsTypography))
         .navigationBarTitleDisplayMode(.inline)
         .tint(AppTheme.accent)
@@ -728,6 +1144,137 @@ struct TypographyDetailSettingsView: View {
     }
 }
 
+struct ReaderBehaviorSettingsView: View {
+    @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
+    @AppStorage(ReaderBehaviorSettingsKey.hapticsEnabled) private var hapticsEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.reverseWPMDialDirection) private var reverseWPMDialDirection: Bool = false
+    @AppStorage(ReaderBehaviorSettingsKey.punctuationPausesEnabled) private var punctuationPausesEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.longWordDelayMode) private var longWordDelayMode: String = LongWordDelayMode.moderate.rawValue
+    @AppStorage(ReaderBehaviorSettingsKey.anchorLetterEnabled) private var anchorLetterEnabled: Bool = true
+    @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                settingsSection(L10n.string(.settingsReaderBehavior)) {
+                    settingsRow(L10n.string(.settingsDefaultWPM)) {
+                        HStack {
+                            Slider(value: defaultWPMBinding, in: 100...1_200, step: 25)
+                                .tint(AppTheme.primaryText)
+
+                            Text("\(defaultWPM)")
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(AppTheme.secondaryText)
+                                .monospacedDigit()
+                                .frame(width: 54, alignment: .trailing)
+                        }
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    settingsRow(L10n.string(.settingsDisplayMode)) {
+                        Picker(L10n.key(.settingsDisplayMode), selection: $displayMode) {
+                            ForEach(ReaderDisplayMode.allCases) { mode in
+                                Text(mode.title).tag(mode.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle(L10n.string(.settingsAnchorLetter), isOn: $anchorLetterEnabled)
+                        .tint(AppTheme.accent)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle(L10n.string(.settingsHaptics), isOn: $hapticsEnabled)
+                        .tint(AppTheme.accent)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle(L10n.string(.settingsReverseWPMDrag), isOn: $reverseWPMDialDirection)
+                        .tint(AppTheme.accent)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    Toggle(L10n.string(.settingsPunctuationPauses), isOn: $punctuationPausesEnabled)
+                        .tint(AppTheme.accent)
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    settingsRow(L10n.string(.settingsLongWordDelay)) {
+                        Picker(L10n.key(.settingsLongWordDelay), selection: $longWordDelayMode) {
+                            ForEach(LongWordDelayMode.allCases) { mode in
+                                Text(mode.title).tag(mode.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    Divider().foregroundStyle(AppTheme.border)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(.settingsDisplayModeHelp)
+                        Text(.settingsAnchorLetterHelp)
+                        Text(.settingsPunctuationPausesHelp)
+                        Text(.settingsLongWordDelayHelp)
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: 720)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
+        }
+        .focusReadSettingsPageChrome()
+        .navigationTitle(L10n.key(.settingsReaderBehavior))
+        .navigationBarTitleDisplayMode(.inline)
+        .tint(AppTheme.accent)
+        .focusReadThemeRefresh()
+    }
+
+    private var defaultWPMBinding: Binding<Double> {
+        Binding(
+            get: { Double(defaultWPM) },
+            set: { defaultWPM = Int($0.rounded()) }
+        )
+    }
+
+    private func settingsSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppTheme.secondaryText)
+                .textCase(.uppercase)
+                .tracking(0.08)
+                .padding(.horizontal, 6)
+
+            VStack(alignment: .leading, spacing: 14) {
+                content()
+            }
+            .padding(18)
+            .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .strokeBorder(AppTheme.border, lineWidth: 1)
+            }
+        }
+    }
+
+    private func settingsRow<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.primaryText)
+            content()
+        }
+    }
+}
+
 struct ThemeSettingsView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var themeManager: FocusReadThemeManager
@@ -744,7 +1291,7 @@ struct ThemeSettingsView: View {
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
         }
-        .background(AppTheme.background.ignoresSafeArea())
+        .focusReadSettingsPageChrome()
         .navigationTitle(L10n.key(.settingsTheme))
         .navigationBarTitleDisplayMode(.inline)
         .tint(AppTheme.accent)
@@ -808,8 +1355,8 @@ private struct ThemePreviewCard: View {
                         Spacer(minLength: 4)
 
                         if isSelected {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.caption.weight(.semibold))
+                            Text(.commonSelected)
+                                .font(.caption2.weight(.semibold))
                                 .foregroundStyle(AppTheme.accent)
                         }
                     }

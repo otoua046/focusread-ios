@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "About / Reset";
 "settings.resetTypography" = "Reset Typography";
 "settings.resetAll" = "Reset All Settings";
+"settings.resetTypography.confirm.title" = "Reset Typography?";
+"settings.resetTypography.confirm.message" = "This will restore the reader font, size, weight, italic style, and text color to their defaults.";
+"settings.resetAll.confirm.title" = "Reset All Settings?";
+"settings.resetAll.confirm.message" = "This will restore appearance, theme, reader behavior, text cleanup, AI recap preference, language, and typography settings to their defaults.";
 
 "appearance.system" = "System";
 "appearance.light" = "Light";

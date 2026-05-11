@@ -354,6 +354,15 @@ final class ReaderViewModel: ObservableObject {
         )
     }
 
+    var savedReadForAIRecap: SavedRead? {
+        guard case .book = displayContext,
+              let savedReadID else {
+            return nil
+        }
+
+        return readingHistoryStore?.read(withID: savedReadID)
+    }
+
     var searchableTokens: [ReadingToken] {
         session.tokens
     }

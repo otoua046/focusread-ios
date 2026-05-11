@@ -5,9 +5,11 @@ struct ReaderActionPaletteView: View {
     @Binding var isInteracting: Bool
     let isVisible: Bool
     let isTranslateSupported: Bool
+    let isAIRecapSupported: Bool
     let currentWord: String
     let onToggle: () -> Void
     let onDictionary: () -> Void
+    let onAIRecap: () -> Void
     let onLookup: () -> Void
     let onTranslate: () -> Void
     let onSettings: () -> Void
@@ -62,6 +64,16 @@ struct ReaderActionPaletteView: View {
                         onPressedChange: updateInteractionState
                     ) {
                         runAndClose(onSettings)
+                    }
+
+                    ReaderActionItem(
+                        title: L10n.string(.readerAIRecap),
+                        systemImage: "sparkles",
+                        size: actionSize,
+                        isEnabled: isAIRecapSupported,
+                        onPressedChange: updateInteractionState
+                    ) {
+                        runAndClose(onAIRecap)
                     }
                 }
 
@@ -154,6 +166,7 @@ private struct ReaderActionItem: View {
     let title: String
     let systemImage: String
     let size: CGFloat
+    var isEnabled: Bool = true
     let onPressedChange: (Bool) -> Void
     let action: () -> Void
 
@@ -173,8 +186,10 @@ private struct ReaderActionItem: View {
                         .strokeBorder(AppTheme.materialLowlightStroke, lineWidth: 0.5)
                 }
                 .shadow(color: AppTheme.overlayShadow.opacity(0.86), radius: 10, x: 0, y: 5)
+                .opacity(isEnabled ? 1 : 0.42)
         }
         .buttonStyle(ReaderPaletteButtonStyle(onPressedChange: onPressedChange))
+        .disabled(!isEnabled)
         .accessibilityLabel(title)
         .accessibilityHint(L10n.string(.readerActionOpenHint))
     }

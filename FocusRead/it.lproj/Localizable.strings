@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "Info / Ripristina";
 "settings.resetTypography" = "Ripristina tipografia";
 "settings.resetAll" = "Ripristina tutte le impostazioni";
+"settings.resetTypography.confirm.title" = "Ripristinare la tipografia?";
+"settings.resetTypography.confirm.message" = "Questo ripristinerà font, dimensione, peso, corsivo e colore del testo del lettore ai valori predefiniti.";
+"settings.resetAll.confirm.title" = "Ripristinare tutte le impostazioni?";
+"settings.resetAll.confirm.message" = "Questo ripristinerà aspetto, tema, comportamento del lettore, pulizia testo, preferenza dei riepiloghi IA, lingua e tipografia ai valori predefiniti.";
 
 "appearance.system" = "Sistema";
 "appearance.light" = "Chiaro";

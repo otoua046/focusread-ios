@@ -6,6 +6,9 @@ struct StatsView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.focusReadTheme) private var theme
     @AppStorage(AppLanguageStorageKey.selectedLanguage) private var selectedLanguageRawValue: String = AppLanguage.systemDefault.rawValue
+    @State private var hasScrolledUnderTop = false
+
+    private let scrollCoordinateSpaceName = "statsScroll"
 
     private var widgetColumns: [GridItem] {
         if horizontalSizeClass == .compact {
@@ -23,6 +26,8 @@ struct StatsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                FocusReadScrollTopTracker(coordinateSpaceName: scrollCoordinateSpaceName)
+
                 FocusReadPageHeader(titleKey: .statsTitle)
 
                 ReadingActivityWidget(
@@ -79,7 +84,12 @@ struct StatsView: View {
             .padding(.top, 20)
             .padding(.bottom, 28)
         }
+        .coordinateSpace(name: scrollCoordinateSpaceName)
+        .onPreferenceChange(FocusReadScrollOffsetPreferenceKey.self) { offset in
+            hasScrolledUnderTop = offset < -1
+        }
         .background(FocusReadBackground())
+        .focusReadTopSafeAreaMaterial(isElevated: hasScrolledUnderTop)
         .focusReadLocalizationRefresh()
         .onAppear {
             statsStore.reconcileCompletedReads(from: readingHistoryStore.savedReads)
