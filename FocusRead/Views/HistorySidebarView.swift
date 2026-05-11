@@ -22,7 +22,10 @@ struct LibraryView: View {
     @AppStorage("library_sort_mode") private var sortMode: LibrarySortMode = .recent
     @State private var isSelectMode = false
     @State private var selection = Set<UUID>()
+    @State private var hasScrolledUnderTop = false
     @Environment(\.focusReadTheme) private var theme
+
+    private let scrollCoordinateSpaceName = "libraryScroll"
 
     init(
         store: LocalReadingHistoryStore,
@@ -48,15 +51,24 @@ struct LibraryView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                mainContent
+                VStack(spacing: 0) {
+                    FocusReadScrollTopTracker(coordinateSpaceName: scrollCoordinateSpaceName)
+
+                    mainContent
+                }
                     .frame(maxWidth: 780)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, 22)
                     .padding(.top, 20)
                     .padding(.bottom, 24)
             }
+            .coordinateSpace(name: scrollCoordinateSpaceName)
+            .onPreferenceChange(FocusReadScrollOffsetPreferenceKey.self) { offset in
+                hasScrolledUnderTop = offset < -1
+            }
             .navigationBarHidden(true)
             .background(FocusReadBackground())
+            .focusReadTopSafeAreaMaterial(isElevated: hasScrolledUnderTop)
             .documentImportFlow(
                 viewModel: documentImportViewModel,
                 onStartImportedDocument: onStartImportedDocument

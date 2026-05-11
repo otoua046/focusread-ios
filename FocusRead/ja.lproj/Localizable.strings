@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "情報 / リセット";
 "settings.resetTypography" = "タイポグラフィをリセット";
 "settings.resetAll" = "すべての設定をリセット";
+"settings.resetTypography.confirm.title" = "タイポグラフィをリセットしますか？";
+"settings.resetTypography.confirm.message" = "リーダーのフォント、サイズ、太さ、斜体、テキストカラーをデフォルトに戻します。";
+"settings.resetAll.confirm.title" = "すべての設定をリセットしますか？";
+"settings.resetAll.confirm.message" = "外観、テーマ、リーダーの動作、テキスト整理、AI 要約の設定、言語、タイポグラフィをデフォルトに戻します。";
 
 "appearance.system" = "システム";
 "appearance.light" = "ライト";

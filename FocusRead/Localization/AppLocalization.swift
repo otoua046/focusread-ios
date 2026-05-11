@@ -252,6 +252,10 @@ enum L10n {
         case settingsAboutReset = "settings.section.aboutReset"
         case settingsResetTypography = "settings.resetTypography"
         case settingsResetAll = "settings.resetAll"
+        case settingsResetTypographyConfirmTitle = "settings.resetTypography.confirm.title"
+        case settingsResetTypographyConfirmMessage = "settings.resetTypography.confirm.message"
+        case settingsResetAllConfirmTitle = "settings.resetAll.confirm.title"
+        case settingsResetAllConfirmMessage = "settings.resetAll.confirm.message"
 
         case appearanceSystem = "appearance.system"
         case appearanceLight = "appearance.light"

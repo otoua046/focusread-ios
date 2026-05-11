@@ -5,6 +5,7 @@ import UIKit
 struct ReaderView: View {
     @ObservedObject var viewModel: ReaderViewModel
     let onClose: () -> Void
+    let onOpenRecapRSVP: (SavedRead, AIRecap) -> Void
 
     @AppStorage(TypographySettingsKey.fontFamily) private var fontFamily: String = ReaderFontFamily.serif.rawValue
     @AppStorage(TypographySettingsKey.fontSize) private var fontSize: Double = FontStyle.defaultSize
@@ -17,6 +18,7 @@ struct ReaderView: View {
     @AppStorage(ReaderBehaviorSettingsKey.displayMode) private var displayMode: String = ReaderDisplayMode.oneWord.rawValue
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var readingStatsStore: LocalReadingStatsStore
+    @EnvironmentObject private var recapStore: LocalAIRecapStore
 
     @State private var verticalDragStartWPM: Int?
     @State private var wpmDialInteractionActive = false
@@ -26,6 +28,7 @@ struct ReaderView: View {
     @State private var showingGoToNavigation = false
     @State private var showingCurrentLocationPreview = false
     @State private var showingTranslation = false
+    @State private var aiRecapTarget: SavedRead?
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -58,10 +61,14 @@ struct ReaderView: View {
                 isInteracting: $actionPaletteInteractionActive,
                 isVisible: viewModel.controlsVisible || showingActionPalette,
                 isTranslateSupported: viewModel.isTranslationAvailable,
+                isAIRecapSupported: viewModel.savedReadForAIRecap != nil,
                 currentWord: viewModel.currentWord,
                 onToggle: toggleActionPalette,
                 onDictionary: {
                     viewModel.lookupCurrentWord()
+                },
+                onAIRecap: {
+                    presentAIRecap()
                 },
                 onLookup: {
                     viewModel.prepareForSearchNavigation()
@@ -88,6 +95,16 @@ struct ReaderView: View {
         }
         .sheet(isPresented: $showingGoToNavigation) {
             GoToNavigationView(readerViewModel: viewModel)
+        }
+        .sheet(item: $aiRecapTarget) { read in
+            AIRecapView(
+                read: read,
+                readingStatsStore: readingStatsStore,
+                recapStore: recapStore,
+                onOpenRSVP: { recap in
+                    onOpenRecapRSVP(read, recap)
+                }
+            )
         }
         .sheet(isPresented: $showingCurrentLocationPreview) {
             CurrentLocationPreviewView(preview: viewModel.currentLocationPreview)
@@ -143,7 +160,7 @@ struct ReaderView: View {
                 Button {
                     presentCurrentLocationPreview()
                 } label: {
-                    Image(systemName: "doc.text.magnifyingglass")
+                    Image(systemName: "text.page")
                 }
                 .buttonStyle(.topReaderControl)
                 .accessibilityLabel(L10n.string(.readerCurrentLocation))
@@ -282,6 +299,13 @@ struct ReaderView: View {
         viewModel.pause(showControls: true)
         viewModel.revealControls()
         showingCurrentLocationPreview = true
+    }
+
+    private func presentAIRecap() {
+        showingActionPalette = false
+        viewModel.pause(showControls: true)
+        viewModel.revealControls()
+        aiRecapTarget = viewModel.savedReadForAIRecap
     }
 
     private var horizontalSwipeGesture: some Gesture {

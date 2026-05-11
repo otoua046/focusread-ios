@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "Sobre / Redefinir";
 "settings.resetTypography" = "Redefinir tipografia";
 "settings.resetAll" = "Redefinir todos os ajustes";
+"settings.resetTypography.confirm.title" = "Redefinir tipografia?";
+"settings.resetTypography.confirm.message" = "Isso restaurará a fonte, o tamanho, o peso, o itálico e a cor do texto do leitor para os padrões.";
+"settings.resetAll.confirm.title" = "Redefinir todos os ajustes?";
+"settings.resetAll.confirm.message" = "Isso restaurará aparência, tema, comportamento do leitor, limpeza de texto, preferência de recapitulações de IA, idioma e tipografia para os padrões.";
 
 "appearance.system" = "Sistema";
 "appearance.light" = "Claro";

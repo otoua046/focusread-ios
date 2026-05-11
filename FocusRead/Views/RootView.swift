@@ -53,9 +53,13 @@ struct RootView: View {
                 ReaderView(viewModel: readerViewModel) {
                     readerViewModel.cleanup()
                     self.readerViewModel = nil
+                } onOpenRecapRSVP: { read, recap in
+                    readerViewModel.cleanup()
+                    startRecapRSVP(for: read, recap: recap)
                 }
                 .environmentObject(readingStatsStore)
                 .environmentObject(cloudSyncManager)
+                .environmentObject(recapStore)
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else {
                 TabView(selection: $selectedTab) {

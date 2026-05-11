@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "关于 / 重置";
 "settings.resetTypography" = "重置排版";
 "settings.resetAll" = "重置所有设置";
+"settings.resetTypography.confirm.title" = "重置排版？";
+"settings.resetTypography.confirm.message" = "这会将阅读器的字体、字号、字重、斜体样式和文本颜色恢复为默认值。";
+"settings.resetAll.confirm.title" = "重置所有设置？";
+"settings.resetAll.confirm.message" = "这会将外观、主题、阅读器行为、文本清理、AI 回顾偏好、语言和排版设置恢复为默认值。";
 
 "appearance.system" = "系统";
 "appearance.light" = "浅色";

@@ -74,13 +74,17 @@ struct TextInputView: View {
     @AppStorage(HomeSettingsKey.selectedReadingGoal) private var selectedGoalRawValue = HomeReadingGoal.focus.rawValue
     @AppStorage(AIRecapSettingsKey.isEnabled) private var aiRecapsEnabledPreference: Bool = AIRecapSettings.defaultEnabled()
     @State private var showingPremiumPlaceholder = false
+    @State private var hasScrolledUnderTop = false
 
     private let aiRecapCapabilityService = AIRecapService()
+    private let scrollCoordinateSpaceName = "homeScroll"
 
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
                 VStack(spacing: 16) {
+                    FocusReadScrollTopTracker(coordinateSpaceName: scrollCoordinateSpaceName)
+
                     HomeHeroDemoView()
 
                     HomeCTASection(
@@ -111,8 +115,13 @@ struct TextInputView: View {
                 .padding(.top, 18)
                 .padding(.bottom, 28)
             }
+            .coordinateSpace(name: scrollCoordinateSpaceName)
+            .onPreferenceChange(FocusReadScrollOffsetPreferenceKey.self) { offset in
+                hasScrolledUnderTop = offset < -1
+            }
             .scrollIndicators(.hidden)
             .background(FocusReadBackground())
+            .focusReadTopSafeAreaMaterial(isElevated: hasScrolledUnderTop)
             .documentImportFlow(
                 viewModel: documentImportViewModel,
                 onStartImportedDocument: onStartImportedDocument

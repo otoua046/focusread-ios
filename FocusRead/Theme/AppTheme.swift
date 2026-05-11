@@ -819,7 +819,7 @@ struct FocusReadSystemChromeModifier: ViewModifier {
 
         let navigationAppearance = UINavigationBarAppearance()
         navigationAppearance.configureWithOpaqueBackground()
-        navigationAppearance.backgroundColor = palette.cardSurface
+        navigationAppearance.backgroundColor = palette.primaryBackground
         navigationAppearance.shadowColor = palette.separator
         navigationAppearance.titleTextAttributes = [
             .foregroundColor: palette.primaryText
@@ -893,6 +893,65 @@ struct FocusReadTabBarUpdater: UIViewControllerRepresentable {
     }
 }
 
+struct FocusReadTopSafeAreaMaterialModifier: ViewModifier {
+    let isElevated: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear
+                    .frame(height: 4)
+                    .accessibilityHidden(true)
+            }
+            .overlay(alignment: .top) {
+                GeometryReader { proxy in
+                    Rectangle()
+                        .fill(topBackgroundFill)
+                        .opacity(isElevated ? 0.94 : 0)
+                        .overlay(alignment: .top) {
+                            Rectangle()
+                                .fill(AppTheme.border.opacity(isElevated ? 0.12 : 0))
+                                .frame(height: 0.5)
+                                .offset(y: max(proxy.safeAreaInsets.top - 6, 0))
+                        }
+                        .frame(height: proxy.safeAreaInsets.top + 4)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                        .ignoresSafeArea(edges: .top)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                .allowsHitTesting(false)
+            }
+    }
+
+    private var topBackgroundFill: AnyShapeStyle {
+        AnyShapeStyle(.regularMaterial)
+    }
+}
+
+struct FocusReadScrollTopTracker: View {
+    let coordinateSpaceName: String
+
+    var body: some View {
+        GeometryReader { proxy in
+            Color.clear
+                .preference(
+                    key: FocusReadScrollOffsetPreferenceKey.self,
+                    value: proxy.frame(in: .named(coordinateSpaceName)).minY
+                )
+        }
+        .frame(height: 0)
+    }
+}
+
+struct FocusReadScrollOffsetPreferenceKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 extension View {
     func focusReadThemeEnvironment() -> some View {
         modifier(FocusReadThemeEnvironmentModifier())
@@ -904,6 +963,16 @@ extension View {
 
     func focusReadSystemChrome() -> some View {
         modifier(FocusReadSystemChromeModifier())
+    }
+
+    func focusReadTopSafeAreaMaterial(isElevated: Bool = true) -> some View {
+        modifier(FocusReadTopSafeAreaMaterialModifier(isElevated: isElevated))
+    }
+
+    func focusReadSettingsPageChrome() -> some View {
+        background(AppTheme.background.ignoresSafeArea())
+            .toolbarBackground(AppTheme.background, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
     }
 }
 

@@ -60,6 +60,10 @@
 "settings.section.aboutReset" = "À propos / Réinitialiser";
 "settings.resetTypography" = "Réinitialiser la typographie";
 "settings.resetAll" = "Réinitialiser tous les réglages";
+"settings.resetTypography.confirm.title" = "Réinitialiser la typographie ?";
+"settings.resetTypography.confirm.message" = "Cela rétablira la police, la taille, la graisse, l’italique et la couleur du texte du lecteur à leurs valeurs par défaut.";
+"settings.resetAll.confirm.title" = "Réinitialiser tous les réglages ?";
+"settings.resetAll.confirm.message" = "Cela rétablira l’apparence, le thème, le comportement du lecteur, le nettoyage du texte, la préférence des récaps IA, la langue et la typographie à leurs valeurs par défaut.";
 
 "appearance.system" = "Système";
 "appearance.light" = "Clair";
