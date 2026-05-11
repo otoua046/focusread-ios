@@ -148,6 +148,10 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
             try Task.checkCancellation()
             try await save(recap, recordType: RecordType.deletedAIRecap, recordName: "deleted-recap-\(recap.id)", updatedAt: recap.deletedAt)
         }
+        try await deleteSupersededLibraryRecords(
+            activeItems: snapshot.libraryItems,
+            excluding: activeLibraryRecordNames
+        )
         try await deleteRecords(
             named: Set(snapshot.deletedLibraryItems.map { "read-\($0.id.uuidString)" }).subtracting(activeLibraryRecordNames)
         )
@@ -181,6 +185,28 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
         for recordName in recordNames {
             try Task.checkCancellation()
             try await deleteRecord(CKRecord.ID(recordName: recordName))
+        }
+    }
+
+    private func deleteSupersededLibraryRecords(
+        activeItems: [SyncedSavedRead],
+        excluding activeRecordNames: Set<String>
+    ) async throws {
+        let activeItemsByFingerprint = Dictionary(
+            activeItems.map { ($0.contentFingerprint, $0) },
+            uniquingKeysWith: { first, second in first.updatedAt >= second.updatedAt ? first : second }
+        )
+        guard !activeItemsByFingerprint.isEmpty else { return }
+
+        let records = try await fetchRecords(type: RecordType.libraryItem)
+        for record in records where !activeRecordNames.contains(record.recordID.recordName) {
+            try Task.checkCancellation()
+            guard let item = try decode(SyncedSavedRead.self, from: record),
+                  let activeItem = activeItemsByFingerprint[item.contentFingerprint],
+                  activeItem.updatedAt >= item.updatedAt else {
+                continue
+            }
+            try await deleteRecord(record.recordID)
         }
     }
 

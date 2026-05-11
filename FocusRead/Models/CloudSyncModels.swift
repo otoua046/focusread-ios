@@ -211,19 +211,12 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
             .map { section in
                 [
                     "\(section.index)",
-                    section.title ?? "",
-                    "\(section.pageNumber ?? -1)",
-                    "\(section.chapterNumber ?? -1)",
                     "\(section.text.count)",
                     stableHash(normalizedFingerprintText(section.text))
                 ].joined(separator: ":")
             }
             .joined(separator: "|")
         return stableHash([
-            read.originalFileName ?? "",
-            read.displayTitle,
-            read.author ?? read.authorName ?? "",
-            read.sourceType.rawValue,
             "\(read.totalWordCount)",
             sectionSignature
         ].joined(separator: "#"))

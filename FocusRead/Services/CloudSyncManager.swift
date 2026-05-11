@@ -28,17 +28,25 @@ final class CloudSyncManager: ObservableObject {
     private var activeSyncID: UUID?
     private var pendingSyncReason: String?
     private var scheduledTask: Task<Void, Never>?
+    private var retryTask: Task<Void, Never>?
+    private var retryAttempt = 0
     private var cancellables: Set<AnyCancellable> = []
     private var isConfigured = false
     private var isApplyingRemoteSnapshot = false
+    private let retryDelayNanoseconds: UInt64
+    private let maxAutomaticRetryAttempts: Int
 
     init(
         cloudKitService: CloudKitServing = CloudKitServiceFactory.makeDefaultService(),
-        userDefaults: UserDefaults = .standard
+        userDefaults: UserDefaults = .standard,
+        retryDelayNanoseconds: UInt64 = 60_000_000_000,
+        maxAutomaticRetryAttempts: Int = 5
     ) {
         self.cloudKitService = cloudKitService
         self.userDefaults = userDefaults
         self.settingsStore = SyncSettingsStore(userDefaults: userDefaults)
+        self.retryDelayNanoseconds = retryDelayNanoseconds
+        self.maxAutomaticRetryAttempts = maxAutomaticRetryAttempts
         self.isSyncEnabled = userDefaults.object(forKey: CloudSyncSettingsKey.isEnabled) as? Bool ?? true
         self.status = SyncStatus(
             kind: (userDefaults.object(forKey: CloudSyncSettingsKey.isEnabled) as? Bool ?? true) ? .unavailable : .off,
@@ -95,6 +103,7 @@ final class CloudSyncManager: ObservableObject {
 
     func syncNow() {
         scheduledTask?.cancel()
+        resetAutomaticRetryState()
         guard isSyncEnabled else {
             status = .off
             return
@@ -104,6 +113,7 @@ final class CloudSyncManager: ObservableObject {
 
     func scheduleSync(reason: String) {
         guard isSyncEnabled, !isApplyingRemoteSnapshot else { return }
+        resetAutomaticRetryState()
         scheduledTask?.cancel()
         scheduledTask = Task { [weak self] in
             do {
@@ -138,7 +148,7 @@ final class CloudSyncManager: ObservableObject {
         activeSyncID = syncID
         syncTask = Task { [weak self] in
             await self?.performSync(reason: reason)
-            await self?.finishSyncTask(syncID)
+            self?.finishSyncTask(syncID)
         }
     }
 
@@ -157,6 +167,7 @@ final class CloudSyncManager: ObservableObject {
             guard canContinueSync else { return }
             status = SyncStatus(kind: .unavailable, lastSyncedAt: status.lastSyncedAt, message: message)
             logger.info("iCloud sync unavailable: \(message, privacy: .public)")
+            scheduleAutomaticRetry(reason: "availability unavailable")
             return
         }
 
@@ -200,6 +211,7 @@ final class CloudSyncManager: ObservableObject {
                 userDefaults.set(now, forKey: CloudSyncSettingsKey.lastSyncedAt)
             }
             status = SyncStatus(kind: .synced, lastSyncedAt: now, message: nil)
+            resetAutomaticRetryState()
             logDecisions(migration.logEntries + merged.decisions.map {
                 CloudSyncMigrationLogEntry(id: UUID(), createdAt: now, message: "\($0.entity)/\($0.id): \($0.message)")
             })
@@ -208,6 +220,7 @@ final class CloudSyncManager: ObservableObject {
             guard canContinueSync else { return }
             status = SyncStatus(kind: .error, lastSyncedAt: status.lastSyncedAt, message: error.localizedDescription)
             logger.error("iCloud sync failed: \(error.localizedDescription, privacy: .public)")
+            scheduleAutomaticRetry(reason: "sync error")
         }
     }
 
@@ -223,6 +236,34 @@ final class CloudSyncManager: ObservableObject {
         guard let reason = pendingSyncReason else { return }
         pendingSyncReason = nil
         startSyncTask(reason: reason)
+    }
+
+    private func scheduleAutomaticRetry(reason: String) {
+        guard isSyncEnabled, retryAttempt < maxAutomaticRetryAttempts else { return }
+        retryAttempt += 1
+        let attempt = retryAttempt
+        let retryDelay = retryDelayNanoseconds
+        retryTask?.cancel()
+        retryTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: retryDelay)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                guard !Task.isCancelled else { return }
+                self?.retryTask = nil
+                self?.runSync(reason: "\(reason) retry \(attempt)")
+            }
+        }
+        logger.info("Queued iCloud sync retry \(attempt, privacy: .public) after \(reason, privacy: .public).")
+    }
+
+    private func resetAutomaticRetryState() {
+        retryTask?.cancel()
+        retryTask = nil
+        retryAttempt = 0
     }
 
     private func makeLocalSnapshot(
@@ -281,6 +322,7 @@ final class CloudSyncManager: ObservableObject {
     private func cancelActiveSync() {
         scheduledTask?.cancel()
         scheduledTask = nil
+        resetAutomaticRetryState()
         pendingSyncReason = nil
         activeSyncID = nil
         syncTask?.cancel()

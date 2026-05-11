@@ -87,6 +87,24 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertNotEqual(SyncedSavedRead.contentFingerprint(for: first), SyncedSavedRead.contentFingerprint(for: second))
     }
 
+    func testContentFingerprintIgnoresMutableMetadata() {
+        let original = savedRead(
+            id: UUID(),
+            title: "Original Title",
+            updatedAt: date("2026-05-03T10:00:00Z"),
+            progress: 0,
+            sectionText: "The same document text should define identity."
+        )
+        var renamed = original
+        renamed.displayTitle = "Renamed on another device"
+        renamed.originalFileName = "different-file-name.txt"
+        renamed.authorName = "Different Author"
+        renamed.author = "Different Author"
+        renamed.sourceType = .txt
+
+        XCTAssertEqual(SyncedSavedRead.contentFingerprint(for: original), SyncedSavedRead.contentFingerprint(for: renamed))
+    }
+
     func testNewerLibraryDeletionTombstoneRemovesCloudItem() {
         let read = syncedRead(
             id: UUID(),
@@ -464,6 +482,45 @@ final class CloudSyncTests: XCTestCase {
     }
 
     @MainActor
+    func testManagerRetriesAfterTransientUnavailable() async throws {
+        let suiteName = "FocusReadCloudSyncTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let cloudKitService = TransientUnavailableCloudKitService(unavailableResponses: 1)
+        let manager = CloudSyncManager(
+            cloudKitService: cloudKitService,
+            userDefaults: defaults,
+            retryDelayNanoseconds: 20_000_000,
+            maxAutomaticRetryAttempts: 2
+        )
+        let historyStore = LocalReadingHistoryStore(storageDirectory: temporaryDirectory())
+        let statsStore = LocalReadingStatsStore(storageDirectory: temporaryDirectory())
+        let recapStore = LocalAIRecapStore(storageDirectory: temporaryDirectory())
+        manager.configure(
+            readingHistoryStore: historyStore,
+            readingStatsStore: statsStore,
+            recapStore: recapStore
+        )
+
+        manager.syncNow()
+
+        for _ in 0..<40 where cloudKitService.saveCount == 0 {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        for _ in 0..<20 where manager.status.kind != .synced {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+
+        XCTAssertEqual(cloudKitService.availabilityCallCount, 2)
+        XCTAssertEqual(cloudKitService.saveCount, 1)
+        XCTAssertEqual(manager.status.kind, .synced)
+        manager.isSyncEnabled = false
+    }
+
+    @MainActor
     func testApplyingFingerprintMatchedCloudMetadataPreservesLocalDocumentText() {
         let store = LocalReadingHistoryStore(storageDirectory: temporaryDirectory())
         let localRead = savedRead(
@@ -714,21 +771,19 @@ private final class UnavailableCloudKitService: CloudKitServing {
     }
 }
 
-private final class OverlapTrackingCloudKitService: CloudKitServing, @unchecked Sendable {
+@MainActor
+private final class OverlapTrackingCloudKitService: CloudKitServing {
     struct Stats {
         var saveCount: Int
         var maxConcurrentSaves: Int
     }
 
-    private let lock = NSLock()
     private var activeSaves = 0
     private var saveCount = 0
     private var maxConcurrentSaves = 0
 
     var stats: Stats {
-        lock.lock()
-        defer { lock.unlock() }
-        return Stats(saveCount: saveCount, maxConcurrentSaves: maxConcurrentSaves)
+        Stats(saveCount: saveCount, maxConcurrentSaves: maxConcurrentSaves)
     }
 
     func availability() async -> CloudSyncAvailability {
@@ -740,16 +795,45 @@ private final class OverlapTrackingCloudKitService: CloudKitServing, @unchecked 
     }
 
     func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {
-        lock.lock()
         activeSaves += 1
         saveCount += 1
         maxConcurrentSaves = max(maxConcurrentSaves, activeSaves)
-        lock.unlock()
 
         try? await Task.sleep(for: .milliseconds(150))
 
-        lock.lock()
         activeSaves -= 1
-        lock.unlock()
+    }
+}
+
+@MainActor
+private final class TransientUnavailableCloudKitService: CloudKitServing {
+    private let unavailableResponses: Int
+    private var availabilityCalls = 0
+    private var saves = 0
+
+    init(unavailableResponses: Int) {
+        self.unavailableResponses = unavailableResponses
+    }
+
+    var availabilityCallCount: Int {
+        availabilityCalls
+    }
+
+    var saveCount: Int {
+        saves
+    }
+
+    func availability() async -> CloudSyncAvailability {
+        availabilityCalls += 1
+        let shouldReturnUnavailable = availabilityCalls <= unavailableResponses
+        return shouldReturnUnavailable ? .unavailable("iCloud is temporarily unavailable.") : .available
+    }
+
+    func fetchSnapshot() async throws -> CloudSyncSnapshot {
+        .empty()
+    }
+
+    func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {
+        saves += 1
     }
 }
