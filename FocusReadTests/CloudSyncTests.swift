@@ -68,6 +68,25 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertTrue(result.decisions.contains { $0.message.contains("matching content fingerprint") })
     }
 
+    func testContentFingerprintIncludesDocumentText() {
+        let first = savedRead(
+            id: UUID(),
+            title: "Same Title",
+            updatedAt: date("2026-05-03T10:00:00Z"),
+            progress: 0,
+            sectionText: "The first document has its own words."
+        )
+        let second = savedRead(
+            id: UUID(),
+            title: "Same Title",
+            updatedAt: date("2026-05-03T10:00:00Z"),
+            progress: 0,
+            sectionText: "A totally different document has different words."
+        )
+
+        XCTAssertNotEqual(SyncedSavedRead.contentFingerprint(for: first), SyncedSavedRead.contentFingerprint(for: second))
+    }
+
     func testNewerLibraryDeletionTombstoneRemovesCloudItem() {
         let read = syncedRead(
             id: UUID(),
@@ -367,7 +386,9 @@ final class CloudSyncTests: XCTestCase {
             progress: 40,
             sectionText: ""
         )
-        store.applySyncMergedReads([SyncedSavedRead(read: cloudRead)])
+        var syncedCloudRead = SyncedSavedRead(read: cloudRead)
+        syncedCloudRead.contentFingerprint = SyncedSavedRead.contentFingerprint(for: localRead)
+        store.applySyncMergedReads([syncedCloudRead])
 
         XCTAssertEqual(store.savedReads.count, 1)
         XCTAssertEqual(store.savedReads.first?.sections.first?.text, localRead.sections.first?.text)

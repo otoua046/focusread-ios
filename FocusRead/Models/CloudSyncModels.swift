@@ -208,7 +208,16 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
 
     static func contentFingerprint(for read: SavedRead) -> String {
         let sectionSignature = read.sections
-            .map { "\($0.index):\($0.title ?? ""):\($0.pageNumber ?? -1):\($0.chapterNumber ?? -1)" }
+            .map { section in
+                [
+                    "\(section.index)",
+                    section.title ?? "",
+                    "\(section.pageNumber ?? -1)",
+                    "\(section.chapterNumber ?? -1)",
+                    "\(section.text.count)",
+                    stableHash(normalizedFingerprintText(section.text))
+                ].joined(separator: ":")
+            }
             .joined(separator: "|")
         return stableHash([
             read.originalFileName ?? "",
@@ -218,6 +227,12 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
             "\(read.totalWordCount)",
             sectionSignature
         ].joined(separator: "#"))
+    }
+
+    private static func normalizedFingerprintText(_ text: String) -> String {
+        text
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private static func stableHash(_ string: String) -> String {

@@ -58,8 +58,7 @@ struct CloudSyncSettingsView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(AppTheme.accent)
-                    .disabled(!cloudSyncManager.isSyncEnabled || isUnavailable || cloudSyncManager.status.kind == .syncing)
-                    .opacity(isUnavailable ? 0.65 : 1)
+                    .disabled(!cloudSyncManager.isSyncEnabled || cloudSyncManager.status.kind == .syncing)
                 }
 
                 settingsSection("Document Files") {
