@@ -214,26 +214,38 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
         matching tombstones: [SyncedDeletedAIRecap],
         excluding activeRecordNames: Set<String>
     ) async throws {
-        let tombstoneRecordNames = Set(tombstones.compactMap { tombstone in
-            tombstone.recapID.map { "recap-\($0.uuidString)" }
-        })
+        let tombstoneRecordNames = Self.deletedAIRecapRecordNames(for: tombstones)
         try await deleteRecords(named: tombstoneRecordNames.subtracting(activeRecordNames))
 
-        let sessionTombstones = tombstones.filter { $0.recapID == nil }
-        guard !sessionTombstones.isEmpty else { return }
+        guard !tombstones.isEmpty else { return }
 
         let records = try await fetchRecords(type: RecordType.aiRecap)
         for record in records where !activeRecordNames.contains(record.recordID.recordName) {
             try Task.checkCancellation()
             guard let recap = try decode(AIRecap.self, from: record),
-                  sessionTombstones.contains(where: {
-                      $0.readID == recap.readID
-                          && $0.sessionID == recap.sessionID
-                          && $0.deletedAt >= recap.createdAt
-                  }) else {
+                  Self.isAIRecap(recap, deletedBy: tombstones) else {
                 continue
             }
             try await deleteRecord(record.recordID)
+        }
+    }
+
+    static func deletedAIRecapRecordNames(for tombstones: [SyncedDeletedAIRecap]) -> Set<String> {
+        Set(tombstones.compactMap { tombstone in
+            tombstone.recapID.map { "recap-\($0.uuidString)" }
+        })
+    }
+
+    static func isAIRecap(_ recap: AIRecap, deletedBy tombstones: [SyncedDeletedAIRecap]) -> Bool {
+        tombstones.contains { tombstone in
+            tombstone.deletedAt >= recap.createdAt
+                && (
+                    tombstone.recapID == recap.id
+                        || (
+                            tombstone.readID == recap.readID
+                                && tombstone.sessionID == recap.sessionID
+                        )
+                )
         }
     }
 

@@ -205,6 +205,27 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertEqual(result.value.map(\.id), [recap.id])
     }
 
+    func testCloudKitAIRecapDeletionTombstoneMatchesReplacementSessionRecap() {
+        let readID = UUID()
+        let sessionID = UUID()
+        let deletedRecapID = UUID()
+        let replacementRecap = aiRecap(
+            id: UUID(),
+            readID: readID,
+            sessionID: sessionID,
+            createdAt: date("2026-05-06T10:00:00Z")
+        )
+        let tombstone = SyncedDeletedAIRecap(
+            recapID: deletedRecapID,
+            readID: readID,
+            sessionID: sessionID,
+            deletedAt: date("2026-05-06T11:00:00Z")
+        )
+
+        XCTAssertTrue(DefaultCloudKitService.isAIRecap(replacementRecap, deletedBy: [tombstone]))
+        XCTAssertEqual(DefaultCloudKitService.deletedAIRecapRecordNames(for: [tombstone]), ["recap-\(deletedRecapID.uuidString)"])
+    }
+
     func testOlderCloudSettingDoesNotOverwriteNewerLocalSetting() throws {
         let key = TypographySettingsKey.fontSize
         let local = SyncedAppSettings(values: [
