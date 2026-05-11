@@ -38,6 +38,7 @@ final class UnconfiguredCloudKitService: CloudKitServing {
 final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
     private enum RecordType {
         static let libraryItem = "FRLibraryItem"
+        static let deletedLibraryItem = "FRDeletedLibraryItem"
         static let readingStats = "FRReadingStats"
         static let appSettings = "FRAppSettings"
         static let aiRecap = "FRAIRecap"
@@ -91,14 +92,22 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
     }
 
     func fetchSnapshot() async throws -> CloudSyncSnapshot {
+        try Task.checkCancellation()
         let libraryRecords = try await fetchRecords(type: RecordType.libraryItem)
+        try Task.checkCancellation()
+        let deletedLibraryRecords = try await fetchRecords(type: RecordType.deletedLibraryItem)
+        try Task.checkCancellation()
         let statsRecords = try await fetchRecords(type: RecordType.readingStats)
+        try Task.checkCancellation()
         let settingsRecords = try await fetchRecords(type: RecordType.appSettings)
+        try Task.checkCancellation()
         let recapRecords = try await fetchRecords(type: RecordType.aiRecap)
+        try Task.checkCancellation()
         let migrationRecords = try await fetchRecords(type: RecordType.migrationState)
 
         return CloudSyncSnapshot(
             libraryItems: try libraryRecords.compactMap { try decode(SyncedSavedRead.self, from: $0) },
+            deletedLibraryItems: try deletedLibraryRecords.compactMap { try decode(SyncedDeletedLibraryItem.self, from: $0) },
             readingStats: try statsRecords.compactMap { try decode(SyncedReadingStats.self, from: $0) }.max { $0.updatedAt < $1.updatedAt },
             settings: try settingsRecords.compactMap { try decode(SyncedAppSettings.self, from: $0) }.max { $0.updatedAt < $1.updatedAt },
             aiRecaps: try recapRecords.compactMap { try decode(AIRecap.self, from: $0) },
@@ -109,17 +118,26 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
 
     func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {
         for item in snapshot.libraryItems {
+            try Task.checkCancellation()
             try await save(item, recordType: RecordType.libraryItem, recordName: "read-\(item.id.uuidString)", updatedAt: item.updatedAt)
         }
+        for item in snapshot.deletedLibraryItems {
+            try Task.checkCancellation()
+            try await save(item, recordType: RecordType.deletedLibraryItem, recordName: "deleted-read-\(item.id.uuidString)", updatedAt: item.deletedAt)
+        }
         if let readingStats = snapshot.readingStats {
+            try Task.checkCancellation()
             try await save(readingStats, recordType: RecordType.readingStats, recordName: "reading-stats", updatedAt: readingStats.updatedAt)
         }
         if let settings = snapshot.settings {
+            try Task.checkCancellation()
             try await save(settings, recordType: RecordType.appSettings, recordName: "app-settings", updatedAt: settings.updatedAt)
         }
         for recap in snapshot.aiRecaps {
+            try Task.checkCancellation()
             try await save(recap, recordType: RecordType.aiRecap, recordName: "recap-\(recap.id.uuidString)", updatedAt: recap.createdAt)
         }
+        try Task.checkCancellation()
         try await save(
             snapshot.migrationState,
             recordType: RecordType.migrationState,

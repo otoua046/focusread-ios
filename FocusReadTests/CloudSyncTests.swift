@@ -11,6 +11,7 @@ final class CloudSyncTests: XCTestCase {
         )
         let snapshot = CloudSyncSnapshot(
             libraryItems: [read],
+            deletedLibraryItems: [],
             readingStats: nil,
             settings: SyncedAppSettings(values: [
                 SyncedSettingValue(
@@ -64,6 +65,43 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertEqual(result.value.first?.displayTitle, "User Title")
         XCTAssertEqual(result.value.first?.progressPercent, 50)
         XCTAssertTrue(result.decisions.contains { $0.message.contains("matching content fingerprint") })
+    }
+
+    func testNewerLibraryDeletionTombstoneRemovesCloudItem() {
+        let read = syncedRead(
+            id: UUID(),
+            title: "Deleted Book",
+            updatedAt: date("2026-05-02T10:00:00Z"),
+            progress: 10
+        )
+        let tombstone = SyncedDeletedLibraryItem(
+            id: read.id,
+            contentFingerprint: read.contentFingerprint,
+            deletedAt: date("2026-05-03T10:00:00Z")
+        )
+
+        let result = SyncConflictResolver.mergeLibraryItems(local: [], cloud: [read], deleted: [tombstone])
+
+        XCTAssertTrue(result.value.isEmpty)
+        XCTAssertTrue(result.decisions.contains { $0.message.contains("deletion tombstone") })
+    }
+
+    func testOlderLibraryDeletionTombstoneDoesNotRemoveNewerItem() {
+        let read = syncedRead(
+            id: UUID(),
+            title: "Reimported Book",
+            updatedAt: date("2026-05-04T10:00:00Z"),
+            progress: 10
+        )
+        let tombstone = SyncedDeletedLibraryItem(
+            id: read.id,
+            contentFingerprint: read.contentFingerprint,
+            deletedAt: date("2026-05-03T10:00:00Z")
+        )
+
+        let result = SyncConflictResolver.mergeLibraryItems(local: [read], cloud: [], deleted: [tombstone])
+
+        XCTAssertEqual(result.value.map(\.id), [read.id])
     }
 
     func testOlderCloudSettingDoesNotOverwriteNewerLocalSetting() throws {

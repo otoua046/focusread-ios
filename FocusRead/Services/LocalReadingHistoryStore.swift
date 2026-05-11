@@ -7,8 +7,10 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     private let fileManager: FileManager
     private let storageDirectory: URL
     private let fileURL: URL
+    private let deletedReadsURL: URL
     private let loader: ReadingHistoryFileLoader
     private let writer: ReadingHistoryFileWriter
+    private var deletedReadTombstones: [SyncedDeletedLibraryItem] = []
     private var persistRevision = 0
     private var persistenceSuspended = false
     private var hasLocalMutations = false
@@ -21,8 +23,10 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         self.storageDirectory = directory
         self.fileURL = directory.appendingPathComponent("SavedReads.json")
+        self.deletedReadsURL = directory.appendingPathComponent("DeletedLibraryItems.json")
         self.loader = ReadingHistoryFileLoader(fileURL: fileURL)
         self.writer = ReadingHistoryFileWriter(fileURL: fileURL)
+        self.deletedReadTombstones = Self.loadDeletedReadTombstones(from: deletedReadsURL)
 
         load()
     }
@@ -49,6 +53,7 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
 
     func delete(_ read: SavedRead) {
         hasLocalMutations = true
+        recordDeletedLibraryItem(read)
         removeAssociatedFiles(for: read)
         savedReads.removeAll { $0.id == read.id }
         persist(durability: .normal)
@@ -69,6 +74,10 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
         savedReads.map { SyncedSavedRead(read: $0, migratedAt: now) }
     }
 
+    func syncDeletedLibraryItems() -> [SyncedDeletedLibraryItem] {
+        deletedReadTombstones
+    }
+
     func applySyncMergedReads(_ syncedReads: [SyncedSavedRead]) {
         let existingByID = Dictionary(savedReads.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let existingByFingerprint = Dictionary(
@@ -84,6 +93,13 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
         hasLocalMutations = true
         savedReads = mergedReads.sortedByHistoryRecency()
         persist(durability: .immediate)
+    }
+
+    func applySyncMergedDeletedLibraryItems(_ deletedItems: [SyncedDeletedLibraryItem]) {
+        let merged = Self.mergeDeletedReadTombstones(deletedReadTombstones + deletedItems)
+        guard merged != deletedReadTombstones else { return }
+        deletedReadTombstones = merged
+        persistDeletedReadTombstones()
     }
 
     private func applyLoadResult(_ result: ReadingHistoryLoadResult) {
@@ -123,6 +139,53 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
             .appendingPathComponent("SavedReads", isDirectory: true)
             .appendingPathComponent(read.id.uuidString, isDirectory: true)
         try? fileManager.removeItem(at: folderURL)
+    }
+
+    private func recordDeletedLibraryItem(_ read: SavedRead) {
+        let tombstone = SyncedDeletedLibraryItem(
+            id: read.id,
+            contentFingerprint: SyncedSavedRead.contentFingerprint(for: read),
+            deletedAt: Date()
+        )
+        deletedReadTombstones = Self.mergeDeletedReadTombstones(deletedReadTombstones + [tombstone])
+        persistDeletedReadTombstones()
+    }
+
+    private func persistDeletedReadTombstones() {
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(deletedReadTombstones)
+            try data.write(to: deletedReadsURL, options: [.atomic])
+        } catch {
+            assertionFailure("Unable to persist deleted reading history tombstones: \(error)")
+        }
+    }
+
+    private static func loadDeletedReadTombstones(from url: URL) -> [SyncedDeletedLibraryItem] {
+        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
+        do {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let data = try Data(contentsOf: url)
+            return mergeDeletedReadTombstones(try decoder.decode([SyncedDeletedLibraryItem].self, from: data))
+        } catch {
+            assertionFailure("Unable to load deleted reading history tombstones: \(error)")
+            return []
+        }
+    }
+
+    private static func mergeDeletedReadTombstones(_ tombstones: [SyncedDeletedLibraryItem]) -> [SyncedDeletedLibraryItem] {
+        var byID: [UUID: SyncedDeletedLibraryItem] = [:]
+        for tombstone in tombstones {
+            guard let existing = byID[tombstone.id] else {
+                byID[tombstone.id] = tombstone
+                continue
+            }
+            byID[tombstone.id] = existing.deletedAt >= tombstone.deletedAt ? existing : tombstone
+        }
+        return byID.values.sorted { $0.deletedAt > $1.deletedAt }
     }
 }
 

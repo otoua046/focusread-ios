@@ -11,6 +11,7 @@ final class CloudSyncManager: ObservableObject {
             if isSyncEnabled {
                 scheduleSync(reason: "enabled")
             } else {
+                cancelActiveSync()
                 status = .off
             }
         }
@@ -85,6 +86,10 @@ final class CloudSyncManager: ObservableObject {
 
     func syncNow() {
         scheduledTask?.cancel()
+        guard isSyncEnabled else {
+            status = .off
+            return
+        }
         runSync(reason: "manual")
     }
 
@@ -92,8 +97,14 @@ final class CloudSyncManager: ObservableObject {
         guard isSyncEnabled, !isApplyingRemoteSnapshot else { return }
         scheduledTask?.cancel()
         scheduledTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(2))
+            do {
+                try await Task.sleep(for: .seconds(2))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
             await MainActor.run {
+                guard !Task.isCancelled else { return }
                 self?.runSync(reason: reason)
             }
         }
@@ -113,14 +124,17 @@ final class CloudSyncManager: ObservableObject {
 
     private func performSync(reason: String) async {
         guard let readingHistoryStore, let readingStatsStore, let recapStore else { return }
+        guard canContinueSync else { return }
 
         status = SyncStatus(kind: .syncing, lastSyncedAt: status.lastSyncedAt, message: nil)
         logger.info("Starting iCloud sync: \(reason, privacy: .public)")
 
         switch await cloudKitService.availability() {
         case .available:
+            guard canContinueSync else { return }
             break
         case .unavailable(let message):
+            guard canContinueSync else { return }
             status = SyncStatus(kind: .unavailable, lastSyncedAt: status.lastSyncedAt, message: message)
             logger.info("iCloud sync unavailable: \(message, privacy: .public)")
             return
@@ -136,6 +150,7 @@ final class CloudSyncManager: ObservableObject {
                 now: now
             )
             let cloudSnapshot = try await cloudKitService.fetchSnapshot()
+            guard canContinueSync else { return }
             let migration = LocalToCloudMigrationService.prepareMigration(
                 localSnapshot: localSnapshot,
                 cloudState: cloudSnapshot.migrationState,
@@ -147,6 +162,7 @@ final class CloudSyncManager: ObservableObject {
                 now: now
             )
 
+            guard canContinueSync else { return }
             isApplyingRemoteSnapshot = true
             applyMergedSnapshot(
                 merged.value,
@@ -156,7 +172,9 @@ final class CloudSyncManager: ObservableObject {
             )
             isApplyingRemoteSnapshot = false
 
+            guard canContinueSync else { return }
             try await cloudKitService.saveSnapshot(merged.value)
+            guard canContinueSync else { return }
 
             writeSyncBookkeeping {
                 userDefaults.set(now, forKey: CloudSyncSettingsKey.lastSyncedAt)
@@ -167,6 +185,7 @@ final class CloudSyncManager: ObservableObject {
             })
         } catch {
             isApplyingRemoteSnapshot = false
+            guard canContinueSync else { return }
             status = SyncStatus(kind: .error, lastSyncedAt: status.lastSyncedAt, message: error.localizedDescription)
             logger.error("iCloud sync failed: \(error.localizedDescription, privacy: .public)")
         }
@@ -181,6 +200,7 @@ final class CloudSyncManager: ObservableObject {
         let readIDs = readingHistoryStore.savedReads.map(\.id)
         return CloudSyncSnapshot(
             libraryItems: readingHistoryStore.syncSnapshotItems(now: now),
+            deletedLibraryItems: readingHistoryStore.syncDeletedLibraryItems(),
             readingStats: readingStatsStore.syncSnapshot(updatedAt: now),
             settings: settingsStore.snapshot(now: now),
             aiRecaps: recapStore.syncSnapshotRecaps(for: readIDs),
@@ -195,6 +215,7 @@ final class CloudSyncManager: ObservableObject {
         readingStatsStore: LocalReadingStatsStore,
         recapStore: LocalAIRecapStore
     ) {
+        readingHistoryStore.applySyncMergedDeletedLibraryItems(snapshot.deletedLibraryItems)
         readingHistoryStore.applySyncMergedReads(snapshot.libraryItems)
         if let readingStats = snapshot.readingStats {
             readingStatsStore.applySyncMergedStats(readingStats)
@@ -214,6 +235,18 @@ final class CloudSyncManager: ObservableObject {
     private func writeSyncBookkeeping(_ updates: () -> Void) {
         isApplyingRemoteSnapshot = true
         updates()
+        isApplyingRemoteSnapshot = false
+    }
+
+    private var canContinueSync: Bool {
+        isSyncEnabled && !Task.isCancelled
+    }
+
+    private func cancelActiveSync() {
+        scheduledTask?.cancel()
+        scheduledTask = nil
+        syncTask?.cancel()
+        syncTask = nil
         isApplyingRemoteSnapshot = false
     }
 }

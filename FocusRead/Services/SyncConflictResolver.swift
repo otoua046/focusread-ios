@@ -17,7 +17,15 @@ enum SyncConflictResolver {
         cloud: CloudSyncSnapshot,
         now: Date = Date()
     ) -> SyncMergeResult<CloudSyncSnapshot> {
-        let library = mergeLibraryItems(local: local.libraryItems, cloud: cloud.libraryItems)
+        let deletedLibraryItems = mergeDeletedLibraryItems(
+            local: local.deletedLibraryItems,
+            cloud: cloud.deletedLibraryItems
+        )
+        let library = mergeLibraryItems(
+            local: local.libraryItems,
+            cloud: cloud.libraryItems,
+            deleted: deletedLibraryItems.value
+        )
         let stats = mergeReadingStats(local: local.readingStats, cloud: cloud.readingStats)
         let settings = mergeSettings(local: local.settings, cloud: cloud.settings)
         let recaps = mergeAIRecaps(local: local.aiRecaps, cloud: cloud.aiRecaps)
@@ -26,31 +34,39 @@ enum SyncConflictResolver {
         return SyncMergeResult(
             value: CloudSyncSnapshot(
                 libraryItems: library.value,
+                deletedLibraryItems: deletedLibraryItems.value,
                 readingStats: stats.value,
                 settings: settings.value,
                 aiRecaps: recaps.value,
                 migrationState: migrationState.value,
                 generatedAt: now
             ),
-            decisions: library.decisions + stats.decisions + settings.decisions + recaps.decisions + migrationState.decisions
+            decisions: library.decisions + deletedLibraryItems.decisions + stats.decisions + settings.decisions + recaps.decisions + migrationState.decisions
         )
     }
 
     static func mergeLibraryItems(
         local: [SyncedSavedRead],
-        cloud: [SyncedSavedRead]
+        cloud: [SyncedSavedRead],
+        deleted: [SyncedDeletedLibraryItem] = []
     ) -> SyncMergeResult<[SyncedSavedRead]> {
         var merged: [SyncedSavedRead] = []
         var decisions: [SyncMergeDecision] = []
-        var mergedIDs = Set<UUID>()
         var indexByFingerprint: [String: Int] = [:]
+        let tombstonesByID = Dictionary(
+            deleted.map { ($0.id, $0) },
+            uniquingKeysWith: { first, second in first.deletedAt >= second.deletedAt ? first : second }
+        )
+        let tombstonesByFingerprint = Dictionary(
+            deleted.compactMap { tombstone in tombstone.contentFingerprint.map { ($0, tombstone) } },
+            uniquingKeysWith: { first, second in first.deletedAt >= second.deletedAt ? first : second }
+        )
 
         func appendOrMerge(_ item: SyncedSavedRead, source: String) {
             if let existingIndex = merged.firstIndex(where: { $0.id == item.id }) {
                 let result = mergeSavedRead(local: merged[existingIndex], cloud: item)
                 merged[existingIndex] = result.value
                 decisions.append(contentsOf: result.decisions)
-                mergedIDs.insert(item.id)
                 return
             }
 
@@ -69,17 +85,28 @@ enum SyncConflictResolver {
                     id: item.id.uuidString,
                     message: "Merged duplicate library metadata with matching content fingerprint."
                 ))
-                mergedIDs.insert(item.id)
                 return
             }
 
             merged.append(item)
             indexByFingerprint[item.contentFingerprint] = merged.count - 1
-            mergedIDs.insert(item.id)
         }
 
         local.forEach { appendOrMerge($0, source: "local") }
         cloud.forEach { appendOrMerge($0, source: "cloud") }
+
+        merged = merged.filter { item in
+            guard let tombstone = tombstonesByID[item.id] ?? tombstonesByFingerprint[item.contentFingerprint],
+                  tombstone.deletedAt >= item.updatedAt else {
+                return true
+            }
+            decisions.append(SyncMergeDecision(
+                entity: "library",
+                id: item.id.uuidString,
+                message: "Kept library deletion tombstone newer than item metadata."
+            ))
+            return false
+        }
 
         merged.sort {
             if $0.isFavorite != $1.isFavorite {
@@ -88,6 +115,32 @@ enum SyncConflictResolver {
             return $0.lastOpenedAt > $1.lastOpenedAt
         }
         return SyncMergeResult(value: merged, decisions: decisions)
+    }
+
+    static func mergeDeletedLibraryItems(
+        local: [SyncedDeletedLibraryItem],
+        cloud: [SyncedDeletedLibraryItem]
+    ) -> SyncMergeResult<[SyncedDeletedLibraryItem]> {
+        var byID: [UUID: SyncedDeletedLibraryItem] = [:]
+        var decisions: [SyncMergeDecision] = []
+
+        for tombstone in local + cloud {
+            if let existing = byID[tombstone.id] {
+                byID[tombstone.id] = existing.deletedAt >= tombstone.deletedAt ? existing : tombstone
+                decisions.append(SyncMergeDecision(
+                    entity: "libraryDeletion",
+                    id: tombstone.id.uuidString,
+                    message: "Merged duplicate library deletion tombstone."
+                ))
+            } else {
+                byID[tombstone.id] = tombstone
+            }
+        }
+
+        return SyncMergeResult(
+            value: byID.values.sorted { $0.deletedAt > $1.deletedAt },
+            decisions: decisions
+        )
     }
 
     static func mergeSavedRead(local: SyncedSavedRead, cloud: SyncedSavedRead) -> SyncMergeResult<SyncedSavedRead> {

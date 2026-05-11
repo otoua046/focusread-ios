@@ -25,6 +25,7 @@ struct SyncStatus: Equatable, Sendable {
 
 struct CloudSyncSnapshot: Codable, Equatable, Sendable {
     var libraryItems: [SyncedSavedRead]
+    var deletedLibraryItems: [SyncedDeletedLibraryItem]
     var readingStats: SyncedReadingStats?
     var settings: SyncedAppSettings?
     var aiRecaps: [AIRecap]
@@ -34,6 +35,7 @@ struct CloudSyncSnapshot: Codable, Equatable, Sendable {
     static func empty(generatedAt: Date = Date()) -> CloudSyncSnapshot {
         CloudSyncSnapshot(
             libraryItems: [],
+            deletedLibraryItems: [],
             readingStats: nil,
             settings: nil,
             aiRecaps: [],
@@ -41,6 +43,12 @@ struct CloudSyncSnapshot: Codable, Equatable, Sendable {
             generatedAt: generatedAt
         )
     }
+}
+
+struct SyncedDeletedLibraryItem: Identifiable, Codable, Equatable, Sendable {
+    var id: UUID
+    var contentFingerprint: String?
+    var deletedAt: Date
 }
 
 struct SavedReadCloudSyncMetadata: Codable, Equatable, Sendable {
