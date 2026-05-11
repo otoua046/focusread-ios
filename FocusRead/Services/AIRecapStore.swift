@@ -14,11 +14,15 @@ final class LocalAIRecapStore: ObservableObject, AIRecapStore {
 
     private let fileManager: FileManager
     private let storageDirectory: URL
+    private let deletedRecapsURL: URL
     private var loadedReadIDs: Set<UUID> = []
+    private var deletedRecapTombstones: [SyncedDeletedAIRecap] = []
 
     init(fileManager: FileManager = .default, storageDirectory: URL? = nil) {
         self.fileManager = fileManager
         self.storageDirectory = storageDirectory ?? Self.defaultStorageDirectory(fileManager: fileManager)
+        self.deletedRecapsURL = self.storageDirectory.appendingPathComponent("DeletedAIRecaps.json")
+        self.deletedRecapTombstones = Self.loadDeletedRecapTombstones(from: deletedRecapsURL)
         try? fileManager.createDirectory(at: self.storageDirectory, withIntermediateDirectories: true)
     }
 
@@ -43,15 +47,54 @@ final class LocalAIRecapStore: ObservableObject, AIRecapStore {
         loadIfNeeded(readID: readID)
 
         var recaps = recapsByReadID[readID] ?? []
+        recaps
+            .filter { $0.sessionID == sessionID }
+            .forEach { recordDeletedRecap($0) }
         recaps.removeAll { $0.sessionID == sessionID }
         recapsByReadID[readID] = recaps
         persist(recaps, for: readID)
     }
 
     func deleteRecaps(for readID: UUID) {
+        loadIfNeeded(readID: readID)
+        (recapsByReadID[readID] ?? []).forEach { recordDeletedRecap($0) }
         recapsByReadID.removeValue(forKey: readID)
         loadedReadIDs.remove(readID)
         try? fileManager.removeItem(at: recapsFileURL(for: readID))
+    }
+
+    func syncSnapshotRecaps(for readIDs: [UUID]) -> [AIRecap] {
+        readIDs.flatMap { recaps(for: $0) }
+            .sortedByRecapRecency()
+    }
+
+    func syncDeletedAIRecaps() -> [SyncedDeletedAIRecap] {
+        deletedRecapTombstones
+    }
+
+    func applySyncMergedDeletedAIRecaps(_ deletedRecaps: [SyncedDeletedAIRecap]) {
+        let merged = Self.mergeDeletedRecapTombstones(deletedRecapTombstones + deletedRecaps)
+        guard merged != deletedRecapTombstones else { return }
+        deletedRecapTombstones = merged
+        persistDeletedRecapTombstones()
+    }
+
+    func applySyncMergedRecaps(_ recaps: [AIRecap], deletedRecaps: [SyncedDeletedAIRecap] = []) {
+        let grouped = Dictionary(grouping: recaps, by: \.readID)
+        let affectedReadIDs = Set(grouped.keys).union(deletedRecaps.map(\.readID))
+        for readID in affectedReadIDs {
+            loadIfNeeded(readID: readID)
+            let existing = recapsByReadID[readID] ?? []
+            let merged = SyncConflictResolver.mergeAIRecaps(
+                local: existing,
+                cloud: grouped[readID] ?? [],
+                deleted: deletedRecapTombstones + deletedRecaps
+            ).value
+            let capped = Array(merged.sortedByRecapRecency().prefix(3))
+            guard capped != existing else { continue }
+            recapsByReadID[readID] = capped
+            persist(capped, for: readID)
+        }
     }
 
     private func loadIfNeeded(readID: UUID) {
@@ -89,6 +132,54 @@ final class LocalAIRecapStore: ObservableObject, AIRecapStore {
         } catch {
             assertionFailure("Unable to persist AI recaps: \(error)")
         }
+    }
+
+    private func recordDeletedRecap(_ recap: AIRecap, deletedAt: Date = Date()) {
+        let tombstone = SyncedDeletedAIRecap(
+            recapID: recap.id,
+            readID: recap.readID,
+            sessionID: recap.sessionID,
+            deletedAt: deletedAt
+        )
+        deletedRecapTombstones = Self.mergeDeletedRecapTombstones(deletedRecapTombstones + [tombstone])
+        persistDeletedRecapTombstones()
+    }
+
+    private func persistDeletedRecapTombstones() {
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(deletedRecapTombstones)
+            try data.write(to: deletedRecapsURL, options: [.atomic])
+        } catch {
+            assertionFailure("Unable to persist deleted AI recap tombstones: \(error)")
+        }
+    }
+
+    private static func loadDeletedRecapTombstones(from url: URL) -> [SyncedDeletedAIRecap] {
+        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
+        do {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let data = try Data(contentsOf: url)
+            return mergeDeletedRecapTombstones(try decoder.decode([SyncedDeletedAIRecap].self, from: data))
+        } catch {
+            assertionFailure("Unable to load deleted AI recap tombstones: \(error)")
+            return []
+        }
+    }
+
+    private static func mergeDeletedRecapTombstones(_ tombstones: [SyncedDeletedAIRecap]) -> [SyncedDeletedAIRecap] {
+        var byID: [String: SyncedDeletedAIRecap] = [:]
+        for tombstone in tombstones {
+            guard let existing = byID[tombstone.id] else {
+                byID[tombstone.id] = tombstone
+                continue
+            }
+            byID[tombstone.id] = existing.deletedAt >= tombstone.deletedAt ? existing : tombstone
+        }
+        return byID.values.sorted { $0.deletedAt > $1.deletedAt }
     }
 
     private func quarantineUnreadableRecapsFile(_ fileURL: URL) {

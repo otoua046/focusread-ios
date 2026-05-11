@@ -37,6 +37,7 @@ struct RootView: View {
     @StateObject private var readingHistoryStore = LocalReadingHistoryStore()
     @StateObject private var readingStatsStore = LocalReadingStatsStore()
     @StateObject private var recapStore = LocalAIRecapStore()
+    @StateObject private var cloudSyncManager = CloudSyncManager()
     @StateObject private var documentOpenInViewModel = DocumentImportViewModel()
     @State private var readerViewModel: ReaderViewModel?
     @State private var selectedTab: MainTab = .home
@@ -54,6 +55,7 @@ struct RootView: View {
                     self.readerViewModel = nil
                 }
                 .environmentObject(readingStatsStore)
+                .environmentObject(cloudSyncManager)
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else {
                 TabView(selection: $selectedTab) {
@@ -107,6 +109,7 @@ struct RootView: View {
                         showsDismissButton: false,
                         showsPageHeader: true
                     )
+                    .environmentObject(cloudSyncManager)
                     .tabItem {
                         Label(MainTab.settings.titleKey, systemImage: MainTab.settings.systemImage)
                     }
@@ -131,6 +134,13 @@ struct RootView: View {
             readerViewModel = nil
             selectedTab = .library
             documentOpenInViewModel.importDocument(from: url)
+        }
+        .onAppear {
+            cloudSyncManager.configure(
+                readingHistoryStore: readingHistoryStore,
+                readingStatsStore: readingStatsStore,
+                recapStore: recapStore
+            )
         }
     }
 
@@ -163,13 +173,12 @@ struct RootView: View {
             document: document,
             wordsPerMinute: defaultWPM
         )
-        var savedRead = SavedReadMapper.makeSavedRead(
+        let savedRead = SavedReadMapper.makeDemoSavedRead(
             from: FocusReadHomeDemoContent.readerSampleText,
-            tokens: tokens
+            tokens: tokens,
+            title: L10n.string(.readerDemoTitle),
+            existingReads: readingHistoryStore.savedReads
         )
-        savedRead.displayTitle = L10n.string(.readerDemoTitle)
-        savedRead.originalFileName = L10n.string(.readerDemoTitle)
-        savedRead.sourceType = .txt
         readingHistoryStore.save(savedRead)
 
         readerViewModel = ReaderViewModel(

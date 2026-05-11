@@ -3,6 +3,7 @@ import SwiftUI
 struct TypographySettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var themeManager: FocusReadThemeManager
+    @EnvironmentObject private var cloudSyncManager: CloudSyncManager
     @ObservedObject private var readingStatsStore: LocalReadingStatsStore
 
     let showsDismissButton: Bool
@@ -228,6 +229,10 @@ struct TypographySettingsView: View {
                     }
                 }
 
+                settingsSection("iCloud") {
+                    cloudSyncNavigationRow
+                }
+
                 settingsSection(L10n.string(.settingsAboutReset)) {
                     settingsActionRow(
                         title: L10n.string(.settingsResetTypography),
@@ -343,6 +348,39 @@ struct TypographySettingsView: View {
         .buttonStyle(.plain)
     }
 
+    private var cloudSyncNavigationRow: some View {
+        NavigationLink {
+            CloudSyncSettingsView()
+                .toolbar(.visible, for: .navigationBar)
+        } label: {
+            HStack(spacing: 12) {
+                Text("iCloud Sync")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryText)
+
+                Spacer(minLength: 12)
+
+                HStack(spacing: 7) {
+                    if cloudSyncManager.status.kind == .syncing {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    Text(syncStatusText)
+                        .font(.subheadline)
+                        .foregroundStyle(syncStatusColor)
+                        .lineLimit(1)
+                }
+
+                Image(systemName: "chevron.forward")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppTheme.tertiaryText)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     private var typographySummary: String {
         let family = ReaderFontFamily(rawValue: fontFamily) ?? .serif
         let weight = ReaderFontWeight(rawValue: fontWeight) ?? .regular
@@ -406,6 +444,32 @@ struct TypographySettingsView: View {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
             ?? Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
             ?? "FocusRead"
+    }
+
+    private var syncStatusText: String {
+        switch cloudSyncManager.status.kind {
+        case .off:
+            return "Off"
+        case .unavailable:
+            return "Unavailable"
+        case .syncing:
+            return "Syncing"
+        case .synced:
+            return "On"
+        case .error:
+            return "Error"
+        }
+    }
+
+    private var syncStatusColor: Color {
+        switch cloudSyncManager.status.kind {
+        case .synced:
+            return AppTheme.accent
+        case .error:
+            return AppTheme.destructive
+        default:
+            return AppTheme.secondaryText
+        }
     }
 
     private func resetTypography() {

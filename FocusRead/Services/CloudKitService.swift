@@ -1,0 +1,359 @@
+import CloudKit
+import Foundation
+import OSLog
+
+enum CloudSyncAvailability: Equatable, Sendable {
+    case available
+    case unavailable(String)
+}
+
+protocol CloudKitServing: AnyObject, Sendable {
+    func availability() async -> CloudSyncAvailability
+    func fetchSnapshot() async throws -> CloudSyncSnapshot
+    func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws
+}
+
+enum CloudKitServiceFactory {
+    static func makeDefaultService(bundle: Bundle = .main) -> CloudKitServing {
+        // CKContainer must only be initialized by CloudKit-capable builds with valid entitlements.
+        guard bundle.object(forInfoDictionaryKey: "FocusReadCloudKitEnabled") as? Bool == true else {
+            return UnconfiguredCloudKitService()
+        }
+        return DefaultCloudKitService()
+    }
+}
+
+final class UnconfiguredCloudKitService: CloudKitServing {
+    func availability() async -> CloudSyncAvailability {
+        .unavailable("iCloud Sync is not configured for this build.")
+    }
+
+    func fetchSnapshot() async throws -> CloudSyncSnapshot {
+        CloudSyncSnapshot.empty()
+    }
+
+    func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {}
+}
+
+final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
+    private enum RecordType {
+        static let libraryItem = "FRLibraryItem"
+        static let deletedLibraryItem = "FRDeletedLibraryItem"
+        static let readingStats = "FRReadingStats"
+        static let appSettings = "FRAppSettings"
+        static let aiRecap = "FRAIRecap"
+        static let deletedAIRecap = "FRDeletedAIRecap"
+        static let migrationState = "FRMigrationState"
+    }
+
+    private enum Field {
+        static let payload = "payload"
+        static let updatedAt = "updatedAt"
+    }
+
+    private let container: CKContainer
+    private let database: CKDatabase
+    private let logger = Logger(subsystem: "FocusRead", category: "CloudKitService")
+    private let encoder: JSONEncoder
+    private let decoder: JSONDecoder
+
+    init(container: CKContainer = .default()) {
+        self.container = container
+        self.database = container.privateCloudDatabase
+        self.encoder = JSONEncoder()
+        self.decoder = JSONDecoder()
+        encoder.dateEncodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .iso8601
+    }
+
+    func availability() async -> CloudSyncAvailability {
+        await withCheckedContinuation { continuation in
+            container.accountStatus { status, error in
+                if let error {
+                    continuation.resume(returning: .unavailable(error.localizedDescription))
+                    return
+                }
+
+                switch status {
+                case .available:
+                    continuation.resume(returning: .available)
+                case .noAccount:
+                    continuation.resume(returning: .unavailable("Sign in to iCloud to sync FocusRead."))
+                case .restricted:
+                    continuation.resume(returning: .unavailable("iCloud is restricted on this device."))
+                case .couldNotDetermine:
+                    continuation.resume(returning: .unavailable("FocusRead could not determine iCloud account status."))
+                case .temporarilyUnavailable:
+                    continuation.resume(returning: .unavailable("iCloud is temporarily unavailable."))
+                @unknown default:
+                    continuation.resume(returning: .unavailable("iCloud is unavailable."))
+                }
+            }
+        }
+    }
+
+    func fetchSnapshot() async throws -> CloudSyncSnapshot {
+        try Task.checkCancellation()
+        let libraryRecords = try await fetchRecords(type: RecordType.libraryItem)
+        try Task.checkCancellation()
+        let deletedLibraryRecords = try await fetchRecords(type: RecordType.deletedLibraryItem)
+        try Task.checkCancellation()
+        let statsRecords = try await fetchRecords(type: RecordType.readingStats)
+        try Task.checkCancellation()
+        let settingsRecords = try await fetchRecords(type: RecordType.appSettings)
+        try Task.checkCancellation()
+        let recapRecords = try await fetchRecords(type: RecordType.aiRecap)
+        try Task.checkCancellation()
+        let deletedRecapRecords = try await fetchRecords(type: RecordType.deletedAIRecap)
+        try Task.checkCancellation()
+        let migrationRecords = try await fetchRecords(type: RecordType.migrationState)
+
+        return CloudSyncSnapshot(
+            libraryItems: try libraryRecords.compactMap { try decode(SyncedSavedRead.self, from: $0) },
+            deletedLibraryItems: try deletedLibraryRecords.compactMap { try decode(SyncedDeletedLibraryItem.self, from: $0) },
+            readingStats: try statsRecords.compactMap { try decode(SyncedReadingStats.self, from: $0) }.max { $0.updatedAt < $1.updatedAt },
+            settings: try settingsRecords.compactMap { try decode(SyncedAppSettings.self, from: $0) }.max { $0.updatedAt < $1.updatedAt },
+            aiRecaps: try recapRecords.compactMap { try decode(AIRecap.self, from: $0) },
+            deletedAIRecaps: try deletedRecapRecords.compactMap { try decode(SyncedDeletedAIRecap.self, from: $0) },
+            migrationState: try migrationRecords.compactMap { try decode(CloudSyncMigrationState.self, from: $0) }.first ?? CloudSyncMigrationState(),
+            generatedAt: Date()
+        )
+    }
+
+    func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {
+        let activeLibraryRecordNames = Set(snapshot.libraryItems.map { "read-\($0.id.uuidString)" })
+        let activeRecapRecordNames = Set(snapshot.aiRecaps.map { "recap-\($0.id.uuidString)" })
+
+        for item in snapshot.libraryItems {
+            try Task.checkCancellation()
+            try await save(item, recordType: RecordType.libraryItem, recordName: "read-\(item.id.uuidString)", updatedAt: item.updatedAt)
+        }
+        for item in snapshot.deletedLibraryItems {
+            try Task.checkCancellation()
+            try await save(item, recordType: RecordType.deletedLibraryItem, recordName: "deleted-read-\(item.id.uuidString)", updatedAt: item.deletedAt)
+        }
+        if let readingStats = snapshot.readingStats {
+            try Task.checkCancellation()
+            try await save(readingStats, recordType: RecordType.readingStats, recordName: "reading-stats", updatedAt: readingStats.updatedAt)
+        }
+        if let settings = snapshot.settings {
+            try Task.checkCancellation()
+            try await save(settings, recordType: RecordType.appSettings, recordName: "app-settings", updatedAt: settings.updatedAt)
+        }
+        for recap in snapshot.aiRecaps {
+            try Task.checkCancellation()
+            try await save(recap, recordType: RecordType.aiRecap, recordName: "recap-\(recap.id.uuidString)", updatedAt: recap.createdAt)
+        }
+        for recap in snapshot.deletedAIRecaps {
+            try Task.checkCancellation()
+            try await save(recap, recordType: RecordType.deletedAIRecap, recordName: "deleted-recap-\(recap.id)", updatedAt: recap.deletedAt)
+        }
+        try await deleteSupersededLibraryRecords(
+            activeItems: snapshot.libraryItems,
+            excluding: activeLibraryRecordNames
+        )
+        try await deleteRecords(
+            named: Set(snapshot.deletedLibraryItems.map { "read-\($0.id.uuidString)" }).subtracting(activeLibraryRecordNames)
+        )
+        try await deleteAIRecapRecords(
+            matching: snapshot.deletedAIRecaps,
+            excluding: activeRecapRecordNames
+        )
+        try Task.checkCancellation()
+        try await save(
+            snapshot.migrationState,
+            recordType: RecordType.migrationState,
+            recordName: "migration-state",
+            updatedAt: snapshot.migrationState.lastMigrationRunAt ?? snapshot.generatedAt
+        )
+    }
+
+    private func save<Value: Encodable>(
+        _ value: Value,
+        recordType: String,
+        recordName: String,
+        updatedAt: Date
+    ) async throws {
+        let recordID = CKRecord.ID(recordName: recordName)
+        let record = try await fetchRecord(recordID: recordID) ?? CKRecord(recordType: recordType, recordID: recordID)
+        record[Field.payload] = try encoder.encode(value) as NSData
+        record[Field.updatedAt] = updatedAt as NSDate
+        _ = try await saveRecord(record)
+    }
+
+    private func deleteRecords(named recordNames: Set<String>) async throws {
+        for recordName in recordNames {
+            try Task.checkCancellation()
+            try await deleteRecord(CKRecord.ID(recordName: recordName))
+        }
+    }
+
+    private func deleteSupersededLibraryRecords(
+        activeItems: [SyncedSavedRead],
+        excluding activeRecordNames: Set<String>
+    ) async throws {
+        let activeItemsByFingerprint = Dictionary(
+            activeItems.map { ($0.contentFingerprint, $0) },
+            uniquingKeysWith: { first, second in first.updatedAt >= second.updatedAt ? first : second }
+        )
+        guard !activeItemsByFingerprint.isEmpty else { return }
+
+        let records = try await fetchRecords(type: RecordType.libraryItem)
+        for record in records where !activeRecordNames.contains(record.recordID.recordName) {
+            try Task.checkCancellation()
+            guard let item = try decode(SyncedSavedRead.self, from: record),
+                  let activeItem = activeItemsByFingerprint[item.contentFingerprint],
+                  activeItem.updatedAt >= item.updatedAt else {
+                continue
+            }
+            try await deleteRecord(record.recordID)
+        }
+    }
+
+    private func deleteAIRecapRecords(
+        matching tombstones: [SyncedDeletedAIRecap],
+        excluding activeRecordNames: Set<String>
+    ) async throws {
+        let tombstoneRecordNames = Self.deletedAIRecapRecordNames(for: tombstones)
+        try await deleteRecords(named: tombstoneRecordNames.subtracting(activeRecordNames))
+
+        guard !tombstones.isEmpty else { return }
+
+        let records = try await fetchRecords(type: RecordType.aiRecap)
+        for record in records where !activeRecordNames.contains(record.recordID.recordName) {
+            try Task.checkCancellation()
+            guard let recap = try decode(AIRecap.self, from: record),
+                  Self.isAIRecap(recap, deletedBy: tombstones) else {
+                continue
+            }
+            try await deleteRecord(record.recordID)
+        }
+    }
+
+    static func deletedAIRecapRecordNames(for tombstones: [SyncedDeletedAIRecap]) -> Set<String> {
+        Set(tombstones.compactMap { tombstone in
+            tombstone.recapID.map { "recap-\($0.uuidString)" }
+        })
+    }
+
+    static func isAIRecap(_ recap: AIRecap, deletedBy tombstones: [SyncedDeletedAIRecap]) -> Bool {
+        tombstones.contains { tombstone in
+            tombstone.deletedAt >= recap.createdAt
+                && (
+                    tombstone.recapID == recap.id
+                        || (
+                            tombstone.readID == recap.readID
+                                && tombstone.sessionID == recap.sessionID
+                        )
+                )
+        }
+    }
+
+    private func decode<Value: Decodable>(_ type: Value.Type, from record: CKRecord) throws -> Value? {
+        let payload = record[Field.payload]
+        let data = (payload as? Data) ?? (payload as? NSData).map { $0 as Data }
+        guard let data else {
+            logger.error("CloudKit record \(record.recordID.recordName, privacy: .public) is missing payload data.")
+            return nil
+        }
+        return try decoder.decode(type, from: data)
+    }
+
+    private func fetchRecords(type: String) async throws -> [CKRecord] {
+        let query = CKQuery(recordType: type, predicate: NSPredicate(value: true))
+        query.sortDescriptors = [NSSortDescriptor(key: Field.updatedAt, ascending: false)]
+        var page = try await fetchRecordsPage(query: query)
+        var records = page.records
+        while let cursor = page.cursor {
+            page = try await fetchRecordsPage(cursor: cursor)
+            records.append(contentsOf: page.records)
+        }
+        return records
+    }
+
+    private func fetchRecordsPage(query: CKQuery) async throws -> (records: [CKRecord], cursor: CKQueryOperation.Cursor?) {
+        try await withCheckedThrowingContinuation { continuation in
+            var records: [CKRecord] = []
+            let operation = CKQueryOperation(query: query)
+            operation.recordMatchedBlock = { _, result in
+                if case .success(let record) = result {
+                    records.append(record)
+                }
+            }
+            operation.queryResultBlock = { result in
+                switch result {
+                case .success(let cursor):
+                    continuation.resume(returning: (records, cursor))
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+            database.add(operation)
+        }
+    }
+
+    private func fetchRecordsPage(cursor: CKQueryOperation.Cursor) async throws -> (records: [CKRecord], cursor: CKQueryOperation.Cursor?) {
+        try await withCheckedThrowingContinuation { continuation in
+            var records: [CKRecord] = []
+            let operation = CKQueryOperation(cursor: cursor)
+            operation.recordMatchedBlock = { _, result in
+                if case .success(let record) = result {
+                    records.append(record)
+                }
+            }
+            operation.queryResultBlock = { result in
+                switch result {
+                case .success(let cursor):
+                    continuation.resume(returning: (records, cursor))
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+            database.add(operation)
+        }
+    }
+
+    private func fetchRecord(recordID: CKRecord.ID) async throws -> CKRecord? {
+        try await withCheckedThrowingContinuation { continuation in
+            database.fetch(withRecordID: recordID) { record, error in
+                if let ckError = error as? CKError, ckError.code == .unknownItem {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: record)
+            }
+        }
+    }
+
+    private func deleteRecord(_ recordID: CKRecord.ID) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            database.delete(withRecordID: recordID) { _, error in
+                if let ckError = error as? CKError, ckError.code == .unknownItem {
+                    continuation.resume()
+                    return
+                }
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume()
+            }
+        }
+    }
+
+    private func saveRecord(_ record: CKRecord) async throws -> CKRecord {
+        try await withCheckedThrowingContinuation { continuation in
+            database.save(record) { savedRecord, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: savedRecord ?? record)
+            }
+        }
+    }
+}

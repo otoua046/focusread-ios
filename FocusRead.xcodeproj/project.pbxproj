@@ -75,6 +75,13 @@
 		760000000000000000000007 /* AIRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000107 /* AIRecapView.swift */; };
 		760000000000000000000008 /* AIRecapSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000108 /* AIRecapSettings.swift */; };
 		760000000000000000000009 /* AIRecapSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000109 /* AIRecapSettingsTests.swift */; };
+		780000000000000000000001 /* CloudSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000101 /* CloudSyncModels.swift */; };
+		780000000000000000000002 /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000102 /* CloudKitService.swift */; };
+		780000000000000000000003 /* SyncConflictResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000103 /* SyncConflictResolver.swift */; };
+		780000000000000000000004 /* LocalToCloudMigrationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000104 /* LocalToCloudMigrationService.swift */; };
+		780000000000000000000005 /* CloudSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000105 /* CloudSyncManager.swift */; };
+		780000000000000000000006 /* CloudSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000106 /* CloudSyncTests.swift */; };
+		780000000000000000000009 /* CloudSyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000108 /* CloudSyncSettingsView.swift */; };
 		770000000000000000000001 /* AppLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000101 /* AppLocalization.swift */; };
 		770000000000000000000002 /* AppLanguageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000102 /* AppLanguageSettingsView.swift */; };
 		770000000000000000000003 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000201 /* Localizable.strings */; };
@@ -162,6 +169,14 @@
 		760000000000000000000107 /* AIRecapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapView.swift; sourceTree = "<group>"; };
 		760000000000000000000108 /* AIRecapSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapSettings.swift; sourceTree = "<group>"; };
 		760000000000000000000109 /* AIRecapSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapSettingsTests.swift; sourceTree = "<group>"; };
+		780000000000000000000101 /* CloudSyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncModels.swift; sourceTree = "<group>"; };
+		780000000000000000000102 /* CloudKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
+		780000000000000000000103 /* SyncConflictResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncConflictResolver.swift; sourceTree = "<group>"; };
+		780000000000000000000104 /* LocalToCloudMigrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalToCloudMigrationService.swift; sourceTree = "<group>"; };
+		780000000000000000000105 /* CloudSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncManager.swift; sourceTree = "<group>"; };
+		780000000000000000000106 /* CloudSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncTests.swift; sourceTree = "<group>"; };
+		780000000000000000000107 /* FocusRead.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusRead.entitlements; sourceTree = "<group>"; };
+		780000000000000000000108 /* CloudSyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncSettingsView.swift; sourceTree = "<group>"; };
 		770000000000000000000101 /* AppLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLocalization.swift; sourceTree = "<group>"; };
 		770000000000000000000102 /* AppLanguageSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguageSettingsView.swift; sourceTree = "<group>"; };
 		770000000000000000000301 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -234,6 +249,7 @@
 				710000000000000000000064 /* Theme */,
 				710000000000000000000063 /* Views */,
 				71000000000000000000010E /* Assets.xcassets */,
+				780000000000000000000107 /* FocusRead.entitlements */,
 				770000000000000000000201 /* Localizable.strings */,
 				770000000000000000000202 /* InfoPlist.strings */,
 			);
@@ -257,6 +273,7 @@
 				750000000000000000000101 /* ReadingStats.swift */,
 				760000000000000000000101 /* AIRecap.swift */,
 				760000000000000000000108 /* AIRecapSettings.swift */,
+				780000000000000000000101 /* CloudSyncModels.swift */,
 				72000000000000000000010D /* SavedRead.swift */,
 				71000000000000000000010C /* TypographySettings.swift */,
 				720000000000000000000101 /* DocumentImportModels.swift */,
@@ -284,6 +301,10 @@
 				750000000000000000000102 /* ReadingStatsStore.swift */,
 				760000000000000000000102 /* AIRecapStore.swift */,
 				760000000000000000000104 /* AIRecapService.swift */,
+				780000000000000000000102 /* CloudKitService.swift */,
+				780000000000000000000103 /* SyncConflictResolver.swift */,
+				780000000000000000000104 /* LocalToCloudMigrationService.swift */,
+				780000000000000000000105 /* CloudSyncManager.swift */,
 				720000000000000000000110 /* SavedReadMapper.swift */,
 				720000000000000000000120 /* ThumbnailGeneratorService.swift */,
 				720000000000000000000112 /* WordLookupService.swift */,
@@ -314,6 +335,7 @@
 				710000000000000000000105 /* ReaderControlsView.swift */,
 				710000000000000000000121 /* ReaderActionPaletteView.swift */,
 				71000000000000000000010D /* TypographySettingsView.swift */,
+				780000000000000000000108 /* CloudSyncSettingsView.swift */,
 				72000000000000000000010A /* DocumentImportView.swift */,
 				720000000000000000000115 /* CameraCaptureView.swift */,
 				720000000000000000000116 /* PhotoLibraryPicker.swift */,
@@ -348,6 +370,7 @@
 				760000000000000000000103 /* AIRecapStoreTests.swift */,
 				760000000000000000000105 /* AIRecapServiceTests.swift */,
 				760000000000000000000109 /* AIRecapSettingsTests.swift */,
+				780000000000000000000106 /* CloudSyncTests.swift */,
 				740000000000000000000041 /* Fixtures */,
 			);
 			path = FocusReadTests;
@@ -516,6 +539,7 @@
 				750000000000000000000001 /* ReadingStats.swift in Sources */,
 				760000000000000000000001 /* AIRecap.swift in Sources */,
 				760000000000000000000008 /* AIRecapSettings.swift in Sources */,
+				780000000000000000000001 /* CloudSyncModels.swift in Sources */,
 				72000000000000000000000D /* SavedRead.swift in Sources */,
 				770000000000000000000001 /* AppLocalization.swift in Sources */,
 				710000000000000000000008 /* TextTokenizer.swift in Sources */,
@@ -540,7 +564,12 @@
 				750000000000000000000002 /* ReadingStatsStore.swift in Sources */,
 				760000000000000000000002 /* AIRecapStore.swift in Sources */,
 				760000000000000000000004 /* AIRecapService.swift in Sources */,
+				780000000000000000000002 /* CloudKitService.swift in Sources */,
+				780000000000000000000003 /* SyncConflictResolver.swift in Sources */,
+				780000000000000000000004 /* LocalToCloudMigrationService.swift in Sources */,
+				780000000000000000000005 /* CloudSyncManager.swift in Sources */,
 				720000000000000000000010 /* SavedReadMapper.swift in Sources */,
+				780000000000000000000009 /* CloudSyncSettingsView.swift in Sources */,
 				720000000000000000000012 /* WordLookupService.swift in Sources */,
 				720000000000000000000017 /* ReaderSearchService.swift in Sources */,
 				71000000000000000000000D /* TypographySettingsView.swift in Sources */,
@@ -574,6 +603,7 @@
 				760000000000000000000003 /* AIRecapStoreTests.swift in Sources */,
 				760000000000000000000005 /* AIRecapServiceTests.swift in Sources */,
 				760000000000000000000009 /* AIRecapSettingsTests.swift in Sources */,
+				780000000000000000000006 /* CloudSyncTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

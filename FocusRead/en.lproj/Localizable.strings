@@ -229,7 +229,7 @@
 "reader.searchWord.action" = "Search Word";
 "reader.currentLocation.title" = "Current Location";
 "reader.wordLocation.format" = "Word %d of %d";
-"reader.pageLocation.format" = "Page %d • %@";
+"reader.pageLocation.format" = "Page %d · %@";
 "reader.chapterWithTitle.format" = "Chapter %d: %@";
 "reader.chapter.format" = "Chapter %d";
 "reader.recapWordProgress.format" = "Recap word %d/%d";

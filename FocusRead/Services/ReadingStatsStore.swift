@@ -23,6 +23,7 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
     private let nowProvider: () -> Date
     private var completedReadIDs: Set<UUID> = []
     private var dailyGoalWords = ReadingStatsSnapshot.defaultDailyGoalWords
+    private var statsUpdatedAt = Date.distantPast
     private var persistenceSuspended = false
 
     init(
@@ -47,6 +48,7 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
 
         sessionEvents.append(event)
         upsertDailyStats(for: event)
+        statsUpdatedAt = nowProvider()
         recomputeSnapshot()
         persist()
     }
@@ -68,12 +70,43 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
         }
 
         sortDailyStats()
+        statsUpdatedAt = nowProvider()
         recomputeSnapshot()
         persist()
     }
 
     func updateDailyGoalWords(_ words: Int) {
         dailyGoalWords = min(max(words, 100), 100_000)
+        statsUpdatedAt = nowProvider()
+        recomputeSnapshot()
+        persist()
+    }
+
+    func syncSnapshot() -> SyncedReadingStats {
+        SyncedReadingStats(
+            dailyGoalWords: dailyGoalWords,
+            dailyStats: dailyStats,
+            sessionEvents: sessionEvents,
+            completedReadIDs: Array(completedReadIDs).sorted { $0.uuidString < $1.uuidString },
+            updatedAt: statsUpdatedAt
+        )
+    }
+
+    func applySyncMergedStats(_ syncedStats: SyncedReadingStats) {
+        let normalizedCompletedIDs = Set(syncedStats.completedReadIDs)
+        guard dailyGoalWords != syncedStats.dailyGoalWords
+            || dailyStats != syncedStats.dailyStats
+            || sessionEvents != syncedStats.sessionEvents
+            || completedReadIDs != normalizedCompletedIDs else {
+            return
+        }
+
+        dailyGoalWords = min(max(syncedStats.dailyGoalWords, 100), 100_000)
+        dailyStats = syncedStats.dailyStats
+        sessionEvents = syncedStats.sessionEvents
+        completedReadIDs = normalizedCompletedIDs
+        statsUpdatedAt = syncedStats.updatedAt
+        sortDailyStats()
         recomputeSnapshot()
         persist()
     }
@@ -100,6 +133,7 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
 
         guard didChange else { return }
         sortDailyStats()
+        statsUpdatedAt = nowProvider()
         recomputeSnapshot()
         persist()
     }
@@ -119,6 +153,7 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
             dailyStats = payload.dailyStats
             sessionEvents = payload.sessionEvents
             completedReadIDs = Set(payload.completedReadIDs)
+            statsUpdatedAt = payload.updatedAt ?? inferredStatsUpdatedAt()
             sortDailyStats()
             recomputeSnapshot()
         } catch {
@@ -127,6 +162,7 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
             dailyStats = []
             sessionEvents = []
             completedReadIDs = []
+            statsUpdatedAt = Date.distantPast
             recomputeSnapshot()
         }
     }
@@ -171,7 +207,8 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
             dailyGoalWords: dailyGoalWords,
             dailyStats: dailyStats,
             sessionEvents: sessionEvents,
-            completedReadIDs: Array(completedReadIDs).sorted { $0.uuidString < $1.uuidString }
+            completedReadIDs: Array(completedReadIDs).sorted { $0.uuidString < $1.uuidString },
+            updatedAt: statsUpdatedAt
         )
 
         do {
@@ -205,6 +242,16 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
         }
     }
 
+    private func inferredStatsUpdatedAt() -> Date {
+        if let attributes = try? fileManager.attributesOfItem(atPath: fileURL.path),
+           let modifiedAt = attributes[.modificationDate] as? Date {
+            return modifiedAt
+        }
+        return sessionEvents.map(\.endedAt).max()
+            ?? dailyStats.map(\.date).max()
+            ?? Date.distantPast
+    }
+
     private static func defaultStorageDirectory(fileManager: FileManager) -> URL {
         let supportDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? fileManager.temporaryDirectory
@@ -217,4 +264,5 @@ private struct ReadingStatsPersistencePayload: Codable {
     var dailyStats: [DailyReadingStats]
     var sessionEvents: [ReadingSessionEvent]
     var completedReadIDs: [UUID]
+    var updatedAt: Date?
 }
