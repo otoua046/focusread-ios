@@ -71,7 +71,7 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     }
 
     func syncSnapshotItems(now: Date = Date()) -> [SyncedSavedRead] {
-        savedReads.map { SyncedSavedRead(read: $0, migratedAt: now) }
+        savedReads.map { SyncedSavedRead(read: $0) }
     }
 
     func syncDeletedLibraryItems() -> [SyncedDeletedLibraryItem] {
@@ -81,7 +81,7 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     func applySyncMergedReads(_ syncedReads: [SyncedSavedRead]) {
         let existingByID = Dictionary(savedReads.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let existingByFingerprint = Dictionary(
-            savedReads.map { (SyncedSavedRead.contentFingerprint(for: $0), $0) },
+            savedReads.map { (SyncedSavedRead.reconciliationFingerprint(for: $0), $0) },
             uniquingKeysWith: { first, _ in first }
         )
         let mergedReads = syncedReads.map { syncedRead in
@@ -194,7 +194,7 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     private func recordDeletedLibraryItem(_ read: SavedRead) {
         let tombstone = SyncedDeletedLibraryItem(
             id: read.id,
-            contentFingerprint: SyncedSavedRead.contentFingerprint(for: read),
+            contentFingerprint: SyncedSavedRead.reconciliationFingerprint(for: read),
             deletedAt: Date()
         )
         deletedReadTombstones = Self.mergeDeletedReadTombstones(deletedReadTombstones + [tombstone])

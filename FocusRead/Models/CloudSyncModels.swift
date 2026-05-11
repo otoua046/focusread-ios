@@ -147,7 +147,7 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
         readingStats = read.readingStats
         author = read.author
         manualSortIndex = read.manualSortIndex
-        contentFingerprint = Self.contentFingerprint(for: read)
+        contentFingerprint = Self.reconciliationFingerprint(for: read)
         isDocumentTextIncluded = false
         fileSync = CloudDocumentFileSyncDescriptor(
             readID: read.id,
@@ -157,7 +157,7 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
             localRelativePath: nil,
             cloudAssetRecordName: nil,
             fileSizeBytes: nil,
-            lastValidatedAt: migratedAt
+            lastValidatedAt: migratedAt ?? read.cloudSync?.migratedAt
         )
     }
 
@@ -220,6 +220,14 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
             "\(read.totalWordCount)",
             sectionSignature
         ].joined(separator: "#"))
+    }
+
+    static func reconciliationFingerprint(for read: SavedRead) -> String {
+        if read.cloudSync?.isMetadataOnly == true,
+           let contentFingerprint = read.cloudSync?.contentFingerprint {
+            return contentFingerprint
+        }
+        return contentFingerprint(for: read)
     }
 
     private static func normalizedFingerprintText(_ text: String) -> String {

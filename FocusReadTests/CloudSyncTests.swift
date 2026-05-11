@@ -105,6 +105,30 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertEqual(SyncedSavedRead.contentFingerprint(for: original), SyncedSavedRead.contentFingerprint(for: renamed))
     }
 
+    func testMetadataOnlySnapshotReusesStoredContentFingerprint() {
+        let original = savedRead(
+            id: UUID(),
+            title: "Downloaded Elsewhere",
+            updatedAt: date("2026-05-03T10:00:00Z"),
+            progress: 0,
+            sectionText: "The original document text defines reconciliation identity."
+        )
+        let originalFingerprint = SyncedSavedRead.contentFingerprint(for: original)
+        var metadataOnly = original
+        metadataOnly.sections[0].text = ""
+        metadataOnly.cloudSync = SavedReadCloudSyncMetadata(
+            isMetadataOnly: true,
+            fileSyncState: .metadataOnly,
+            contentFingerprint: originalFingerprint,
+            migratedAt: date("2026-05-03T11:00:00Z")
+        )
+
+        let syncedRead = SyncedSavedRead(read: metadataOnly)
+
+        XCTAssertEqual(syncedRead.contentFingerprint, originalFingerprint)
+        XCTAssertEqual(syncedRead.fileSync?.contentFingerprint, originalFingerprint)
+    }
+
     func testNewerLibraryDeletionTombstoneRemovesCloudItem() {
         let read = syncedRead(
             id: UUID(),
@@ -586,6 +610,32 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: localFolder.path))
         XCTAssertEqual(try Data(contentsOf: mergedFolder.appendingPathComponent("thumbnail.jpg")), Data("thumbnail".utf8))
         XCTAssertEqual(mergedRead.thumbnailPath, "SavedReads/\(mergedRead.id.uuidString)/thumbnail.jpg")
+    }
+
+    @MainActor
+    func testSyncSnapshotItemsPreservesExistingMigratedAt() {
+        let store = LocalReadingHistoryStore(storageDirectory: temporaryDirectory())
+        var read = savedRead(
+            id: UUID(),
+            title: "Stable Snapshot",
+            updatedAt: date("2026-05-06T10:00:00Z"),
+            progress: 20
+        )
+        let migratedAt = date("2026-05-06T11:00:00Z")
+        read.cloudSync = SavedReadCloudSyncMetadata(
+            isMetadataOnly: false,
+            fileSyncState: .uploaded,
+            contentFingerprint: SyncedSavedRead.contentFingerprint(for: read),
+            migratedAt: migratedAt
+        )
+        store.save(read, durability: .immediate)
+
+        let firstSnapshot = store.syncSnapshotItems(now: date("2026-05-06T12:00:00Z"))
+        let secondSnapshot = store.syncSnapshotItems(now: date("2026-05-06T13:00:00Z"))
+
+        XCTAssertEqual(firstSnapshot.first?.fileSync?.lastValidatedAt, migratedAt)
+        XCTAssertEqual(secondSnapshot.first?.fileSync?.lastValidatedAt, migratedAt)
+        XCTAssertEqual(firstSnapshot, secondSnapshot)
     }
 
     @MainActor
