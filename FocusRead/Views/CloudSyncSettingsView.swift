@@ -41,8 +41,6 @@ struct CloudSyncSettingsView: View {
                 settingsSection("Sync") {
                     Toggle("iCloud Sync", isOn: $cloudSyncManager.isSyncEnabled)
                         .tint(AppTheme.accent)
-                        .disabled(isUnavailable)
-                        .opacity(isUnavailable ? 0.55 : 1)
 
                     Text("Sync reading progress, library metadata, settings, and stats across your Apple devices.")
                         .font(.footnote)
@@ -84,10 +82,6 @@ struct CloudSyncSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .tint(AppTheme.accent)
         .focusReadThemeRefresh()
-    }
-
-    private var isUnavailable: Bool {
-        cloudSyncManager.status.kind == .unavailable
     }
 
     private var shouldShowStatusMessage: Bool {

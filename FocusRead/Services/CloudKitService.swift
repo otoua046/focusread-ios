@@ -121,6 +121,9 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
     }
 
     func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {
+        let activeLibraryRecordNames = Set(snapshot.libraryItems.map { "read-\($0.id.uuidString)" })
+        let activeRecapRecordNames = Set(snapshot.aiRecaps.map { "recap-\($0.id.uuidString)" })
+
         for item in snapshot.libraryItems {
             try Task.checkCancellation()
             try await save(item, recordType: RecordType.libraryItem, recordName: "read-\(item.id.uuidString)", updatedAt: item.updatedAt)
@@ -145,6 +148,13 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
             try Task.checkCancellation()
             try await save(recap, recordType: RecordType.deletedAIRecap, recordName: "deleted-recap-\(recap.id)", updatedAt: recap.deletedAt)
         }
+        try await deleteRecords(
+            named: Set(snapshot.deletedLibraryItems.map { "read-\($0.id.uuidString)" }).subtracting(activeLibraryRecordNames)
+        )
+        try await deleteAIRecapRecords(
+            matching: snapshot.deletedAIRecaps,
+            excluding: activeRecapRecordNames
+        )
         try Task.checkCancellation()
         try await save(
             snapshot.migrationState,
@@ -165,6 +175,40 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
         record[Field.payload] = try encoder.encode(value) as NSData
         record[Field.updatedAt] = updatedAt as NSDate
         _ = try await saveRecord(record)
+    }
+
+    private func deleteRecords(named recordNames: Set<String>) async throws {
+        for recordName in recordNames {
+            try Task.checkCancellation()
+            try await deleteRecord(CKRecord.ID(recordName: recordName))
+        }
+    }
+
+    private func deleteAIRecapRecords(
+        matching tombstones: [SyncedDeletedAIRecap],
+        excluding activeRecordNames: Set<String>
+    ) async throws {
+        let tombstoneRecordNames = Set(tombstones.compactMap { tombstone in
+            tombstone.recapID.map { "recap-\($0.uuidString)" }
+        })
+        try await deleteRecords(named: tombstoneRecordNames.subtracting(activeRecordNames))
+
+        let sessionTombstones = tombstones.filter { $0.recapID == nil }
+        guard !sessionTombstones.isEmpty else { return }
+
+        let records = try await fetchRecords(type: RecordType.aiRecap)
+        for record in records where !activeRecordNames.contains(record.recordID.recordName) {
+            try Task.checkCancellation()
+            guard let recap = try decode(AIRecap.self, from: record),
+                  sessionTombstones.contains(where: {
+                      $0.readID == recap.readID
+                          && $0.sessionID == recap.sessionID
+                          && $0.deletedAt >= recap.createdAt
+                  }) else {
+                continue
+            }
+            try await deleteRecord(record.recordID)
+        }
     }
 
     private func decode<Value: Decodable>(_ type: Value.Type, from record: CKRecord) throws -> Value? {
@@ -243,6 +287,22 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
                     return
                 }
                 continuation.resume(returning: record)
+            }
+        }
+    }
+
+    private func deleteRecord(_ recordID: CKRecord.ID) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            database.delete(withRecordID: recordID) { _, error in
+                if let ckError = error as? CKError, ckError.code == .unknownItem {
+                    continuation.resume()
+                    return
+                }
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume()
             }
         }
     }
