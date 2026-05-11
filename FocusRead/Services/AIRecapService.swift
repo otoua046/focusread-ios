@@ -222,7 +222,8 @@ struct AIRecapSourceExtractor: Sendable {
             }
 
             let gap = segment.startedAt.timeIntervalSince(current.endedAt)
-            guard gap < Self.logicalSessionMergeGap else {
+            guard gap < Self.logicalSessionMergeGap,
+                  Self.sourceRangesCanMerge(current.sourceWordRange, segment.sourceWordRange) else {
                 sessions.append(current)
                 sessions.append(segment)
                 return
@@ -236,8 +237,27 @@ struct AIRecapSourceExtractor: Sendable {
             current.sourceStartWordIndex = min(current.sourceStartWordIndex, segment.sourceStartWordIndex)
             current.sourceEndWordIndex = max(current.sourceEndWordIndex, segment.sourceEndWordIndex)
             current.sourceEventIDs.append(contentsOf: segment.sourceEventIDs)
+            current.id = Self.logicalSessionID(for: current)
             sessions.append(current)
         }
+    }
+
+    private static func sourceRangesCanMerge(_ lhs: Range<Int>, _ rhs: Range<Int>) -> Bool {
+        lhs.lowerBound <= rhs.upperBound && rhs.lowerBound <= lhs.upperBound
+    }
+
+    private static func logicalSessionID(for session: AIRecapSession) -> UUID {
+        guard session.sourceEventIDs.count > 1 else {
+            return session.id
+        }
+
+        var hasher = StableSessionHasher()
+        hasher.update("ai-recap-logical-session-v1")
+        hasher.update(session.readID.uuidString)
+        hasher.update(session.sourceStartWordIndex)
+        hasher.update(session.sourceEndWordIndex)
+        session.sourceEventIDs.forEach { hasher.update($0.uuidString) }
+        return hasher.uuid()
     }
 
     private func tokens(for read: SavedRead) -> [ReadingToken] {
@@ -359,6 +379,46 @@ enum AIRecapSourceTextCleaner {
     }
 }
 
+private struct StableSessionHasher {
+    private var high: UInt64 = 0xcbf29ce484222325
+    private var low: UInt64 = 0x84222325cbf29ce4
+
+    mutating func update(_ value: String) {
+        value.utf8.forEach { update($0) }
+        update(UInt8.max)
+    }
+
+    mutating func update(_ value: Int) {
+        withUnsafeBytes(of: Int64(value).bigEndian) { bytes in
+            bytes.forEach { update($0) }
+        }
+        update(UInt8.max)
+    }
+
+    func uuid() -> UUID {
+        var bytes = bytes(for: high) + bytes(for: low)
+        bytes[6] = (bytes[6] & 0x0f) | 0x50
+        bytes[8] = (bytes[8] & 0x3f) | 0x80
+        return UUID(uuid: (
+            bytes[0], bytes[1], bytes[2], bytes[3],
+            bytes[4], bytes[5], bytes[6], bytes[7],
+            bytes[8], bytes[9], bytes[10], bytes[11],
+            bytes[12], bytes[13], bytes[14], bytes[15]
+        ))
+    }
+
+    private mutating func update(_ byte: UInt8) {
+        high ^= UInt64(byte)
+        high = high &* 0x00000100000001b3
+        low ^= UInt64(byte) &+ 0x9e3779b97f4a7c15
+        low = low &* 0x00000100000001b3
+    }
+
+    private func bytes(for value: UInt64) -> [UInt8] {
+        withUnsafeBytes(of: value.bigEndian) { Array($0) }
+    }
+}
+
 struct AIRecapService: Sendable {
     static let maximumOutputWordCount = 500
     private static let logger = Logger(subsystem: "FocusRead", category: "AIRecap")
@@ -403,7 +463,7 @@ struct AIRecapService: Sendable {
         }
 
         let prompt = AIRecapPromptBuilder.makePrompt(for: source, outputWordLimit: Self.maximumOutputWordCount)
-        Self.logger.debug("AI recap generation starting. documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsBeforeCap=\(source.sourceWordCountBeforeCap, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(source.detectedLanguage?.code ?? "unknown", privacy: .public) isCapped=\(source.isCapped, privacy: .public) cleanedSourcePreview=\(Self.loggableSnippet(source.text, limit: 500), privacy: .public) promptPreview=\(prompt.logDescription, privacy: .public)")
+        Self.logger.debug("AI recap generation starting. documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsBeforeCap=\(source.sourceWordCountBeforeCap, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(source.detectedLanguage?.code ?? "unknown", privacy: .public) isCapped=\(source.isCapped, privacy: .public) cleanedSourcePreview=\(Self.loggableSnippet(source.text, limit: 500), privacy: .private) promptPreview=\(prompt.logDescription, privacy: .private)")
 
         let generationStartedAt = Date()
         do {

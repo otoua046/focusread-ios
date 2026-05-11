@@ -287,6 +287,17 @@ final class AIRecapServiceTests: XCTestCase {
         XCTAssertEqual(sessions[0].sourceWordRange, 0..<420)
     }
 
+    func testNearbySessionsFromDistantSourceRangesDoNotMerge() {
+        let read = makeRead(wordCount: 1_000)
+        let first = event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:05:00Z"), range: 0..<120)
+        let second = event(readID: read.id, startedAt: date("2026-05-07T10:10:00Z"), endedAt: date("2026-05-07T10:15:00Z"), range: 900..<980)
+
+        let sessions = AIRecapSourceExtractor(minimumInputWordCount: 1).recentEligibleSessions(for: read, from: [first, second])
+
+        XCTAssertEqual(sessions.count, 2)
+        XCTAssertEqual(sessions.map(\.sourceWordRange), [900..<980, 0..<120])
+    }
+
     func testReturnAfterThirtyOneMinutesStartsNewLogicalRecapSession() {
         let read = makeRead(wordCount: 700)
         let first = event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:10:00Z"), range: 0..<300)
@@ -310,6 +321,24 @@ final class AIRecapServiceTests: XCTestCase {
 
         XCTAssertEqual(sessions.count, 1)
         XCTAssertEqual(sessions[0].sourceWordRange, 0..<270)
+    }
+
+    func testMergedLogicalSessionIDChangesWhenNewEventsExtendSession() {
+        let read = makeRead(wordCount: 500)
+        let first = event(readID: read.id, startedAt: date("2026-05-07T10:00:00Z"), endedAt: date("2026-05-07T10:05:00Z"), range: 0..<180)
+        let second = event(readID: read.id, startedAt: date("2026-05-07T10:10:00Z"), endedAt: date("2026-05-07T10:15:00Z"), range: 180..<320)
+        let extractor = AIRecapSourceExtractor(minimumInputWordCount: 1)
+
+        let originalSession = extractor.recentEligibleSessions(for: read, from: [first])
+        let extendedSession = extractor.recentEligibleSessions(for: read, from: [first, second])
+        let recalculatedExtendedSession = extractor.recentEligibleSessions(for: read, from: [first, second])
+
+        XCTAssertEqual(originalSession.count, 1)
+        XCTAssertEqual(originalSession[0].id, first.id)
+        XCTAssertEqual(extendedSession.count, 1)
+        XCTAssertEqual(extendedSession[0].sourceWordRange, 0..<320)
+        XCTAssertNotEqual(extendedSession[0].id, first.id)
+        XCTAssertEqual(extendedSession[0].id, recalculatedExtendedSession[0].id)
     }
 
     func testOneWordSessionIsNotRecapable() {
