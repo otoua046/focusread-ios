@@ -183,7 +183,12 @@ enum SyncConflictResolver {
             uniquingKeysWith: { first, second in first.endedAt >= second.endedAt ? first : second }
         )
         let completedReadIDs = Set(local.completedReadIDs).union(cloud.completedReadIDs)
-        let dailyStats = mergeDailyStats(local.dailyStats + cloud.dailyStats)
+        let dailyStats = mergeDailyStats(
+            local: local.dailyStats,
+            cloud: cloud.dailyStats,
+            sessionEvents: Array(events.values),
+            completedReadIDs: completedReadIDs
+        )
         if events.count != local.sessionEvents.count || completedReadIDs.count != local.completedReadIDs.count {
             decisions.append(SyncMergeDecision(
                 entity: "readingStats",
@@ -310,18 +315,83 @@ enum SyncConflictResolver {
         return local ?? cloud
     }
 
-    private static func mergeDailyStats(_ stats: [DailyReadingStats]) -> [DailyReadingStats] {
+    private static func mergeDailyStats(
+        local: [DailyReadingStats],
+        cloud: [DailyReadingStats],
+        sessionEvents: [ReadingSessionEvent],
+        completedReadIDs: Set<UUID>
+    ) -> [DailyReadingStats] {
         let calendar = Calendar(identifier: .gregorian)
-        let grouped = Dictionary(grouping: stats) { calendar.startOfDay(for: $0.date) }
-        return grouped.map { date, statsForDay in
-            DailyReadingStats(
+        let stats = local + cloud
+        let groupedStats = Dictionary(grouping: stats) { calendar.startOfDay(for: $0.date) }
+        let groupedEvents = Dictionary(grouping: sessionEvents) { calendar.startOfDay(for: $0.endedAt) }
+        let dates = Set(groupedStats.keys).union(groupedEvents.keys)
+        let merged: [DailyReadingStats] = dates.map { date in
+            let statsForDay = groupedStats[date] ?? []
+            let eventsForDay = groupedEvents[date] ?? []
+            let completedBooksCount = mergedCompletedBooksCount(for: statsForDay)
+            return DailyReadingStats(
                 date: date,
-                wordsRead: statsForDay.map(\.wordsRead).max() ?? 0,
-                readingSeconds: statsForDay.map(\.readingSeconds).max() ?? 0,
-                sessionsCount: statsForDay.map(\.sessionsCount).max() ?? 0,
-                completedBooksCount: statsForDay.map(\.completedBooksCount).max() ?? 0
+                wordsRead: eventsForDay.isEmpty
+                    ? mergedIntegerCounter(statsForDay.map(\.wordsRead))
+                    : eventsForDay.reduce(0) { $0 + $1.wordsRead },
+                readingSeconds: eventsForDay.isEmpty
+                    ? mergedTimeCounter(statsForDay.map(\.readingSeconds))
+                    : eventsForDay.reduce(0) { $0 + $1.readingSeconds },
+                sessionsCount: eventsForDay.isEmpty
+                    ? mergedIntegerCounter(statsForDay.map(\.sessionsCount))
+                    : eventsForDay.count,
+                completedBooksCount: completedBooksCount
             )
         }
         .sorted { $0.date > $1.date }
+
+        return cappedCompletedBooks(merged, totalCompletedBooks: completedReadIDs.count)
+    }
+
+    private static func mergedIntegerCounter(_ values: [Int]) -> Int {
+        let positiveValues = values.filter { $0 > 0 }
+        guard Set(positiveValues).count != 1 else { return positiveValues.first ?? 0 }
+        return positiveValues.reduce(0, +)
+    }
+
+    private static func mergedTimeCounter(_ values: [TimeInterval]) -> TimeInterval {
+        let positiveValues = values.filter { $0 > 0 }
+        guard Set(positiveValues).count != 1 else { return positiveValues.first ?? 0 }
+        return positiveValues.reduce(0, +)
+    }
+
+    private static func mergedCompletedBooksCount(for stats: [DailyReadingStats]) -> Int {
+        mergedIntegerCounter(stats.map(\.completedBooksCount))
+    }
+
+    private static func cappedCompletedBooks(
+        _ dailyStats: [DailyReadingStats],
+        totalCompletedBooks: Int
+    ) -> [DailyReadingStats] {
+        guard totalCompletedBooks > 0 else {
+            return dailyStats.map {
+                DailyReadingStats(
+                    date: $0.date,
+                    wordsRead: $0.wordsRead,
+                    readingSeconds: $0.readingSeconds,
+                    sessionsCount: $0.sessionsCount,
+                    completedBooksCount: 0
+                )
+            }
+        }
+
+        var remaining = totalCompletedBooks
+        return dailyStats.map { stat in
+            let completedBooksCount = min(stat.completedBooksCount, remaining)
+            remaining -= completedBooksCount
+            return DailyReadingStats(
+                date: stat.date,
+                wordsRead: stat.wordsRead,
+                readingSeconds: stat.readingSeconds,
+                sessionsCount: stat.sessionsCount,
+                completedBooksCount: completedBooksCount
+            )
+        }
     }
 }

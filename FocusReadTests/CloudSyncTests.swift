@@ -128,6 +128,49 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertEqual(merged.values.first?.value, "72")
     }
 
+    func testDailyStatsMergeAddsSameDayCounters() throws {
+        let day = date("2026-05-08T00:00:00Z")
+        let completedReadID = UUID()
+        let local = SyncedReadingStats(
+            dailyGoalWords: 1_000,
+            dailyStats: [
+                DailyReadingStats(
+                    date: day,
+                    wordsRead: 400,
+                    readingSeconds: 120,
+                    sessionsCount: 1,
+                    completedBooksCount: 0
+                )
+            ],
+            sessionEvents: [],
+            completedReadIDs: [],
+            updatedAt: date("2026-05-08T10:00:00Z")
+        )
+        let cloud = SyncedReadingStats(
+            dailyGoalWords: 1_000,
+            dailyStats: [
+                DailyReadingStats(
+                    date: day,
+                    wordsRead: 600,
+                    readingSeconds: 180,
+                    sessionsCount: 2,
+                    completedBooksCount: 1
+                )
+            ],
+            sessionEvents: [],
+            completedReadIDs: [completedReadID],
+            updatedAt: date("2026-05-08T11:00:00Z")
+        )
+
+        let merged = try XCTUnwrap(SyncConflictResolver.mergeReadingStats(local: local, cloud: cloud).value)
+        let mergedDay = try XCTUnwrap(merged.dailyStats.first)
+
+        XCTAssertEqual(mergedDay.wordsRead, 1_000)
+        XCTAssertEqual(mergedDay.readingSeconds, 300)
+        XCTAssertEqual(mergedDay.sessionsCount, 3)
+        XCTAssertEqual(mergedDay.completedBooksCount, 1)
+    }
+
     @MainActor
     func testTrackedSettingTimestampRefreshesWhenLocalValueChanges() throws {
         let suiteName = "FocusReadCloudSyncSettingsTests-\(UUID().uuidString)"
@@ -167,6 +210,32 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertFalse(store.refreshTrackedSettings(now: bookkeepingDate))
         let setting = try XCTUnwrap(store.snapshot(now: bookkeepingDate).values.first { $0.key == TypographySettingsKey.fontSize })
         XCTAssertEqual(setting.updatedAt, initialDate)
+    }
+
+    @MainActor
+    func testStatsSnapshotDoesNotAdvanceTimestampWithoutLocalStatsChange() {
+        var now = date("2026-05-08T10:00:00Z")
+        let store = LocalReadingStatsStore(
+            storageDirectory: temporaryDirectory(),
+            now: { now }
+        )
+        store.record(ReadingSessionEvent(
+            readID: UUID(),
+            startedAt: date("2026-05-08T09:45:00Z"),
+            endedAt: date("2026-05-08T10:00:00Z"),
+            wordsRead: 500,
+            averageWPM: 250
+        ))
+        let firstSnapshot = store.syncSnapshot()
+
+        now = date("2026-05-08T11:00:00Z")
+        let secondSnapshot = store.syncSnapshot()
+        store.updateDailyGoalWords(2_000)
+        let thirdSnapshot = store.syncSnapshot()
+
+        XCTAssertEqual(firstSnapshot.updatedAt, date("2026-05-08T10:00:00Z"))
+        XCTAssertEqual(secondSnapshot.updatedAt, firstSnapshot.updatedAt)
+        XCTAssertEqual(thirdSnapshot.updatedAt, date("2026-05-08T11:00:00Z"))
     }
 
     func testReadingProgressKeepsFurthestMeaningfulProgress() {
@@ -263,6 +332,29 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertEqual(store.savedReads.count, 1)
         XCTAssertEqual(store.savedReads.first?.sections.first?.text, localRead.sections.first?.text)
         XCTAssertFalse(store.savedReads.first?.cloudSync?.isMetadataOnly ?? true)
+    }
+
+    @MainActor
+    func testApplyingSyncMergedReadsRemovesFilesForDroppedLocalReads() throws {
+        let directory = temporaryDirectory()
+        let store = LocalReadingHistoryStore(storageDirectory: directory)
+        let localRead = savedRead(
+            id: UUID(),
+            title: "Deleted elsewhere",
+            updatedAt: date("2026-05-09T10:00:00Z"),
+            progress: 20
+        )
+        store.save(localRead, durability: .immediate)
+        let readFolder = directory
+            .appendingPathComponent("SavedReads", isDirectory: true)
+            .appendingPathComponent(localRead.id.uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: readFolder, withIntermediateDirectories: true)
+        try Data("thumbnail".utf8).write(to: readFolder.appendingPathComponent("thumbnail.jpg"))
+
+        store.applySyncMergedReads([])
+
+        XCTAssertTrue(store.savedReads.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: readFolder.path))
     }
 
     private func syncedRead(

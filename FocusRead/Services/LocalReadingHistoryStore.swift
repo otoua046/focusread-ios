@@ -88,8 +88,12 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
             let existing = existingByID[syncedRead.id] ?? existingByFingerprint[syncedRead.contentFingerprint]
             return syncedRead.localRead(preservingDocumentTextFrom: existing)
         }
+        let mergedReadIDs = Set(mergedReads.map(\.id))
 
         guard mergedReads.sortedByHistoryRecency() != savedReads else { return }
+        savedReads
+            .filter { !mergedReadIDs.contains($0.id) }
+            .forEach(removeAssociatedFiles)
         hasLocalMutations = true
         savedReads = mergedReads.sortedByHistoryRecency()
         persist(durability: .immediate)

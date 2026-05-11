@@ -201,7 +201,7 @@ final class CloudSyncManager: ObservableObject {
         return CloudSyncSnapshot(
             libraryItems: readingHistoryStore.syncSnapshotItems(now: now),
             deletedLibraryItems: readingHistoryStore.syncDeletedLibraryItems(),
-            readingStats: readingStatsStore.syncSnapshot(updatedAt: now),
+            readingStats: readingStatsStore.syncSnapshot(),
             settings: settingsStore.snapshot(now: now),
             aiRecaps: recapStore.syncSnapshotRecaps(for: readIDs),
             migrationState: CloudSyncMigrationState(),
