@@ -28,7 +28,8 @@ enum SyncConflictResolver {
         )
         let stats = mergeReadingStats(local: local.readingStats, cloud: cloud.readingStats)
         let settings = mergeSettings(local: local.settings, cloud: cloud.settings)
-        let recaps = mergeAIRecaps(local: local.aiRecaps, cloud: cloud.aiRecaps)
+        let deletedAIRecaps = mergeDeletedAIRecaps(local: local.deletedAIRecaps, cloud: cloud.deletedAIRecaps)
+        let recaps = mergeAIRecaps(local: local.aiRecaps, cloud: cloud.aiRecaps, deleted: deletedAIRecaps.value)
         let migrationState = mergeMigrationState(local: local.migrationState, cloud: cloud.migrationState, now: now)
 
         return SyncMergeResult(
@@ -38,10 +39,11 @@ enum SyncConflictResolver {
                 readingStats: stats.value,
                 settings: settings.value,
                 aiRecaps: recaps.value,
+                deletedAIRecaps: deletedAIRecaps.value,
                 migrationState: migrationState.value,
                 generatedAt: now
             ),
-            decisions: library.decisions + deletedLibraryItems.decisions + stats.decisions + settings.decisions + recaps.decisions + migrationState.decisions
+            decisions: library.decisions + deletedLibraryItems.decisions + stats.decisions + settings.decisions + recaps.decisions + deletedAIRecaps.decisions + migrationState.decisions
         )
     }
 
@@ -245,18 +247,69 @@ enum SyncConflictResolver {
         )
     }
 
-    static func mergeAIRecaps(local: [AIRecap], cloud: [AIRecap]) -> SyncMergeResult<[AIRecap]> {
+    static func mergeAIRecaps(
+        local: [AIRecap],
+        cloud: [AIRecap],
+        deleted: [SyncedDeletedAIRecap] = []
+    ) -> SyncMergeResult<[AIRecap]> {
+        var decisions: [SyncMergeDecision] = []
         let recapsByID = Dictionary(
             (local + cloud).map { ($0.id, $0) },
             uniquingKeysWith: { first, second in first.createdAt >= second.createdAt ? first : second }
         )
-        let recaps = recapsByID.values.sorted {
+        let tombstonesByRecapID = Dictionary(
+            deleted.compactMap { tombstone in tombstone.recapID.map { ($0, tombstone) } },
+            uniquingKeysWith: { first, second in first.deletedAt >= second.deletedAt ? first : second }
+        )
+        let tombstonesBySession = Dictionary(
+            deleted.map { ($0.id, $0) },
+            uniquingKeysWith: { first, second in first.deletedAt >= second.deletedAt ? first : second }
+        )
+        let recaps = recapsByID.values.filter { recap in
+            guard let tombstone = tombstonesByRecapID[recap.id] ?? tombstonesBySession["\(recap.readID.uuidString)-\(recap.sessionID.uuidString)"],
+                  tombstone.deletedAt >= recap.createdAt else {
+                return true
+            }
+            decisions.append(SyncMergeDecision(
+                entity: "aiRecap",
+                id: recap.id.uuidString,
+                message: "Kept AI recap deletion tombstone newer than recap metadata."
+            ))
+            return false
+        }
+        .sorted {
             if $0.sessionEndedAt != $1.sessionEndedAt {
                 return $0.sessionEndedAt > $1.sessionEndedAt
             }
             return $0.createdAt > $1.createdAt
         }
-        return SyncMergeResult(value: recaps, decisions: [])
+        return SyncMergeResult(value: recaps, decisions: decisions)
+    }
+
+    static func mergeDeletedAIRecaps(
+        local: [SyncedDeletedAIRecap],
+        cloud: [SyncedDeletedAIRecap]
+    ) -> SyncMergeResult<[SyncedDeletedAIRecap]> {
+        var byID: [String: SyncedDeletedAIRecap] = [:]
+        var decisions: [SyncMergeDecision] = []
+
+        for tombstone in local + cloud {
+            if let existing = byID[tombstone.id] {
+                byID[tombstone.id] = existing.deletedAt >= tombstone.deletedAt ? existing : tombstone
+                decisions.append(SyncMergeDecision(
+                    entity: "aiRecapDeletion",
+                    id: tombstone.id,
+                    message: "Merged duplicate AI recap deletion tombstone."
+                ))
+            } else {
+                byID[tombstone.id] = tombstone
+            }
+        }
+
+        return SyncMergeResult(
+            value: byID.values.sorted { $0.deletedAt > $1.deletedAt },
+            decisions: decisions
+        )
     }
 
     static func mergeMigrationState(

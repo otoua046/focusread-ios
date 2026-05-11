@@ -70,6 +70,13 @@ final class CloudSyncManager: ObservableObject {
             }
             .store(in: &cancellables)
 
+        recapStore.$recapsByReadID
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.scheduleSync(reason: "AI recaps changed")
+            }
+            .store(in: &cancellables)
+
         NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -204,6 +211,7 @@ final class CloudSyncManager: ObservableObject {
             readingStats: readingStatsStore.syncSnapshot(),
             settings: settingsStore.snapshot(now: now),
             aiRecaps: recapStore.syncSnapshotRecaps(for: readIDs),
+            deletedAIRecaps: recapStore.syncDeletedAIRecaps(),
             migrationState: CloudSyncMigrationState(),
             generatedAt: now
         )
@@ -223,7 +231,8 @@ final class CloudSyncManager: ObservableObject {
         if let settings = snapshot.settings {
             settingsStore.apply(settings)
         }
-        recapStore.applySyncMergedRecaps(snapshot.aiRecaps)
+        recapStore.applySyncMergedDeletedAIRecaps(snapshot.deletedAIRecaps)
+        recapStore.applySyncMergedRecaps(snapshot.aiRecaps, deletedRecaps: snapshot.deletedAIRecaps)
     }
 
     private func logDecisions(_ entries: [CloudSyncMigrationLogEntry]) {

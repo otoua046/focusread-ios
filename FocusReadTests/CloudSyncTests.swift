@@ -22,6 +22,7 @@ final class CloudSyncTests: XCTestCase {
                 )
             ], updatedAt: date("2026-05-01T10:00:00Z")),
             aiRecaps: [],
+            deletedAIRecaps: [],
             migrationState: CloudSyncMigrationState(),
             generatedAt: date("2026-05-01T10:00:00Z")
         )
@@ -102,6 +103,45 @@ final class CloudSyncTests: XCTestCase {
         let result = SyncConflictResolver.mergeLibraryItems(local: [read], cloud: [], deleted: [tombstone])
 
         XCTAssertEqual(result.value.map(\.id), [read.id])
+    }
+
+    func testNewerAIRecapDeletionTombstoneRemovesCloudRecap() {
+        let recap = aiRecap(
+            id: UUID(),
+            readID: UUID(),
+            sessionID: UUID(),
+            createdAt: date("2026-05-06T10:00:00Z")
+        )
+        let tombstone = SyncedDeletedAIRecap(
+            recapID: recap.id,
+            readID: recap.readID,
+            sessionID: recap.sessionID,
+            deletedAt: date("2026-05-06T11:00:00Z")
+        )
+
+        let result = SyncConflictResolver.mergeAIRecaps(local: [], cloud: [recap], deleted: [tombstone])
+
+        XCTAssertTrue(result.value.isEmpty)
+        XCTAssertTrue(result.decisions.contains { $0.message.contains("AI recap deletion tombstone") })
+    }
+
+    func testOlderAIRecapDeletionTombstoneDoesNotRemoveNewerRecap() {
+        let recap = aiRecap(
+            id: UUID(),
+            readID: UUID(),
+            sessionID: UUID(),
+            createdAt: date("2026-05-06T11:00:00Z")
+        )
+        let tombstone = SyncedDeletedAIRecap(
+            recapID: recap.id,
+            readID: recap.readID,
+            sessionID: recap.sessionID,
+            deletedAt: date("2026-05-06T10:00:00Z")
+        )
+
+        let result = SyncConflictResolver.mergeAIRecaps(local: [recap], cloud: [], deleted: [tombstone])
+
+        XCTAssertEqual(result.value.map(\.id), [recap.id])
     }
 
     func testOlderCloudSettingDoesNotOverwriteNewerLocalSetting() throws {
@@ -357,6 +397,30 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: readFolder.path))
     }
 
+    @MainActor
+    func testAIRecapStoreRecordsDeletionTombstoneAndAppliesRemoteDeletion() {
+        let store = LocalAIRecapStore(storageDirectory: temporaryDirectory())
+        let recap = aiRecap(
+            id: UUID(),
+            readID: UUID(),
+            sessionID: UUID(),
+            createdAt: date("2026-05-07T10:00:00Z")
+        )
+        store.save(recap)
+
+        store.deleteRecap(sessionID: recap.sessionID, for: recap.readID)
+
+        XCTAssertTrue(store.recaps(for: recap.readID).isEmpty)
+        XCTAssertEqual(store.syncDeletedAIRecaps().first?.recapID, recap.id)
+
+        let remoteStore = LocalAIRecapStore(storageDirectory: temporaryDirectory())
+        remoteStore.save(recap)
+        remoteStore.applySyncMergedDeletedAIRecaps(store.syncDeletedAIRecaps())
+        remoteStore.applySyncMergedRecaps([], deletedRecaps: store.syncDeletedAIRecaps())
+
+        XCTAssertTrue(remoteStore.recaps(for: recap.readID).isEmpty)
+    }
+
     private func syncedRead(
         id: UUID,
         title: String = "Book",
@@ -420,6 +484,31 @@ final class CloudSyncTests: XCTestCase {
             readingStats: .empty,
             author: "Author",
             manualSortIndex: nil
+        )
+    }
+
+    private func aiRecap(
+        id: UUID,
+        readID: UUID,
+        sessionID: UUID,
+        createdAt: Date
+    ) -> AIRecap {
+        AIRecap(
+            id: id,
+            readID: readID,
+            sessionID: sessionID,
+            sessionStartedAt: createdAt.addingTimeInterval(-900),
+            sessionEndedAt: createdAt,
+            sourceStartWordIndex: 0,
+            sourceEndWordIndex: 500,
+            generatedText: "A concise recap.",
+            createdAt: createdAt,
+            inputWordCount: 500,
+            outputWordCount: 20,
+            sourceLanguageCode: "en",
+            sourceLanguageName: "English",
+            modelName: "TestModel",
+            modelVersion: "1"
         )
     }
 

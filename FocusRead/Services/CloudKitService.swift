@@ -42,6 +42,7 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
         static let readingStats = "FRReadingStats"
         static let appSettings = "FRAppSettings"
         static let aiRecap = "FRAIRecap"
+        static let deletedAIRecap = "FRDeletedAIRecap"
         static let migrationState = "FRMigrationState"
     }
 
@@ -103,6 +104,8 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
         try Task.checkCancellation()
         let recapRecords = try await fetchRecords(type: RecordType.aiRecap)
         try Task.checkCancellation()
+        let deletedRecapRecords = try await fetchRecords(type: RecordType.deletedAIRecap)
+        try Task.checkCancellation()
         let migrationRecords = try await fetchRecords(type: RecordType.migrationState)
 
         return CloudSyncSnapshot(
@@ -111,6 +114,7 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
             readingStats: try statsRecords.compactMap { try decode(SyncedReadingStats.self, from: $0) }.max { $0.updatedAt < $1.updatedAt },
             settings: try settingsRecords.compactMap { try decode(SyncedAppSettings.self, from: $0) }.max { $0.updatedAt < $1.updatedAt },
             aiRecaps: try recapRecords.compactMap { try decode(AIRecap.self, from: $0) },
+            deletedAIRecaps: try deletedRecapRecords.compactMap { try decode(SyncedDeletedAIRecap.self, from: $0) },
             migrationState: try migrationRecords.compactMap { try decode(CloudSyncMigrationState.self, from: $0) }.first ?? CloudSyncMigrationState(),
             generatedAt: Date()
         )
@@ -136,6 +140,10 @@ final class DefaultCloudKitService: CloudKitServing, @unchecked Sendable {
         for recap in snapshot.aiRecaps {
             try Task.checkCancellation()
             try await save(recap, recordType: RecordType.aiRecap, recordName: "recap-\(recap.id.uuidString)", updatedAt: recap.createdAt)
+        }
+        for recap in snapshot.deletedAIRecaps {
+            try Task.checkCancellation()
+            try await save(recap, recordType: RecordType.deletedAIRecap, recordName: "deleted-recap-\(recap.id)", updatedAt: recap.deletedAt)
         }
         try Task.checkCancellation()
         try await save(

@@ -53,7 +53,8 @@ enum LocalToCloudMigrationService {
             snapshot.deletedLibraryItems.map { "\($0.id.uuidString):\($0.deletedAt.timeIntervalSince1970)" }.sorted().joined(separator: "|"),
             snapshot.readingStats.map { "\($0.updatedAt.timeIntervalSince1970):\($0.sessionEvents.count):\($0.completedReadIDs.count)" } ?? "no-stats",
             snapshot.settings?.values.map { "\($0.key):\($0.updatedAt.timeIntervalSince1970)" }.sorted().joined(separator: "|") ?? "no-settings",
-            snapshot.aiRecaps.map { "\($0.id.uuidString):\($0.createdAt.timeIntervalSince1970)" }.sorted().joined(separator: "|")
+            snapshot.aiRecaps.map { "\($0.id.uuidString):\($0.createdAt.timeIntervalSince1970)" }.sorted().joined(separator: "|"),
+            snapshot.deletedAIRecaps.map { "\($0.id):\($0.deletedAt.timeIntervalSince1970)" }.sorted().joined(separator: "|")
         ]
         .joined(separator: "#")
     }
@@ -71,7 +72,7 @@ enum LocalToCloudMigrationService {
             CloudSyncMigrationLogEntry(
                 id: UUID(),
                 createdAt: now,
-                message: "Migrated deletion tombstones: \(snapshot.deletedLibraryItems.count), settings: \(snapshot.settings?.values.count ?? 0), stats events: \(snapshot.readingStats?.sessionEvents.count ?? 0), AI recaps: \(snapshot.aiRecaps.count)."
+                message: "Migrated deletion tombstones: \(snapshot.deletedLibraryItems.count) library, \(snapshot.deletedAIRecaps.count) AI recap, settings: \(snapshot.settings?.values.count ?? 0), stats events: \(snapshot.readingStats?.sessionEvents.count ?? 0), AI recaps: \(snapshot.aiRecaps.count)."
             )
         ]
     }

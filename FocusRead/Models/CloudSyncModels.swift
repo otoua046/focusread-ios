@@ -29,6 +29,7 @@ struct CloudSyncSnapshot: Codable, Equatable, Sendable {
     var readingStats: SyncedReadingStats?
     var settings: SyncedAppSettings?
     var aiRecaps: [AIRecap]
+    var deletedAIRecaps: [SyncedDeletedAIRecap]
     var migrationState: CloudSyncMigrationState
     var generatedAt: Date
 
@@ -39,6 +40,7 @@ struct CloudSyncSnapshot: Codable, Equatable, Sendable {
             readingStats: nil,
             settings: nil,
             aiRecaps: [],
+            deletedAIRecaps: [],
             migrationState: CloudSyncMigrationState(),
             generatedAt: generatedAt
         )
@@ -48,6 +50,15 @@ struct CloudSyncSnapshot: Codable, Equatable, Sendable {
 struct SyncedDeletedLibraryItem: Identifiable, Codable, Equatable, Sendable {
     var id: UUID
     var contentFingerprint: String?
+    var deletedAt: Date
+}
+
+struct SyncedDeletedAIRecap: Identifiable, Codable, Equatable, Sendable {
+    var id: String { "\(readID.uuidString)-\(sessionID.uuidString)" }
+
+    var recapID: UUID?
+    var readID: UUID
+    var sessionID: UUID
     var deletedAt: Date
 }
 
