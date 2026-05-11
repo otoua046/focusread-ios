@@ -1,6 +1,8 @@
 import Foundation
 
 enum SavedReadMapper {
+    static let demoReadID = UUID(uuidString: "8F7B7F6C-7F37-4F65-9B43-5D9B6C0E52D1")!
+
     static func makeSavedRead(
         from text: String,
         tokens: [ReadingToken],
@@ -44,6 +46,41 @@ enum SavedReadMapper {
             author: nil,
             manualSortIndex: nil
         )
+    }
+
+    static func makeDemoSavedRead(
+        from text: String,
+        tokens: [ReadingToken],
+        title: String,
+        existingReads: [SavedRead],
+        now: Date = Date()
+    ) -> SavedRead {
+        var savedRead = makeSavedRead(from: text, tokens: tokens, now: now)
+        savedRead.id = Self.demoReadID
+        savedRead.displayTitle = title
+        savedRead.originalFileName = title
+        savedRead.sourceType = .txt
+
+        guard let existing = existingReads.first(where: { isDemoRead($0, matching: text) }) else {
+            return savedRead
+        }
+
+        savedRead.id = existing.id
+        savedRead.createdAt = existing.createdAt
+        savedRead.isFavorite = existing.isFavorite
+        savedRead.manualSortIndex = existing.manualSortIndex
+        savedRead.cloudSync = existing.cloudSync
+        savedRead.readingStats = existing.readingStats
+        savedRead.readingStats.sessionsCount += 1
+        return savedRead
+    }
+
+    static func isDemoRead(_ read: SavedRead, matching text: String) -> Bool {
+        read.id == Self.demoReadID
+            || (
+                read.sourceType == .txt
+                    && read.documentText.focusReadNormalizedDocumentText == text.focusReadNormalizedDocumentText
+            )
     }
 
     static func makeSavedRead(

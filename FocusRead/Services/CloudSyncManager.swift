@@ -280,7 +280,7 @@ struct SyncSettingsStore {
                 key: definition.key,
                 value: storedString(for: definition),
                 kind: definition.kind,
-                updatedAt: settingUpdatedAt(for: definition.key) ?? now
+                updatedAt: settingUpdatedAt(for: definition.key) ?? Self.defaultSettingUpdatedAt
             )
         }
         return SyncedAppSettings(values: values, updatedAt: values.map(\.updatedAt).max() ?? now)
@@ -301,7 +301,8 @@ struct SyncSettingsStore {
         var didChange = false
         for definition in Self.definitions {
             let currentValue = storedString(for: definition)
-            if userDefaults.object(forKey: updatedAtKey(for: definition.key)) == nil {
+            let hasStoredValue = userDefaults.object(forKey: definition.key) != nil
+            if hasStoredValue, userDefaults.object(forKey: updatedAtKey(for: definition.key)) == nil {
                 setSettingUpdatedAt(now, for: definition.key)
             }
 
@@ -395,4 +396,6 @@ struct SyncSettingsStore {
         Definition(key: "library_view_mode", kind: .string, defaultValue: LibraryViewMode.grid.rawValue),
         Definition(key: "library_sort_mode", kind: .string, defaultValue: LibrarySortMode.recent.rawValue)
     ]
+
+    private static let defaultSettingUpdatedAt = Date(timeIntervalSince1970: 0)
 }

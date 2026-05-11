@@ -173,13 +173,12 @@ struct RootView: View {
             document: document,
             wordsPerMinute: defaultWPM
         )
-        var savedRead = SavedReadMapper.makeSavedRead(
+        let savedRead = SavedReadMapper.makeDemoSavedRead(
             from: FocusReadHomeDemoContent.readerSampleText,
-            tokens: tokens
+            tokens: tokens,
+            title: L10n.string(.readerDemoTitle),
+            existingReads: readingHistoryStore.savedReads
         )
-        savedRead.displayTitle = L10n.string(.readerDemoTitle)
-        savedRead.originalFileName = L10n.string(.readerDemoTitle)
-        savedRead.sourceType = .txt
         readingHistoryStore.save(savedRead)
 
         readerViewModel = ReaderViewModel(

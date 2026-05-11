@@ -268,7 +268,68 @@ final class CloudSyncTests: XCTestCase {
 
         XCTAssertFalse(store.refreshTrackedSettings(now: bookkeepingDate))
         let setting = try XCTUnwrap(store.snapshot(now: bookkeepingDate).values.first { $0.key == TypographySettingsKey.fontSize })
-        XCTAssertEqual(setting.updatedAt, initialDate)
+        XCTAssertEqual(setting.updatedAt, Date(timeIntervalSince1970: 0))
+    }
+
+    @MainActor
+    func testUntouchedDefaultSettingDoesNotOverrideCloudValue() throws {
+        let suiteName = "FocusReadCloudSyncSettingsTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let store = SyncSettingsStore(userDefaults: defaults)
+        let cloudDate = date("2026-05-07T09:00:00Z")
+
+        XCTAssertFalse(store.refreshTrackedSettings(now: date("2026-05-07T10:00:00Z")))
+        let local = store.snapshot(now: date("2026-05-07T11:00:00Z"))
+        let cloud = SyncedAppSettings(values: [
+            SyncedSettingValue(
+                key: TypographySettingsKey.fontSize,
+                value: "72.0",
+                kind: .double,
+                updatedAt: cloudDate
+            )
+        ], updatedAt: cloudDate)
+
+        let merged = try XCTUnwrap(SyncConflictResolver.mergeSettings(local: local, cloud: cloud).value)
+        let setting = try XCTUnwrap(merged.values.first { $0.key == TypographySettingsKey.fontSize })
+        XCTAssertEqual(setting.value, "72.0")
+        XCTAssertEqual(setting.updatedAt, cloudDate)
+    }
+
+    func testDemoSavedReadReusesExistingDemoItem() {
+        let text = "FocusRead demo text."
+        let tokens = [token("FocusRead", index: 0), token("demo", index: 1)]
+        let firstDate = date("2026-05-07T10:00:00Z")
+        let secondDate = date("2026-05-07T11:00:00Z")
+        var existing = SavedReadMapper.makeDemoSavedRead(
+            from: text,
+            tokens: tokens,
+            title: "FocusRead Demo",
+            existingReads: [],
+            now: firstDate
+        )
+        existing.id = UUID()
+        existing.readingStats = SavedReadStats(totalTimeRead: 120, sessionsCount: 3)
+        existing.isFavorite = true
+
+        let next = SavedReadMapper.makeDemoSavedRead(
+            from: text,
+            tokens: tokens,
+            title: "Localized Demo",
+            existingReads: [existing],
+            now: secondDate
+        )
+
+        XCTAssertEqual(next.id, existing.id)
+        XCTAssertEqual(next.createdAt, firstDate)
+        XCTAssertEqual(next.displayTitle, "Localized Demo")
+        XCTAssertEqual(next.readingStats.totalTimeRead, 120)
+        XCTAssertEqual(next.readingStats.sessionsCount, 4)
+        XCTAssertTrue(next.isFavorite)
+        XCTAssertEqual(next.currentWordIndex, 0)
     }
 
     @MainActor
@@ -544,6 +605,22 @@ final class CloudSyncTests: XCTestCase {
 
     private func date(_ string: String) -> Date {
         ISO8601DateFormatter().date(from: string)!
+    }
+
+    private func token(_ text: String, index: Int) -> ReadingToken {
+        ReadingToken(
+            id: index,
+            text: text,
+            rawText: text,
+            globalWordIndex: index,
+            sourcePageNumber: nil,
+            sourceChapterNumber: nil,
+            sourceChapterTitle: nil,
+            sourceSectionIndex: nil,
+            pauseKind: .none,
+            sentenceIndex: 0,
+            containsNumber: false
+        )
     }
 }
 
