@@ -429,6 +429,41 @@ final class CloudSyncTests: XCTestCase {
     }
 
     @MainActor
+    func testManagerSerializesQueuedSyncRuns() async throws {
+        let suiteName = "FocusReadCloudSyncTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let cloudKitService = OverlapTrackingCloudKitService()
+        let manager = CloudSyncManager(
+            cloudKitService: cloudKitService,
+            userDefaults: defaults
+        )
+        let historyStore = LocalReadingHistoryStore(storageDirectory: temporaryDirectory())
+        let statsStore = LocalReadingStatsStore(storageDirectory: temporaryDirectory())
+        let recapStore = LocalAIRecapStore(storageDirectory: temporaryDirectory())
+        manager.configure(
+            readingHistoryStore: historyStore,
+            readingStatsStore: statsStore,
+            recapStore: recapStore
+        )
+
+        manager.syncNow()
+        try await Task.sleep(for: .milliseconds(25))
+        manager.syncNow()
+
+        for _ in 0..<60 where cloudKitService.stats.saveCount < 2 {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        manager.isSyncEnabled = false
+
+        XCTAssertEqual(cloudKitService.stats.saveCount, 2)
+        XCTAssertEqual(cloudKitService.stats.maxConcurrentSaves, 1)
+    }
+
+    @MainActor
     func testApplyingFingerprintMatchedCloudMetadataPreservesLocalDocumentText() {
         let store = LocalReadingHistoryStore(storageDirectory: temporaryDirectory())
         let localRead = savedRead(
@@ -454,6 +489,46 @@ final class CloudSyncTests: XCTestCase {
         XCTAssertEqual(store.savedReads.count, 1)
         XCTAssertEqual(store.savedReads.first?.sections.first?.text, localRead.sections.first?.text)
         XCTAssertFalse(store.savedReads.first?.cloudSync?.isMetadataOnly ?? true)
+    }
+
+    @MainActor
+    func testApplyingFingerprintMatchedCloudMetadataMigratesLocalFiles() throws {
+        let directory = temporaryDirectory()
+        let store = LocalReadingHistoryStore(storageDirectory: directory)
+        var localRead = savedRead(
+            id: UUID(),
+            title: "Book",
+            updatedAt: date("2026-05-06T10:00:00Z"),
+            progress: 20,
+            sectionText: "Local document text with a thumbnail."
+        )
+        localRead.thumbnailPath = "SavedReads/\(localRead.id.uuidString)/thumbnail.jpg"
+        store.save(localRead, durability: .immediate)
+        let localFolder = directory
+            .appendingPathComponent("SavedReads", isDirectory: true)
+            .appendingPathComponent(localRead.id.uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: localFolder, withIntermediateDirectories: true)
+        try Data("thumbnail".utf8).write(to: localFolder.appendingPathComponent("thumbnail.jpg"))
+
+        let cloudRead = savedRead(
+            id: UUID(),
+            title: localRead.displayTitle,
+            updatedAt: date("2026-05-06T11:00:00Z"),
+            progress: 40,
+            sectionText: ""
+        )
+        var syncedCloudRead = SyncedSavedRead(read: cloudRead)
+        syncedCloudRead.contentFingerprint = SyncedSavedRead.contentFingerprint(for: localRead)
+        store.applySyncMergedReads([syncedCloudRead])
+
+        let mergedRead = try XCTUnwrap(store.savedReads.first)
+        let mergedFolder = directory
+            .appendingPathComponent("SavedReads", isDirectory: true)
+            .appendingPathComponent(mergedRead.id.uuidString, isDirectory: true)
+        XCTAssertEqual(mergedRead.id, cloudRead.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: localFolder.path))
+        XCTAssertEqual(try Data(contentsOf: mergedFolder.appendingPathComponent("thumbnail.jpg")), Data("thumbnail".utf8))
+        XCTAssertEqual(mergedRead.thumbnailPath, "SavedReads/\(mergedRead.id.uuidString)/thumbnail.jpg")
     }
 
     @MainActor
@@ -636,5 +711,45 @@ private final class UnavailableCloudKitService: CloudKitServing {
 
     func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {
         XCTFail("Unavailable iCloud should not save snapshots.")
+    }
+}
+
+private final class OverlapTrackingCloudKitService: CloudKitServing, @unchecked Sendable {
+    struct Stats {
+        var saveCount: Int
+        var maxConcurrentSaves: Int
+    }
+
+    private let lock = NSLock()
+    private var activeSaves = 0
+    private var saveCount = 0
+    private var maxConcurrentSaves = 0
+
+    var stats: Stats {
+        lock.lock()
+        defer { lock.unlock() }
+        return Stats(saveCount: saveCount, maxConcurrentSaves: maxConcurrentSaves)
+    }
+
+    func availability() async -> CloudSyncAvailability {
+        .available
+    }
+
+    func fetchSnapshot() async throws -> CloudSyncSnapshot {
+        .empty()
+    }
+
+    func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {
+        lock.lock()
+        activeSaves += 1
+        saveCount += 1
+        maxConcurrentSaves = max(maxConcurrentSaves, activeSaves)
+        lock.unlock()
+
+        try? await Task.sleep(for: .milliseconds(150))
+
+        lock.lock()
+        activeSaves -= 1
+        lock.unlock()
     }
 }

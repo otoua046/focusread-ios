@@ -25,6 +25,8 @@ final class CloudSyncManager: ObservableObject {
     private let userDefaults: UserDefaults
     private let logger = Logger(subsystem: "FocusRead", category: "CloudSync")
     private var syncTask: Task<Void, Never>?
+    private var activeSyncID: UUID?
+    private var pendingSyncReason: String?
     private var scheduledTask: Task<Void, Never>?
     private var cancellables: Set<AnyCancellable> = []
     private var isConfigured = false
@@ -123,9 +125,20 @@ final class CloudSyncManager: ObservableObject {
             return
         }
 
-        syncTask?.cancel()
+        guard syncTask == nil else {
+            pendingSyncReason = reason
+            logger.info("Queued iCloud sync while another run is active: \(reason, privacy: .public)")
+            return
+        }
+        startSyncTask(reason: reason)
+    }
+
+    private func startSyncTask(reason: String) {
+        let syncID = UUID()
+        activeSyncID = syncID
         syncTask = Task { [weak self] in
             await self?.performSync(reason: reason)
+            await self?.finishSyncTask(syncID)
         }
     }
 
@@ -198,6 +211,20 @@ final class CloudSyncManager: ObservableObject {
         }
     }
 
+    private func finishSyncTask(_ syncID: UUID) {
+        guard activeSyncID == syncID else { return }
+        syncTask = nil
+        activeSyncID = nil
+
+        guard isSyncEnabled else {
+            pendingSyncReason = nil
+            return
+        }
+        guard let reason = pendingSyncReason else { return }
+        pendingSyncReason = nil
+        startSyncTask(reason: reason)
+    }
+
     private func makeLocalSnapshot(
         readingHistoryStore: LocalReadingHistoryStore,
         readingStatsStore: LocalReadingStatsStore,
@@ -254,6 +281,8 @@ final class CloudSyncManager: ObservableObject {
     private func cancelActiveSync() {
         scheduledTask?.cancel()
         scheduledTask = nil
+        pendingSyncReason = nil
+        activeSyncID = nil
         syncTask?.cancel()
         syncTask = nil
         isApplyingRemoteSnapshot = false

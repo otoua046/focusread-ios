@@ -86,7 +86,11 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
         )
         let mergedReads = syncedReads.map { syncedRead in
             let existing = existingByID[syncedRead.id] ?? existingByFingerprint[syncedRead.contentFingerprint]
-            return syncedRead.localRead(preservingDocumentTextFrom: existing)
+            var mergedRead = syncedRead.localRead(preservingDocumentTextFrom: existing)
+            if let existing, existing.id != mergedRead.id {
+                migrateAssociatedFiles(from: existing, to: &mergedRead)
+            }
+            return mergedRead
         }
         let mergedReadIDs = Set(mergedReads.map(\.id))
 
@@ -139,10 +143,52 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     }
 
     private func removeAssociatedFiles(for read: SavedRead) {
-        let folderURL = storageDirectory
+        try? fileManager.removeItem(at: associatedFilesURL(for: read.id))
+    }
+
+    private func migrateAssociatedFiles(from existing: SavedRead, to mergedRead: inout SavedRead) {
+        let existingFolderURL = associatedFilesURL(for: existing.id)
+        guard fileManager.fileExists(atPath: existingFolderURL.path) else { return }
+
+        let mergedFolderURL = associatedFilesURL(for: mergedRead.id)
+        do {
+            if fileManager.fileExists(atPath: mergedFolderURL.path) {
+                try copyMissingAssociatedFiles(from: existingFolderURL, to: mergedFolderURL)
+                try? fileManager.removeItem(at: existingFolderURL)
+            } else {
+                try fileManager.createDirectory(
+                    at: mergedFolderURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                try fileManager.moveItem(at: existingFolderURL, to: mergedFolderURL)
+            }
+
+            let migratedThumbnailURL = mergedFolderURL.appendingPathComponent("thumbnail.jpg")
+            if fileManager.fileExists(atPath: migratedThumbnailURL.path) {
+                mergedRead.thumbnailPath = "SavedReads/\(mergedRead.id.uuidString)/thumbnail.jpg"
+            }
+        } catch {
+            assertionFailure("Unable to migrate associated files for synced read \(existing.id): \(error)")
+        }
+    }
+
+    private func copyMissingAssociatedFiles(from sourceFolderURL: URL, to destinationFolderURL: URL) throws {
+        try fileManager.createDirectory(at: destinationFolderURL, withIntermediateDirectories: true)
+        let sourceItems = try fileManager.contentsOfDirectory(
+            at: sourceFolderURL,
+            includingPropertiesForKeys: nil
+        )
+        for sourceURL in sourceItems {
+            let destinationURL = destinationFolderURL.appendingPathComponent(sourceURL.lastPathComponent)
+            guard !fileManager.fileExists(atPath: destinationURL.path) else { continue }
+            try fileManager.copyItem(at: sourceURL, to: destinationURL)
+        }
+    }
+
+    private func associatedFilesURL(for readID: UUID) -> URL {
+        storageDirectory
             .appendingPathComponent("SavedReads", isDirectory: true)
-            .appendingPathComponent(read.id.uuidString, isDirectory: true)
-        try? fileManager.removeItem(at: folderURL)
+            .appendingPathComponent(readID.uuidString, isDirectory: true)
     }
 
     private func recordDeletedLibraryItem(_ read: SavedRead) {
