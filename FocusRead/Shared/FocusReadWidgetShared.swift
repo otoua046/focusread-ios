@@ -48,15 +48,31 @@ struct FocusReadStatsSnapshot: Codable, Equatable, Sendable {
                 .map(\.key)
         )
         let today = calendar.startOfDay(for: now)
+        let oldestRetainedDay = wordsByDay.keys.min()
+        let streak = Self.currentStreak(
+            activeDays: activeDays,
+            now: now,
+            calendar: calendar,
+            oldestRetainedDay: oldestRetainedDay
+        )
 
         var snapshot = self
         snapshot.todayWordsRead = wordsByDay[today] ?? 0
-        snapshot.currentStreakDays = Self.currentStreakDays(activeDays: activeDays, now: now, calendar: calendar)
+        snapshot.currentStreakDays = streak.isLimitedByHistory
+            ? max(currentStreakDays, streak.count)
+            : streak.count
         return snapshot
     }
 
-    private static func currentStreakDays(activeDays: Set<Date>, now: Date, calendar: Calendar) -> Int {
-        guard !activeDays.isEmpty else { return 0 }
+    private static func currentStreak(
+        activeDays: Set<Date>,
+        now: Date,
+        calendar: Calendar,
+        oldestRetainedDay: Date?
+    ) -> FocusReadWidgetStreak {
+        guard !activeDays.isEmpty else {
+            return FocusReadWidgetStreak(count: 0, isLimitedByHistory: false)
+        }
 
         let today = calendar.startOfDay(for: now)
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
@@ -66,20 +82,31 @@ struct FocusReadStatsSnapshot: Codable, Equatable, Sendable {
         } else if activeDays.contains(yesterday) {
             streakEnd = yesterday
         } else {
-            return 0
+            return FocusReadWidgetStreak(count: 0, isLimitedByHistory: false)
         }
 
         var count = 0
         var cursor = streakEnd
+        var lastActiveDay = streakEnd
         while activeDays.contains(cursor) {
             count += 1
+            lastActiveDay = cursor
             guard let previousDay = calendar.date(byAdding: .day, value: -1, to: cursor) else {
                 break
             }
             cursor = previousDay
         }
-        return count
+
+        let isLimitedByHistory = oldestRetainedDay.map { oldestDay in
+            calendar.isDate(lastActiveDay, inSameDayAs: oldestDay)
+        } ?? false
+        return FocusReadWidgetStreak(count: count, isLimitedByHistory: isLimitedByHistory)
     }
+}
+
+private struct FocusReadWidgetStreak {
+    let count: Int
+    let isLimitedByHistory: Bool
 }
 
 struct FocusReadWidgetActivityDay: Codable, Equatable, Identifiable, Sendable {
