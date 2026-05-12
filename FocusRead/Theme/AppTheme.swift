@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import WidgetKit
 
 enum FocusReadThemeStorageKey {
     static let selectedThemeID = "focusread.theme.selectedThemeID"
@@ -67,6 +68,8 @@ final class FocusReadThemeManager: ObservableObject {
         didSet {
             guard oldValue != selectedThemeID else { return }
             UserDefaults.standard.set(selectedThemeID, forKey: FocusReadThemeStorageKey.selectedThemeID)
+            FocusReadWidgetStatsStore.saveThemeID(selectedThemeID)
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 
@@ -77,6 +80,8 @@ final class FocusReadThemeManager: ObservableObject {
     private init() {
         let savedThemeID = UserDefaults.standard.string(forKey: FocusReadThemeStorageKey.selectedThemeID)
         selectedThemeID = FocusReadThemeCatalog.theme(matching: savedThemeID).id
+        FocusReadWidgetStatsStore.saveThemeID(selectedThemeID)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     func select(_ theme: FocusReadTheme) {

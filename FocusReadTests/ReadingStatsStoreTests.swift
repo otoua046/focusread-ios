@@ -2,6 +2,178 @@ import XCTest
 @testable import FocusRead
 
 final class ReadingStatsStoreTests: XCTestCase {
+    func testWidgetSnapshotNormalizationClearsTodayWordsAfterMidnight() {
+        let calendar = gregorianUTC()
+        let cachedSnapshot = FocusReadStatsSnapshot(
+            totalWordsRead: 1_500,
+            totalReadingSeconds: 300,
+            averageWPM: 300,
+            booksCompleted: 1,
+            currentStreakDays: 1,
+            longestStreakDays: 3,
+            dailyGoalWords: 1_000,
+            todayWordsRead: 1_500,
+            estimatedTimeSavedSeconds: 78,
+            lastUpdatedAt: date("2026-05-11T22:00:00Z")
+        )
+
+        let normalized = cachedSnapshot.normalizedForWidget(
+            activityDays: [
+                FocusReadWidgetActivityDay(
+                    date: date("2026-05-11T12:00:00Z"),
+                    wordsRead: 1_500,
+                    dailyGoalWords: 1_000,
+                    calendar: calendar
+                )
+            ],
+            now: date("2026-05-12T06:00:00Z"),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(normalized.todayWordsRead, 0)
+        XCTAssertEqual(normalized.currentStreakDays, 1)
+        XCTAssertEqual(normalized.longestStreakDays, 3)
+        XCTAssertEqual(normalized.totalWordsRead, 1_500)
+    }
+
+    func testWidgetSnapshotNormalizationDropsExpiredCurrentStreak() {
+        let calendar = gregorianUTC()
+        let cachedSnapshot = FocusReadStatsSnapshot(
+            totalWordsRead: 1_500,
+            totalReadingSeconds: 300,
+            averageWPM: 300,
+            booksCompleted: 1,
+            currentStreakDays: 2,
+            longestStreakDays: 3,
+            dailyGoalWords: 1_000,
+            todayWordsRead: 1_500,
+            estimatedTimeSavedSeconds: 78,
+            lastUpdatedAt: date("2026-05-10T22:00:00Z")
+        )
+
+        let normalized = cachedSnapshot.normalizedForWidget(
+            activityDays: [
+                FocusReadWidgetActivityDay(
+                    date: date("2026-05-10T12:00:00Z"),
+                    wordsRead: 1_500,
+                    dailyGoalWords: 1_000,
+                    calendar: calendar
+                )
+            ],
+            now: date("2026-05-12T06:00:00Z"),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(normalized.todayWordsRead, 0)
+        XCTAssertEqual(normalized.currentStreakDays, 0)
+        XCTAssertEqual(normalized.longestStreakDays, 3)
+    }
+
+    func testWidgetSnapshotNormalizationPreservesLongStreakBeyondActivityWindow() {
+        let calendar = gregorianUTC()
+        let now = date("2026-05-12T06:00:00Z")
+        let cachedSnapshot = FocusReadStatsSnapshot(
+            totalWordsRead: 500_000,
+            totalReadingSeconds: 100_000,
+            averageWPM: 300,
+            booksCompleted: 12,
+            currentStreakDays: 500,
+            longestStreakDays: 500,
+            dailyGoalWords: 1_000,
+            todayWordsRead: 1_200,
+            estimatedTimeSavedSeconds: 26_000,
+            lastUpdatedAt: date("2026-05-12T05:00:00Z")
+        )
+        let retainedActivityDays = (0..<366).map { offset in
+            FocusReadWidgetActivityDay(
+                date: calendar.date(byAdding: .day, value: -offset, to: now)!,
+                wordsRead: 1_200,
+                dailyGoalWords: 1_000,
+                calendar: calendar
+            )
+        }
+
+        let normalized = cachedSnapshot.normalizedForWidget(
+            activityDays: retainedActivityDays,
+            now: now,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(normalized.todayWordsRead, 1_200)
+        XCTAssertEqual(normalized.currentStreakDays, 500)
+        XCTAssertEqual(normalized.longestStreakDays, 500)
+    }
+
+    @MainActor
+    func testWidgetPayloadPreservesActivityDaysWhenSnapshotIsUndecodable() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: FocusReadWidgetShared.appGroupIdentifier))
+        addTeardownBlock {
+            defaults.removeObject(forKey: FocusReadWidgetShared.statsSnapshotKey)
+            defaults.removeObject(forKey: FocusReadWidgetShared.activityDaysKey)
+            defaults.removeObject(forKey: FocusReadWidgetShared.themeIDKey)
+        }
+        defaults.removeObject(forKey: FocusReadWidgetShared.statsSnapshotKey)
+        defaults.removeObject(forKey: FocusReadWidgetShared.activityDaysKey)
+        defaults.removeObject(forKey: FocusReadWidgetShared.themeIDKey)
+
+        let activityDays = [
+            FocusReadWidgetActivityDay(
+                date: date("2026-05-11T12:00:00Z"),
+                wordsRead: 1_500,
+                dailyGoalWords: 1_000,
+                calendar: gregorianUTC()
+            )
+        ]
+        defaults.set(Data("not-json".utf8), forKey: FocusReadWidgetShared.statsSnapshotKey)
+        defaults.set(try JSONEncoder().encode(activityDays), forKey: FocusReadWidgetShared.activityDaysKey)
+        defaults.set("paper", forKey: FocusReadWidgetShared.themeIDKey)
+
+        let payload = FocusReadWidgetStatsStore.loadPayload()
+
+        XCTAssertEqual(payload.snapshot, .empty)
+        XCTAssertEqual(payload.activityDays, activityDays)
+        XCTAssertEqual(payload.themeID, "paper")
+    }
+
+    func testWidgetSnapshotNormalizationDoesNotPreserveStaleStreakWhenVisibleHistoryHasGap() {
+        let calendar = gregorianUTC()
+        let cachedSnapshot = FocusReadStatsSnapshot(
+            totalWordsRead: 5_000,
+            totalReadingSeconds: 1_000,
+            averageWPM: 300,
+            booksCompleted: 1,
+            currentStreakDays: 500,
+            longestStreakDays: 500,
+            dailyGoalWords: 1_000,
+            todayWordsRead: 1_200,
+            estimatedTimeSavedSeconds: 260,
+            lastUpdatedAt: date("2026-05-12T05:00:00Z")
+        )
+
+        let normalized = cachedSnapshot.normalizedForWidget(
+            activityDays: [
+                FocusReadWidgetActivityDay(
+                    date: date("2026-05-12T05:00:00Z"),
+                    wordsRead: 1_200,
+                    dailyGoalWords: 1_000,
+                    calendar: calendar
+                ),
+                FocusReadWidgetActivityDay(
+                    date: date("2026-05-10T05:00:00Z"),
+                    wordsRead: 1_200,
+                    dailyGoalWords: 1_000,
+                    calendar: calendar
+                )
+            ],
+            now: date("2026-05-12T06:00:00Z"),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(normalized.todayWordsRead, 1_200)
+        XCTAssertEqual(normalized.currentStreakDays, 1)
+        XCTAssertEqual(normalized.longestStreakDays, 500)
+    }
+
     func testReadingDayActivityIntensityUsesDailyGoalThresholds() {
         XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 0, dailyGoalWords: 2_000), 0)
         XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 1, dailyGoalWords: 2_000), 1)
