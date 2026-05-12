@@ -87,6 +87,13 @@
 		770000000000000000000002 /* AppLanguageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000102 /* AppLanguageSettingsView.swift */; };
 		770000000000000000000003 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000201 /* Localizable.strings */; };
 		770000000000000000000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000202 /* InfoPlist.strings */; };
+		790000000000000000000001 /* FocusReadWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000107 /* FocusReadWidgetShared.swift */; };
+		790000000000000000000002 /* FocusReadWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000107 /* FocusReadWidgetShared.swift */; };
+		790000000000000000000003 /* FocusReadStatsWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000101 /* FocusReadStatsWidgetBundle.swift */; };
+		790000000000000000000004 /* FocusReadStatsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000102 /* FocusReadStatsWidget.swift */; };
+		790000000000000000000005 /* FocusReadStatsWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000103 /* FocusReadStatsWidgetViews.swift */; };
+		790000000000000000000006 /* FocusReadWidgetTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000104 /* FocusReadWidgetTheme.swift */; };
+		790000000000000000000007 /* FocusReadStatsWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 790000000000000000000011 /* FocusReadStatsWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -97,12 +104,34 @@
 			remoteGlobalIDString = 710000000000000000000070;
 			remoteInfo = FocusRead;
 		};
+		790000000000000000000201 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 710000000000000000000080 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 790000000000000000000070;
+			remoteInfo = FocusReadStatsWidgets;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		790000000000000000000074 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				790000000000000000000007 /* FocusReadStatsWidgets.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4BB9D3082FAACCED00E05D79 /* E001005.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = E001005.pdf; sourceTree = "<group>"; };
 		4BB9D3092FAACCED00E05D79 /* The Psychology of Persuasion.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "The Psychology of Persuasion.pdf"; sourceTree = "<group>"; };
 		710000000000000000000011 /* FocusRead.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FocusRead.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		790000000000000000000011 /* FocusReadStatsWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FocusReadStatsWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		710000000000000000000101 /* FocusReadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadApp.swift; sourceTree = "<group>"; };
 		710000000000000000000102 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		710000000000000000000103 /* TextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInputView.swift; sourceTree = "<group>"; };
@@ -200,6 +229,13 @@
 		770000000000000000000328 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		770000000000000000000329 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		77000000000000000000032A /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		790000000000000000000101 /* FocusReadStatsWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadStatsWidgetBundle.swift; sourceTree = "<group>"; };
+		790000000000000000000102 /* FocusReadStatsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadStatsWidget.swift; sourceTree = "<group>"; };
+		790000000000000000000103 /* FocusReadStatsWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadStatsWidgetViews.swift; sourceTree = "<group>"; };
+		790000000000000000000104 /* FocusReadWidgetTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadWidgetTheme.swift; sourceTree = "<group>"; };
+		790000000000000000000105 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		790000000000000000000106 /* FocusReadStatsWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusReadStatsWidgets.entitlements; sourceTree = "<group>"; };
+		790000000000000000000107 /* FocusReadWidgetShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadWidgetShared.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -212,6 +248,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		740000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		790000000000000000000020 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -234,6 +277,7 @@
 			isa = PBXGroup;
 			children = (
 				710000000000000000000040 /* FocusRead */,
+				790000000000000000000040 /* FocusReadWidgets */,
 				740000000000000000000040 /* FocusReadTests */,
 				710000000000000000000050 /* Products */,
 			);
@@ -245,6 +289,7 @@
 				710000000000000000000101 /* FocusReadApp.swift */,
 				710000000000000000000060 /* Models */,
 				710000000000000000000061 /* Services */,
+				790000000000000000000060 /* Shared */,
 				710000000000000000000062 /* ViewModels */,
 				770000000000000000000060 /* Localization */,
 				710000000000000000000064 /* Theme */,
@@ -261,6 +306,7 @@
 			isa = PBXGroup;
 			children = (
 				710000000000000000000011 /* FocusRead.app */,
+				790000000000000000000011 /* FocusReadStatsWidgets.appex */,
 				740000000000000000000011 /* FocusReadTests.xctest */,
 			);
 			name = Products;
@@ -405,6 +451,27 @@
 			path = Localization;
 			sourceTree = "<group>";
 		};
+		790000000000000000000040 /* FocusReadWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				790000000000000000000101 /* FocusReadStatsWidgetBundle.swift */,
+				790000000000000000000102 /* FocusReadStatsWidget.swift */,
+				790000000000000000000103 /* FocusReadStatsWidgetViews.swift */,
+				790000000000000000000104 /* FocusReadWidgetTheme.swift */,
+				790000000000000000000105 /* Info.plist */,
+				790000000000000000000106 /* FocusReadStatsWidgets.entitlements */,
+			);
+			path = FocusReadWidgets;
+			sourceTree = "<group>";
+		};
+		790000000000000000000060 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				790000000000000000000107 /* FocusReadWidgetShared.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -415,10 +482,12 @@
 				710000000000000000000071 /* Sources */,
 				710000000000000000000020 /* Frameworks */,
 				710000000000000000000073 /* Resources */,
+				790000000000000000000074 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				790000000000000000000202 /* PBXTargetDependency */,
 			);
 			name = FocusRead;
 			packageProductDependencies = (
@@ -427,6 +496,25 @@
 			productName = FocusRead;
 			productReference = 710000000000000000000011 /* FocusRead.app */;
 			productType = "com.apple.product-type.application";
+		};
+		790000000000000000000070 /* FocusReadStatsWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 790000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadStatsWidgets" */;
+			buildPhases = (
+				790000000000000000000071 /* Sources */,
+				790000000000000000000020 /* Frameworks */,
+				790000000000000000000073 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FocusReadStatsWidgets;
+			packageProductDependencies = (
+			);
+			productName = FocusReadStatsWidgets;
+			productReference = 790000000000000000000011 /* FocusReadStatsWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		740000000000000000000070 /* FocusReadTests */ = {
 			isa = PBXNativeTarget;
@@ -461,6 +549,9 @@
 					710000000000000000000070 = {
 						CreatedOnToolsVersion = 26.4;
 					};
+					790000000000000000000070 = {
+						CreatedOnToolsVersion = 26.4;
+					};
 					740000000000000000000070 = {
 						CreatedOnToolsVersion = 26.4;
 						TestTargetID = 710000000000000000000070;
@@ -493,6 +584,7 @@
 			projectRoot = "";
 			targets = (
 				710000000000000000000070 /* FocusRead */,
+				790000000000000000000070 /* FocusReadStatsWidgets */,
 				740000000000000000000070 /* FocusReadTests */,
 			);
 		};
@@ -522,6 +614,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		790000000000000000000073 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -539,6 +638,7 @@
 				710000000000000000000007 /* ReadingSession.swift in Sources */,
 				720000000000000000000001 /* DocumentImportModels.swift in Sources */,
 				750000000000000000000001 /* ReadingStats.swift in Sources */,
+				790000000000000000000001 /* FocusReadWidgetShared.swift in Sources */,
 				760000000000000000000001 /* AIRecap.swift in Sources */,
 				760000000000000000000008 /* AIRecapSettings.swift in Sources */,
 				780000000000000000000001 /* CloudSyncModels.swift in Sources */,
@@ -609,6 +709,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		790000000000000000000071 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				790000000000000000000002 /* FocusReadWidgetShared.swift in Sources */,
+				790000000000000000000003 /* FocusReadStatsWidgetBundle.swift in Sources */,
+				790000000000000000000004 /* FocusReadStatsWidget.swift in Sources */,
+				790000000000000000000005 /* FocusReadStatsWidgetViews.swift in Sources */,
+				790000000000000000000006 /* FocusReadWidgetTheme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -616,6 +728,11 @@
 			isa = PBXTargetDependency;
 			target = 710000000000000000000070 /* FocusRead */;
 			targetProxy = 740000000000000000000201 /* PBXContainerItemProxy */;
+		};
+		790000000000000000000202 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 790000000000000000000070 /* FocusReadStatsWidgets */;
+			targetProxy = 790000000000000000000201 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -727,6 +844,7 @@
 		710000000000000000000091 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FocusRead/FocusRead.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -746,6 +864,7 @@
 		710000000000000000000092 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FocusRead/FocusRead.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
@@ -756,6 +875,59 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		790000000000000000000091 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = FocusReadWidgets/FocusReadStatsWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WFH2TCAAQ8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FocusReadWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app.FocusReadStatsWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		790000000000000000000092 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = FocusReadWidgets/FocusReadStatsWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WFH2TCAAQ8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FocusReadWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app.FocusReadStatsWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -816,6 +988,15 @@
 			buildConfigurations = (
 				710000000000000000000091 /* Debug */,
 				710000000000000000000092 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		790000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadStatsWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				790000000000000000000091 /* Debug */,
+				790000000000000000000092 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

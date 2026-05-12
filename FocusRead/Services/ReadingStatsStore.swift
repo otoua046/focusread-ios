@@ -1,4 +1,5 @@
 import Foundation
+import WidgetKit
 
 @MainActor
 protocol ReadingStatsStore: AnyObject {
@@ -198,6 +199,44 @@ final class LocalReadingStatsStore: ObservableObject, ReadingStatsStore {
             calendar: calendar,
             now: nowProvider()
         )
+        publishWidgetSnapshot()
+    }
+
+    private func publishWidgetSnapshot() {
+        FocusReadWidgetStatsStore.save(
+            snapshot: FocusReadStatsSnapshot(
+                totalWordsRead: snapshot.totalWordsRead,
+                totalReadingSeconds: snapshot.totalReadingSeconds,
+                averageWPM: snapshot.averageWPM,
+                booksCompleted: snapshot.booksCompleted,
+                currentStreakDays: snapshot.currentStreakDays,
+                longestStreakDays: snapshot.longestStreakDays,
+                dailyGoalWords: snapshot.dailyGoalWords,
+                todayWordsRead: snapshot.todayWordsRead,
+                estimatedTimeSavedSeconds: snapshot.estimatedTimeSavedSeconds,
+                lastUpdatedAt: statsUpdatedAt == .distantPast ? nowProvider() : statsUpdatedAt
+            )
+        )
+        FocusReadWidgetStatsStore.saveActivityDays(widgetActivityDays())
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func widgetActivityDays() -> [FocusReadWidgetActivityDay] {
+        ReadingDayActivity.recentDays(
+            from: dailyStats,
+            dailyGoalWords: snapshot.dailyGoalWords,
+            dayCount: 366,
+            endingAt: nowProvider(),
+            calendar: calendar
+        )
+        .map {
+            FocusReadWidgetActivityDay(
+                date: $0.date,
+                wordsRead: $0.wordsRead,
+                dailyGoalWords: snapshot.dailyGoalWords,
+                calendar: calendar
+            )
+        }
     }
 
     private func persist() {
