@@ -155,7 +155,7 @@ enum FocusReadWidgetStatsStore {
 
         guard let data = defaults?.data(forKey: FocusReadWidgetShared.statsSnapshotKey),
               let snapshot = try? JSONDecoder().decode(FocusReadStatsSnapshot.self, from: data) else {
-            return FocusReadWidgetPayload(snapshot: .empty, activityDays: [], themeID: themeID)
+            return FocusReadWidgetPayload(snapshot: .empty, activityDays: activityDays, themeID: themeID)
         }
 
         return FocusReadWidgetPayload(

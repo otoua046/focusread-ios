@@ -81,6 +81,7 @@ final class FocusReadThemeManager: ObservableObject {
         let savedThemeID = UserDefaults.standard.string(forKey: FocusReadThemeStorageKey.selectedThemeID)
         selectedThemeID = FocusReadThemeCatalog.theme(matching: savedThemeID).id
         FocusReadWidgetStatsStore.saveThemeID(selectedThemeID)
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     func select(_ theme: FocusReadTheme) {

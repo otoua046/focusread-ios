@@ -104,6 +104,37 @@ final class ReadingStatsStoreTests: XCTestCase {
         XCTAssertEqual(normalized.longestStreakDays, 500)
     }
 
+    @MainActor
+    func testWidgetPayloadPreservesActivityDaysWhenSnapshotIsUndecodable() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: FocusReadWidgetShared.appGroupIdentifier))
+        addTeardownBlock {
+            defaults.removeObject(forKey: FocusReadWidgetShared.statsSnapshotKey)
+            defaults.removeObject(forKey: FocusReadWidgetShared.activityDaysKey)
+            defaults.removeObject(forKey: FocusReadWidgetShared.themeIDKey)
+        }
+        defaults.removeObject(forKey: FocusReadWidgetShared.statsSnapshotKey)
+        defaults.removeObject(forKey: FocusReadWidgetShared.activityDaysKey)
+        defaults.removeObject(forKey: FocusReadWidgetShared.themeIDKey)
+
+        let activityDays = [
+            FocusReadWidgetActivityDay(
+                date: date("2026-05-11T12:00:00Z"),
+                wordsRead: 1_500,
+                dailyGoalWords: 1_000,
+                calendar: gregorianUTC()
+            )
+        ]
+        defaults.set(Data("not-json".utf8), forKey: FocusReadWidgetShared.statsSnapshotKey)
+        defaults.set(try JSONEncoder().encode(activityDays), forKey: FocusReadWidgetShared.activityDaysKey)
+        defaults.set("paper", forKey: FocusReadWidgetShared.themeIDKey)
+
+        let payload = FocusReadWidgetStatsStore.loadPayload()
+
+        XCTAssertEqual(payload.snapshot, .empty)
+        XCTAssertEqual(payload.activityDays, activityDays)
+        XCTAssertEqual(payload.themeID, "paper")
+    }
+
     func testWidgetSnapshotNormalizationDoesNotPreserveStaleStreakWhenVisibleHistoryHasGap() {
         let calendar = gregorianUTC()
         let cachedSnapshot = FocusReadStatsSnapshot(
