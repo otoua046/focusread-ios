@@ -32,6 +32,54 @@ struct FocusReadStatsSnapshot: Codable, Equatable, Sendable {
         estimatedTimeSavedSeconds: 0,
         lastUpdatedAt: Date.distantPast
     )
+
+    func normalizedForWidget(
+        activityDays: [FocusReadWidgetActivityDay],
+        now: Date = Date(),
+        calendar: Calendar = .autoupdatingCurrent
+    ) -> FocusReadStatsSnapshot {
+        let wordsByDay = Dictionary(
+            activityDays.map { (calendar.startOfDay(for: $0.date), $0.wordsRead) },
+            uniquingKeysWith: +
+        )
+        let activeDays = Set(
+            wordsByDay
+                .filter { $0.value > 0 }
+                .map(\.key)
+        )
+        let today = calendar.startOfDay(for: now)
+
+        var snapshot = self
+        snapshot.todayWordsRead = wordsByDay[today] ?? 0
+        snapshot.currentStreakDays = Self.currentStreakDays(activeDays: activeDays, now: now, calendar: calendar)
+        return snapshot
+    }
+
+    private static func currentStreakDays(activeDays: Set<Date>, now: Date, calendar: Calendar) -> Int {
+        guard !activeDays.isEmpty else { return 0 }
+
+        let today = calendar.startOfDay(for: now)
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        let streakEnd: Date
+        if activeDays.contains(today) {
+            streakEnd = today
+        } else if activeDays.contains(yesterday) {
+            streakEnd = yesterday
+        } else {
+            return 0
+        }
+
+        var count = 0
+        var cursor = streakEnd
+        while activeDays.contains(cursor) {
+            count += 1
+            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: cursor) else {
+                break
+            }
+            cursor = previousDay
+        }
+        return count
+    }
 }
 
 struct FocusReadWidgetActivityDay: Codable, Equatable, Identifiable, Sendable {
@@ -76,14 +124,16 @@ enum FocusReadWidgetStatsStore {
         let themeID = defaults?.string(forKey: FocusReadWidgetShared.themeIDKey)
             ?? FocusReadWidgetShared.defaultThemeID
 
+        let activityDays = loadActivityDays(from: defaults)
+
         guard let data = defaults?.data(forKey: FocusReadWidgetShared.statsSnapshotKey),
               let snapshot = try? JSONDecoder().decode(FocusReadStatsSnapshot.self, from: data) else {
             return FocusReadWidgetPayload(snapshot: .empty, activityDays: [], themeID: themeID)
         }
 
         return FocusReadWidgetPayload(
-            snapshot: snapshot,
-            activityDays: loadActivityDays(from: defaults),
+            snapshot: snapshot.normalizedForWidget(activityDays: activityDays),
+            activityDays: activityDays,
             themeID: themeID
         )
     }

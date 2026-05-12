@@ -2,6 +2,73 @@ import XCTest
 @testable import FocusRead
 
 final class ReadingStatsStoreTests: XCTestCase {
+    func testWidgetSnapshotNormalizationClearsTodayWordsAfterMidnight() {
+        let calendar = gregorianUTC()
+        let cachedSnapshot = FocusReadStatsSnapshot(
+            totalWordsRead: 1_500,
+            totalReadingSeconds: 300,
+            averageWPM: 300,
+            booksCompleted: 1,
+            currentStreakDays: 1,
+            longestStreakDays: 3,
+            dailyGoalWords: 1_000,
+            todayWordsRead: 1_500,
+            estimatedTimeSavedSeconds: 78,
+            lastUpdatedAt: date("2026-05-11T22:00:00Z")
+        )
+
+        let normalized = cachedSnapshot.normalizedForWidget(
+            activityDays: [
+                FocusReadWidgetActivityDay(
+                    date: date("2026-05-11T12:00:00Z"),
+                    wordsRead: 1_500,
+                    dailyGoalWords: 1_000,
+                    calendar: calendar
+                )
+            ],
+            now: date("2026-05-12T06:00:00Z"),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(normalized.todayWordsRead, 0)
+        XCTAssertEqual(normalized.currentStreakDays, 1)
+        XCTAssertEqual(normalized.longestStreakDays, 3)
+        XCTAssertEqual(normalized.totalWordsRead, 1_500)
+    }
+
+    func testWidgetSnapshotNormalizationDropsExpiredCurrentStreak() {
+        let calendar = gregorianUTC()
+        let cachedSnapshot = FocusReadStatsSnapshot(
+            totalWordsRead: 1_500,
+            totalReadingSeconds: 300,
+            averageWPM: 300,
+            booksCompleted: 1,
+            currentStreakDays: 2,
+            longestStreakDays: 3,
+            dailyGoalWords: 1_000,
+            todayWordsRead: 1_500,
+            estimatedTimeSavedSeconds: 78,
+            lastUpdatedAt: date("2026-05-10T22:00:00Z")
+        )
+
+        let normalized = cachedSnapshot.normalizedForWidget(
+            activityDays: [
+                FocusReadWidgetActivityDay(
+                    date: date("2026-05-10T12:00:00Z"),
+                    wordsRead: 1_500,
+                    dailyGoalWords: 1_000,
+                    calendar: calendar
+                )
+            ],
+            now: date("2026-05-12T06:00:00Z"),
+            calendar: calendar
+        )
+
+        XCTAssertEqual(normalized.todayWordsRead, 0)
+        XCTAssertEqual(normalized.currentStreakDays, 0)
+        XCTAssertEqual(normalized.longestStreakDays, 3)
+    }
+
     func testReadingDayActivityIntensityUsesDailyGoalThresholds() {
         XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 0, dailyGoalWords: 2_000), 0)
         XCTAssertEqual(ReadingDayActivity.intensityLevel(wordsRead: 1, dailyGoalWords: 2_000), 1)
