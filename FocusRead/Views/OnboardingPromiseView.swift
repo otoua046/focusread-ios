@@ -5,9 +5,29 @@ struct OnboardingPromiseView: View {
     @State private var wordIndex = 0
 
     private var words: [String] {
-        L10n.string(.onboardingPromiseWords)
+        localizedPromiseWords()
+    }
+
+    private var currentWord: String? {
+        guard !words.isEmpty else { return nil }
+        return words[safeWordIndex]
+    }
+
+    private func localizedPromiseWords(localeIdentifier: String? = nil) -> [String] {
+        let localizedWords = L10n.string(.onboardingPromiseWords, localeIdentifier: localeIdentifier)
             .split(separator: "|")
-            .map(String.init)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        if !localizedWords.isEmpty {
+            return localizedWords
+        }
+
+        guard localeIdentifier != AppLanguage.english.rawValue else {
+            return []
+        }
+
+        return localizedPromiseWords(localeIdentifier: AppLanguage.english.rawValue)
     }
 
     var body: some View {
@@ -43,14 +63,16 @@ struct OnboardingPromiseView: View {
 
                     OnboardingRSVPStageGuide()
 
-                    OnboardingORPWordView(
-                        word: words[safeWordIndex],
-                        fontSize: 46,
-                        usesAnchorLetter: true
-                    )
-                    .id(wordIndex)
-                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.95)))
-                    .padding(.horizontal, 24)
+                    if let currentWord {
+                        OnboardingORPWordView(
+                            word: currentWord,
+                            fontSize: 46,
+                            usesAnchorLetter: true
+                        )
+                        .id(wordIndex)
+                        .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.95)))
+                        .padding(.horizontal, 24)
+                    }
                 }
                 .frame(height: 178)
                 .frame(maxWidth: 430)
@@ -68,10 +90,15 @@ struct OnboardingPromiseView: View {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(760))
                 guard !Task.isCancelled else { return }
+                let wordCount = words.count
+                guard wordCount > 0 else {
+                    wordIndex = 0
+                    return
+                }
 
                 await MainActor.run {
                     withAnimation(.smooth(duration: 0.28)) {
-                        wordIndex = (wordIndex + 1) % words.count
+                        wordIndex = (wordIndex + 1) % wordCount
                     }
                 }
             }
