@@ -8,7 +8,6 @@
 "common.notSelected" = "未选中";
 "common.words" = "词";
 
-"tab.home" = "首页";
 "tab.library" = "书库";
 "tab.stats" = "统计";
 "tab.settings" = "设置";
@@ -103,37 +102,10 @@
 "theme.category.accent" = "强调色主题";
 "theme.category.full" = "完整主题";
 
-"home.hero.subtitle" = "大多数阅读 App 移动你的眼睛。\nFocusRead 移动文字。";
-"home.demo.sample" = "大多数阅读都要求你的眼睛一行接一行地追赶。\n\nFocusRead 让目标保持静止。文字来到中央，标点自然呼吸，你的注意力也少了许多走神的地方。\n\n这个简短演示完全在本机运行。调整速度，随时暂停，感受当文字移动而不是眼睛移动时，阅读会如何改变。";
-"home.hero.words" = "大多数|阅读 App|移动|你的|眼睛。|FocusRead|移动|文字。";
-"home.comparison.words" = "更少|眼动。|更多|注意力。";
-"home.animatedDemo.accessibility" = "FocusRead 动态文字演示";
-"home.seeShift" = "看看变化";
-"home.mode.normal" = "普通";
-"home.mode.focusRead" = "FocusRead";
-"home.normalReading.description" = "你的眼睛扫过每一行，然后再跳回开头。";
-"home.readingGoal.prompt" = "你为什么阅读？";
-"home.goal.study" = "学习";
-"home.goal.books" = "书籍";
-"home.goal.focus" = "专注";
-"home.goal.work" = "工作";
-"home.goal.languages" = "语言";
-"home.aiRecap.enabled.title" = "完成一次会话，获得清晰回顾。";
-"home.aiRecap.unavailable.title" = "本地 AI 就绪后即可使用回顾。";
-"home.aiRecap.enabled.status" = "设备端 AI 回顾已启用。";
-"home.aiRecap.available.status" = "AI 回顾可用，可在设置中启用。";
-"home.aiRecap.requires.status" = "需要设备端 Apple Intelligence 支持。";
-"home.recapFlow.read" = "阅读";
-"home.recapFlow.recap" = "回顾";
-"home.recapFlow.keyIdeas" = "要点";
-"home.readingSpace" = "阅读空间";
-"home.themes" = "主题";
-"home.tryFocusRead" = "试用 FocusRead";
-"home.importBook" = "导入一本书";
-"home.premiumPreview.title" = "Premium 预览";
-"home.premiumPreview.message" = "Premium 尚未接入。添加产品配置后，此操作即可用于订阅流程。";
-"home.premium.teaser" = "解锁无限 AI 回顾、高级专注模式和完整书库功能。";
-"home.viewPremium" = "查看 Premium";
+"onboarding.goal.study" = "学习";
+"onboarding.goal.books" = "书籍";
+"onboarding.goal.work" = "工作";
+"onboarding.goal.languages" = "语言";
 
 "import.title" = "导入";
 "import.close.accessibility" = "关闭导入";

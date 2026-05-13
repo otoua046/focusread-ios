@@ -8,7 +8,6 @@
 "common.notSelected" = "未選択";
 "common.words" = "語";
 
-"tab.home" = "ホーム";
 "tab.library" = "ライブラリ";
 "tab.stats" = "統計";
 "tab.settings" = "設定";
@@ -103,37 +102,10 @@
 "theme.category.accent" = "アクセントテーマ";
 "theme.category.full" = "フルテーマ";
 
-"home.hero.subtitle" = "多くの読書アプリは目を動かします。\nFocusRead は言葉を動かします。";
-"home.demo.sample" = "ふつうの読書では、目が行を追い続けます。\n\nFocusRead は目標を中央に固定します。言葉が中央に届き、句読点が呼吸し、注意が迷い込む場所を減らします。\n\nこの短いデモはアプリ内だけで動きます。速度を調整し、いつでも一時停止して、目ではなく言葉が動く読書の変化を感じてください。";
-"home.hero.words" = "多くの|読書アプリは|目を|動かします。|FocusRead は|言葉を|動かします。";
-"home.comparison.words" = "少ない|目の動き。|より多い|集中。";
-"home.animatedDemo.accessibility" = "FocusRead の単語アニメーションデモ";
-"home.seeShift" = "変化を見る";
-"home.mode.normal" = "通常";
-"home.mode.focusRead" = "FocusRead";
-"home.normalReading.description" = "目は各行を横切り、また先頭へ戻ります。";
-"home.readingGoal.prompt" = "何のために読みますか？";
-"home.goal.study" = "学習";
-"home.goal.books" = "本";
-"home.goal.focus" = "集中";
-"home.goal.work" = "仕事";
-"home.goal.languages" = "言語";
-"home.aiRecap.enabled.title" = "セッションを終えると、明快な要約が届きます。";
-"home.aiRecap.unavailable.title" = "ローカル AI が使えると要約も使えます。";
-"home.aiRecap.enabled.status" = "デバイス上の AI 要約が有効です。";
-"home.aiRecap.available.status" = "AI 要約を利用できます。設定で有効にできます。";
-"home.aiRecap.requires.status" = "デバイス上の Apple Intelligence が必要です。";
-"home.recapFlow.read" = "読む";
-"home.recapFlow.recap" = "要約";
-"home.recapFlow.keyIdeas" = "要点";
-"home.readingSpace" = "読書空間";
-"home.themes" = "テーマ";
-"home.tryFocusRead" = "FocusRead を試す";
-"home.importBook" = "本を読み込む";
-"home.premiumPreview.title" = "Premium プレビュー";
-"home.premiumPreview.message" = "Premium はまだ接続されていません。製品設定が追加されると、この操作をサブスクリプションフローで使えます。";
-"home.premium.teaser" = "無制限の AI 要約、高度な集中モード、ライブラリの全機能を利用できます。";
-"home.viewPremium" = "Premium を表示";
+"onboarding.goal.study" = "学習";
+"onboarding.goal.books" = "本";
+"onboarding.goal.work" = "仕事";
+"onboarding.goal.languages" = "言語";
 
 "import.title" = "読み込み";
 "import.close.accessibility" = "読み込みを閉じる";

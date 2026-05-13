@@ -12,6 +12,7 @@ struct TypographySettingsView: View {
 
     let showsDismissButton: Bool
     let showsPageHeader: Bool
+    let onReplayOnboarding: (() -> Void)?
 
     @AppStorage(TypographySettingsKey.fontFamily) private var fontFamily: String = ReaderFontFamily.serif.rawValue
     @AppStorage(TypographySettingsKey.fontSize) private var fontSize: Double = FontStyle.defaultSize
@@ -41,11 +42,13 @@ struct TypographySettingsView: View {
     init(
         readingStatsStore: LocalReadingStatsStore,
         showsDismissButton: Bool = true,
-        showsPageHeader: Bool = false
+        showsPageHeader: Bool = false,
+        onReplayOnboarding: (() -> Void)? = nil
     ) {
         _readingStatsStore = ObservedObject(wrappedValue: readingStatsStore)
         self.showsDismissButton = showsDismissButton
         self.showsPageHeader = showsPageHeader
+        self.onReplayOnboarding = onReplayOnboarding
     }
 
     var body: some View {
@@ -200,6 +203,15 @@ struct TypographySettingsView: View {
                 }
 
                 settingsSection("Support") {
+                    if let onReplayOnboarding {
+                        settingsActionRow(
+                            title: "Replay FocusRead Demo",
+                            action: onReplayOnboarding
+                        )
+
+                        settingsDivider
+                    }
+
                     settingsLinkButtonRow(title: "Rate Us") {
                         requestReview()
                     }

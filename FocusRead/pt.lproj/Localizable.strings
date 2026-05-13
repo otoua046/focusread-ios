@@ -8,7 +8,6 @@
 "common.notSelected" = "Não selecionado";
 "common.words" = "palavras";
 
-"tab.home" = "Início";
 "tab.library" = "Biblioteca";
 "tab.stats" = "Minhas estatísticas";
 "tab.settings" = "Ajustes";
@@ -103,37 +102,10 @@
 "theme.category.accent" = "Temas de destaque";
 "theme.category.full" = "Temas completos";
 
-"home.hero.subtitle" = "A maioria dos apps move seus olhos.\nO FocusRead move as palavras.";
-"home.demo.sample" = "A leitura comum pede que seus olhos persigam linha após linha.\n\nO FocusRead mantém o alvo parado. As palavras chegam ao centro, a pontuação respira e sua atenção tem menos lugares para se perder.\n\nEsta breve demonstração é local no app. Ajuste o ritmo, pause quando quiser e sinta como a leitura muda quando as palavras se movem em vez dos seus olhos.";
-"home.hero.words" = "A maioria|dos apps|move|seus|olhos.|FocusRead|move|as|palavras.";
-"home.comparison.words" = "Menos|movimento|dos olhos.|Mais|atenção.";
-"home.animatedDemo.accessibility" = "Demonstração animada de palavras do FocusRead";
-"home.seeShift" = "Ver a mudança";
-"home.mode.normal" = "Normal";
-"home.mode.focusRead" = "FocusRead";
-"home.normalReading.description" = "Seus olhos percorrem cada linha e depois voltam ao começo.";
-"home.readingGoal.prompt" = "Você está lendo para quê?";
-"home.goal.study" = "Estudo";
-"home.goal.books" = "Livros";
-"home.goal.focus" = "Foco";
-"home.goal.work" = "Trabalho";
-"home.goal.languages" = "Idiomas";
-"home.aiRecap.enabled.title" = "Termine uma sessão. Receba uma recapitulação clara.";
-"home.aiRecap.unavailable.title" = "As recapitulações estarão prontas quando a IA local estiver.";
-"home.aiRecap.enabled.status" = "As recapitulações de IA no dispositivo estão ativadas.";
-"home.aiRecap.available.status" = "As recapitulações de IA estão disponíveis e podem ser ativadas em Ajustes.";
-"home.aiRecap.requires.status" = "Requer Apple Intelligence no dispositivo.";
-"home.recapFlow.read" = "Ler";
-"home.recapFlow.recap" = "Recap";
-"home.recapFlow.keyIdeas" = "Ideias-chave";
-"home.readingSpace" = "Espaço de leitura";
-"home.themes" = "Temas";
-"home.tryFocusRead" = "Experimentar FocusRead";
-"home.importBook" = "Importar um livro";
-"home.premiumPreview.title" = "Prévia Premium";
-"home.premiumPreview.message" = "O Premium ainda não está conectado. Esta ação está pronta para o fluxo de assinatura quando a configuração de produtos for adicionada.";
-"home.premium.teaser" = "Desbloqueie recapitulações de IA ilimitadas, modos avançados de foco e todos os recursos da biblioteca.";
-"home.viewPremium" = "Ver Premium";
+"onboarding.goal.study" = "Estudo";
+"onboarding.goal.books" = "Livros";
+"onboarding.goal.work" = "Trabalho";
+"onboarding.goal.languages" = "Idiomas";
 
 "import.title" = "Importar";
 "import.close.accessibility" = "Fechar importação";

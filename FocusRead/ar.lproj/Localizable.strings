@@ -8,7 +8,6 @@
 "common.notSelected" = "غير محدد";
 "common.words" = "كلمة";
 
-"tab.home" = "الرئيسية";
 "tab.library" = "المكتبة";
 "tab.stats" = "إحصاءاتي";
 "tab.settings" = "الإعدادات";
@@ -103,37 +102,10 @@
 "theme.category.accent" = "سمات التمييز";
 "theme.category.full" = "سمات كاملة";
 
-"home.hero.subtitle" = "معظم تطبيقات القراءة تحرك عينيك.\nFocusRead يحرك الكلمات.";
-"home.demo.sample" = "معظم القراءة تجعل عينيك تطاردان سطرًا بعد سطر.\n\nيبقي FocusRead الهدف ثابتًا. تصل الكلمات إلى الوسط، وتتنفس علامات الترقيم، ويجد انتباهك أماكن أقل ليتشتت.\n\nهذه تجربة قصيرة محلية داخل التطبيق. اضبط السرعة، وتوقف متى أردت، ولاحظ كيف تتغير القراءة عندما تتحرك الكلمات بدلًا من عينيك.";
-"home.hero.words" = "معظم|تطبيقات القراءة|تحرك|عينيك.|FocusRead|يحرك|الكلمات.";
-"home.comparison.words" = "حركة|عين أقل.|انتباه|أكثر.";
-"home.animatedDemo.accessibility" = "عرض كلمات FocusRead المتحرك";
-"home.seeShift" = "شاهد الفرق";
-"home.mode.normal" = "عادي";
-"home.mode.focusRead" = "FocusRead";
-"home.normalReading.description" = "تتحرك عيناك عبر كل سطر، ثم تعودان إلى البداية.";
-"home.readingGoal.prompt" = "لماذا تقرأ؟";
-"home.goal.study" = "دراسة";
-"home.goal.books" = "كتب";
-"home.goal.focus" = "تركيز";
-"home.goal.work" = "عمل";
-"home.goal.languages" = "لغات";
-"home.aiRecap.enabled.title" = "أنهِ جلسة. واحصل على ملخص واضح.";
-"home.aiRecap.unavailable.title" = "ستكون الملخصات جاهزة عندما يصبح الذكاء المحلي جاهزًا.";
-"home.aiRecap.enabled.status" = "ملخصات الذكاء الاصطناعي على الجهاز مفعلة.";
-"home.aiRecap.available.status" = "ملخصات الذكاء الاصطناعي متاحة ويمكن تفعيلها من الإعدادات.";
-"home.aiRecap.requires.status" = "يتطلب Apple Intelligence على الجهاز.";
-"home.recapFlow.read" = "اقرأ";
-"home.recapFlow.recap" = "ملخص";
-"home.recapFlow.keyIdeas" = "أفكار رئيسية";
-"home.readingSpace" = "مساحة القراءة";
-"home.themes" = "السمات";
-"home.tryFocusRead" = "جرّب FocusRead";
-"home.importBook" = "استيراد كتاب";
-"home.premiumPreview.title" = "معاينة Premium";
-"home.premiumPreview.message" = "لم يتم ربط Premium بعد. هذا الإجراء جاهز لمسار الاشتراك عند إضافة إعدادات المنتجات.";
-"home.premium.teaser" = "افتح ملخصات ذكاء اصطناعي غير محدودة، وأوضاع تركيز متقدمة، وميزات المكتبة الكاملة.";
-"home.viewPremium" = "عرض Premium";
+"onboarding.goal.study" = "دراسة";
+"onboarding.goal.books" = "كتب";
+"onboarding.goal.work" = "عمل";
+"onboarding.goal.languages" = "لغات";
 
 "import.title" = "استيراد";
 "import.close.accessibility" = "إغلاق الاستيراد";

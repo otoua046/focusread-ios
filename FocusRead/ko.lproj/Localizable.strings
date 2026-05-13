@@ -8,7 +8,6 @@
 "common.notSelected" = "선택되지 않음";
 "common.words" = "단어";
 
-"tab.home" = "홈";
 "tab.library" = "라이브러리";
 "tab.stats" = "내 통계";
 "tab.settings" = "설정";
@@ -103,37 +102,10 @@
 "theme.category.accent" = "강조 테마";
 "theme.category.full" = "전체 테마";
 
-"home.hero.subtitle" = "대부분의 읽기 앱은 눈을 움직입니다.\nFocusRead는 단어를 움직입니다.";
-"home.demo.sample" = "대부분의 읽기는 눈이 한 줄씩 따라가도록 요구합니다.\n\nFocusRead는 목표를 가만히 둡니다. 단어는 중앙에 도착하고, 문장부호는 숨을 쉬며, 주의가 흩어질 곳이 줄어듭니다.\n\n이 짧은 데모는 앱 안에서 로컬로 실행됩니다. 속도를 조절하고 언제든 멈추며, 눈 대신 단어가 움직일 때 읽기가 어떻게 달라지는지 느껴보세요.";
-"home.hero.words" = "대부분의|읽기 앱은|눈을|움직입니다.|FocusRead는|단어를|움직입니다.";
-"home.comparison.words" = "적은|눈 움직임.|더 많은|집중.";
-"home.animatedDemo.accessibility" = "FocusRead 단어 애니메이션 데모";
-"home.seeShift" = "변화 보기";
-"home.mode.normal" = "일반";
-"home.mode.focusRead" = "FocusRead";
-"home.normalReading.description" = "눈은 각 줄을 따라 이동한 뒤 다시 처음으로 돌아갑니다.";
-"home.readingGoal.prompt" = "무엇을 위해 읽나요?";
-"home.goal.study" = "공부";
-"home.goal.books" = "책";
-"home.goal.focus" = "집중";
-"home.goal.work" = "업무";
-"home.goal.languages" = "언어";
-"home.aiRecap.enabled.title" = "세션을 끝내고 명확한 요약을 받으세요.";
-"home.aiRecap.unavailable.title" = "로컬 AI가 준비되면 요약도 준비됩니다.";
-"home.aiRecap.enabled.status" = "기기 내 AI 요약이 활성화되어 있습니다.";
-"home.aiRecap.available.status" = "AI 요약을 사용할 수 있으며 설정에서 활성화할 수 있습니다.";
-"home.aiRecap.requires.status" = "기기 내 Apple Intelligence 지원이 필요합니다.";
-"home.recapFlow.read" = "읽기";
-"home.recapFlow.recap" = "요약";
-"home.recapFlow.keyIdeas" = "핵심 아이디어";
-"home.readingSpace" = "읽기 공간";
-"home.themes" = "테마";
-"home.tryFocusRead" = "FocusRead 사용해 보기";
-"home.importBook" = "책 가져오기";
-"home.premiumPreview.title" = "Premium 미리보기";
-"home.premiumPreview.message" = "Premium은 아직 연결되지 않았습니다. 제품 구성이 추가되면 이 동작을 구독 흐름에서 사용할 수 있습니다.";
-"home.premium.teaser" = "무제한 AI 요약, 고급 집중 모드, 전체 라이브러리 기능을 잠금 해제하세요.";
-"home.viewPremium" = "Premium 보기";
+"onboarding.goal.study" = "공부";
+"onboarding.goal.books" = "책";
+"onboarding.goal.work" = "업무";
+"onboarding.goal.languages" = "언어";
 
 "import.title" = "가져오기";
 "import.close.accessibility" = "가져오기 닫기";

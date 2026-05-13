@@ -8,7 +8,6 @@
 "common.notSelected" = "Not selected";
 "common.words" = "words";
 
-"tab.home" = "Home";
 "tab.library" = "Library";
 "tab.stats" = "My Stats";
 "tab.settings" = "Settings";
@@ -103,37 +102,10 @@
 "theme.category.accent" = "Accent Themes";
 "theme.category.full" = "Full Themes";
 
-"home.hero.subtitle" = "Most reading apps move your eyes.\nFocusRead moves the words.";
-"home.demo.sample" = "Most reading asks your eyes to chase line after line.\n\nFocusRead keeps the target still. Words arrive at the center, punctuation breathes, and your attention has fewer places to wander.\n\nThis short demo is local to the app. Adjust the pace, pause anytime, and feel how reading changes when the words move instead of your eyes.";
-"home.hero.words" = "Most|reading|apps|move|your|eyes.|FocusRead|moves|the|words.";
-"home.comparison.words" = "Less|eye|movement.|More|attention.";
-"home.animatedDemo.accessibility" = "Animated FocusRead word demo";
-"home.seeShift" = "See the shift";
-"home.mode.normal" = "Normal";
-"home.mode.focusRead" = "FocusRead";
-"home.normalReading.description" = "Your eyes travel across each line, then jump back to begin again.";
-"home.readingGoal.prompt" = "What are you reading for?";
-"home.goal.study" = "Study";
-"home.goal.books" = "Books";
-"home.goal.focus" = "Focus";
-"home.goal.work" = "Work";
-"home.goal.languages" = "Languages";
-"home.aiRecap.enabled.title" = "Finish a session. Get a clear recap.";
-"home.aiRecap.unavailable.title" = "Recaps are ready when local AI is.";
-"home.aiRecap.enabled.status" = "On-device AI recaps are enabled.";
-"home.aiRecap.available.status" = "AI Recaps are available and can be enabled in Settings.";
-"home.aiRecap.requires.status" = "Requires on-device Apple Intelligence support.";
-"home.recapFlow.read" = "Read";
-"home.recapFlow.recap" = "Recap";
-"home.recapFlow.keyIdeas" = "Key ideas";
-"home.readingSpace" = "Reading space";
-"home.themes" = "Themes";
-"home.tryFocusRead" = "Try FocusRead";
-"home.importBook" = "Import a Book";
-"home.premiumPreview.title" = "Premium Preview";
-"home.premiumPreview.message" = "Premium is not wired yet. This action is ready for the subscription flow when product configuration is added.";
-"home.premium.teaser" = "Unlock unlimited AI recaps, advanced focus modes, and full library features.";
-"home.viewPremium" = "View Premium";
+"onboarding.goal.study" = "Study";
+"onboarding.goal.books" = "Books";
+"onboarding.goal.work" = "Work";
+"onboarding.goal.languages" = "Languages";
 
 "import.title" = "Import";
 "import.close.accessibility" = "Close import";

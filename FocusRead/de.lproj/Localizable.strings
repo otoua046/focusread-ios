@@ -8,7 +8,6 @@
 "common.notSelected" = "Nicht ausgewählt";
 "common.words" = "Wörter";
 
-"tab.home" = "Start";
 "tab.library" = "Bibliothek";
 "tab.stats" = "Meine Statistik";
 "tab.settings" = "Einstellungen";
@@ -103,37 +102,10 @@
 "theme.category.accent" = "Akzent-Themes";
 "theme.category.full" = "Vollständige Themes";
 
-"home.hero.subtitle" = "Die meisten Lese-Apps bewegen deine Augen.\nFocusRead bewegt die Wörter.";
-"home.demo.sample" = "Beim normalen Lesen jagen deine Augen Zeile für Zeile.\n\nFocusRead hält das Ziel ruhig. Wörter erscheinen in der Mitte, Satzzeichen atmen, und deine Aufmerksamkeit hat weniger Orte, an die sie wandern kann.\n\nDiese kurze Demo läuft lokal in der App. Passe das Tempo an, pausiere jederzeit und spüre, wie Lesen sich verändert, wenn die Wörter sich bewegen statt deiner Augen.";
-"home.hero.words" = "Die meisten|Lese-Apps|bewegen|deine|Augen.|FocusRead|bewegt|die|Wörter.";
-"home.comparison.words" = "Weniger|Augenbewegung.|Mehr|Aufmerksamkeit.";
-"home.animatedDemo.accessibility" = "Animierte FocusRead-Wortdemo";
-"home.seeShift" = "Veränderung ansehen";
-"home.mode.normal" = "Normal";
-"home.mode.focusRead" = "FocusRead";
-"home.normalReading.description" = "Deine Augen wandern über jede Zeile und springen dann wieder an den Anfang.";
-"home.readingGoal.prompt" = "Wofür liest du?";
-"home.goal.study" = "Lernen";
-"home.goal.books" = "Bücher";
-"home.goal.focus" = "Fokus";
-"home.goal.work" = "Arbeit";
-"home.goal.languages" = "Sprachen";
-"home.aiRecap.enabled.title" = "Sitzung beenden. Klare Zusammenfassung erhalten.";
-"home.aiRecap.unavailable.title" = "Zusammenfassungen sind bereit, sobald lokale KI bereit ist.";
-"home.aiRecap.enabled.status" = "On-Device-KI-Zusammenfassungen sind aktiviert.";
-"home.aiRecap.available.status" = "KI-Zusammenfassungen sind verfügbar und können in Einstellungen aktiviert werden.";
-"home.aiRecap.requires.status" = "Erfordert Apple Intelligence auf dem Gerät.";
-"home.recapFlow.read" = "Lesen";
-"home.recapFlow.recap" = "Zusammenfassung";
-"home.recapFlow.keyIdeas" = "Kernideen";
-"home.readingSpace" = "Leseraum";
-"home.themes" = "Themes";
-"home.tryFocusRead" = "FocusRead testen";
-"home.importBook" = "Buch importieren";
-"home.premiumPreview.title" = "Premium-Vorschau";
-"home.premiumPreview.message" = "Premium ist noch nicht verbunden. Diese Aktion ist bereit für den Abo-Ablauf, sobald die Produktkonfiguration hinzugefügt wurde.";
-"home.premium.teaser" = "Schalte unbegrenzte KI-Zusammenfassungen, erweiterte Fokusmodi und alle Bibliotheksfunktionen frei.";
-"home.viewPremium" = "Premium ansehen";
+"onboarding.goal.study" = "Lernen";
+"onboarding.goal.books" = "Bücher";
+"onboarding.goal.work" = "Arbeit";
+"onboarding.goal.languages" = "Sprachen";
 
 "import.title" = "Importieren";
 "import.close.accessibility" = "Import schließen";
