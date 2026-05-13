@@ -310,7 +310,6 @@ struct OnboardingReadAnythingView: View {
         [
             OnboardingReadSource(title: L10n.string(.onboardingReadSourceEPUBTitle), detail: L10n.string(.onboardingReadSourceEPUBDetail), systemImage: "book.closed"),
             OnboardingReadSource(title: L10n.string(.onboardingReadSourcePDFTitle), detail: L10n.string(.onboardingReadSourcePDFDetail), systemImage: "doc.richtext"),
-            OnboardingReadSource(title: L10n.string(.onboardingReadSourcePasteTitle), detail: L10n.string(.onboardingReadSourcePasteDetail), systemImage: "doc.on.clipboard"),
             OnboardingReadSource(title: L10n.string(.onboardingReadSourcePhotoTitle), detail: L10n.string(.onboardingReadSourcePhotoDetail), systemImage: "camera.viewfinder"),
             OnboardingReadSource(title: L10n.string(.onboardingReadSourceBookPageTitle), detail: L10n.string(.onboardingReadSourceBookPageDetail), systemImage: "text.viewfinder"),
             OnboardingReadSource(title: L10n.string(.onboardingReadSourcePrintedNoteTitle), detail: L10n.string(.onboardingReadSourcePrintedNoteDetail), systemImage: "viewfinder.rectangular")
