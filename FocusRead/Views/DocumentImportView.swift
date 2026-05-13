@@ -75,13 +75,17 @@ struct DocumentImportView: View {
             }
 
             ScrollView {
-                Text(document.previewText)
-                    .font(.body)
-                    .foregroundStyle(AppTheme.primaryText)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-                    .padding(16)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(document.previewText)
+                        .font(.body)
+                        .foregroundStyle(AppTheme.primaryText)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
             }
+            .frame(maxWidth: .infinity)
             .frame(maxHeight: 320)
             .background(AppTheme.cardBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay {

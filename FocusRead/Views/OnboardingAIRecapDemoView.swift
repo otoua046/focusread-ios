@@ -9,16 +9,16 @@ struct OnboardingAIRecapDemoView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(spa-cing: 24) {
+                VStack(spacing: 24) {
                     VStack(spacing: 8) {
-                        Text("Pick up where you left off.")
+                        Text(.onboardingAIRecapTitle)
                             .font(.system(.largeTitle, design: .serif, weight: .semibold))
                             .foregroundStyle(AppTheme.primaryText)
                             .multilineTextAlignment(.center)
                             .lineLimit(3)
                             .minimumScaleFactor(0.72)
 
-                        Text("FocusRead can turn a session into a short AI recap before your next read.")
+                        Text(.onboardingAIRecapSubtitle)
                             .font(.body.weight(.medium))
                             .foregroundStyle(AppTheme.secondaryText)
                             .multilineTextAlignment(.center)
@@ -28,7 +28,7 @@ struct OnboardingAIRecapDemoView: View {
 
                     VStack(spacing: 16) {
                         demoBlock(
-                            title: "Yesterday's session",
+                            title: L10n.string(.onboardingAIRecapYesterdaySession),
                             systemImage: "clock.arrow.circlepath",
                             isVisible: revealLevel >= 0
                         ) {
@@ -48,7 +48,7 @@ struct OnboardingAIRecapDemoView: View {
 
                         if revealLevel >= 1 {
                             demoBlock(
-                                title: "Before you continue",
+                                title: L10n.string(.onboardingAIRecapBeforeContinue),
                                 systemImage: "sparkles",
                                 isVisible: true
                             ) {
@@ -62,9 +62,9 @@ struct OnboardingAIRecapDemoView: View {
                                         .overlay(AppTheme.border.opacity(0.75))
 
                                     VStack(alignment: .leading, spacing: 10) {
-                                        recapIdea("What you covered", "Eye travel adds effort across long pages.")
-                                        recapIdea("What matters next", "A fixed focal point keeps momentum steady.")
-                                        recapIdea("Where to continue", "Start from the next section without rereading.")
+                                        recapIdea(L10n.string(.onboardingAIRecapIdeaCoveredTitle), L10n.string(.onboardingAIRecapIdeaCoveredDetail))
+                                        recapIdea(L10n.string(.onboardingAIRecapIdeaNextTitle), L10n.string(.onboardingAIRecapIdeaNextDetail))
+                                        recapIdea(L10n.string(.onboardingAIRecapIdeaContinueTitle), L10n.string(.onboardingAIRecapIdeaContinueDetail))
                                     }
                                 }
                             }
@@ -73,7 +73,7 @@ struct OnboardingAIRecapDemoView: View {
 
                         if revealLevel >= 2 {
                             demoBlock(
-                                title: "Reading continuity",
+                                title: L10n.string(.onboardingAIRecapContinuity),
                                 systemImage: "bookmark",
                                 isVisible: true
                             ) {
@@ -89,12 +89,12 @@ struct OnboardingAIRecapDemoView: View {
                                             .fixedSize(horizontal: false, vertical: true)
                                     }
 
-                                    Text("Useful across long PDFs, EPUBs, research papers, study material, and work documents.")
+                                    Text(.onboardingAIRecapUseful)
                                         .font(.footnote.weight(.medium))
                                         .foregroundStyle(AppTheme.secondaryText)
                                         .fixedSize(horizontal: false, vertical: true)
 
-                                    Text("On supported devices, recap data never leaves your phone.")
+                                    Text(.onboardingAIRecapPrivacy)
                                         .font(.footnote.weight(.semibold))
                                         .foregroundStyle(AppTheme.secondaryText)
                                         .fixedSize(horizontal: false, vertical: true)
@@ -141,9 +141,9 @@ struct OnboardingAIRecapDemoView: View {
 
     private var aiAvailabilityText: String {
         if aiRecapCapabilityService.isAvailable {
-            return "On-device AI recaps are available on this device."
+            return L10n.string(.onboardingAIRecapAvailable)
         } else {
-            return "AI recaps are available on supported devices."
+            return L10n.string(.onboardingAIRecapSupported)
         }
     }
 

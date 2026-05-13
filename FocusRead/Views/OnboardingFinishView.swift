@@ -18,7 +18,7 @@ struct OnboardingFinishView: View {
                             .foregroundStyle(AppTheme.accent)
                     }
 
-                    Text("You're ready to read.")
+                    Text(.onboardingFinishTitle)
                         .font(.system(.largeTitle, design: .serif, weight: .semibold))
                         .foregroundStyle(AppTheme.primaryText)
                         .multilineTextAlignment(.center)
@@ -30,7 +30,7 @@ struct OnboardingFinishView: View {
                     Button {
                         onComplete(.trySampleText)
                     } label: {
-                        Label("Try Sample Text", systemImage: "play.circle")
+                        Label(.onboardingTrySampleText, systemImage: "play.circle")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(OnboardingPrimaryActionButtonStyle())
@@ -38,12 +38,12 @@ struct OnboardingFinishView: View {
                     Button {
                         onComplete(.importBook)
                     } label: {
-                        Label("Import a Book", systemImage: "square.and.arrow.down")
+                        Label(.onboardingImportBook, systemImage: "square.and.arrow.down")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(OnboardingSecondaryActionButtonStyle())
 
-                    Button(mode == .replay ? "Back to Settings" : "Go to Library") {
+                    Button(mode == .replay ? L10n.string(.onboardingBackToSettings) : L10n.string(.onboardingGoToLibrary)) {
                         onComplete(.showLibrary)
                     }
                     .font(.subheadline.weight(.semibold))

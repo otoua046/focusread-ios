@@ -43,7 +43,7 @@ struct FocusReadOnboardingView: View {
         }
         .onChange(of: canContinueFromRSVP) { _, canContinue in
             guard canContinue else { return }
-            UIAccessibility.post(notification: .announcement, argument: "Demo complete. Continue is available.")
+            UIAccessibility.post(notification: .announcement, argument: L10n.string(.onboardingDemoCompleteAnnouncement))
         }
     }
 
@@ -59,7 +59,7 @@ struct FocusReadOnboardingView: View {
                         .background(AppTheme.controlBackground, in: Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Back")
+                .accessibilityLabel(L10n.string(.onboardingBack))
             } else {
                 Color.clear
                     .frame(width: 44, height: 44)
@@ -67,7 +67,7 @@ struct FocusReadOnboardingView: View {
 
             progressView
 
-            Button(mode == .replay ? "Close" : "Skip") {
+            Button(mode == .replay ? L10n.string(.onboardingClose) : L10n.string(.onboardingSkip)) {
                 onComplete(.showLibrary)
             }
             .font(.subheadline.weight(.medium))
@@ -75,7 +75,7 @@ struct FocusReadOnboardingView: View {
             .buttonStyle(.plain)
             .frame(width: 60, height: 44, alignment: .trailing)
             .contentShape(Rectangle())
-            .accessibilityLabel(mode == .replay ? "Close onboarding" : "Skip onboarding")
+            .accessibilityLabel(mode == .replay ? L10n.string(.onboardingCloseAccessibility) : L10n.string(.onboardingSkipAccessibility))
         }
         .padding(.horizontal, 18)
         .padding(.top, 8)
@@ -93,7 +93,7 @@ struct FocusReadOnboardingView: View {
         }
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Onboarding step \(step.progressIndex) of \(FocusReadOnboardingStep.allCases.count)")
+        .accessibilityLabel(L10n.format(.onboardingStepProgressFormat, step.progressIndex, FocusReadOnboardingStep.allCases.count))
     }
 
     @ViewBuilder
@@ -144,7 +144,7 @@ struct FocusReadOnboardingView: View {
 
             VStack(spacing: 4) {
                 if step == .rsvpDemo && !canContinueFromRSVP {
-                    Text("Play a few words to continue.")
+                    Text(.onboardingPlayWordsToContinue)
                         .font(.caption.weight(.medium))
                         .foregroundStyle(AppTheme.secondaryText)
                 }
@@ -163,11 +163,11 @@ struct FocusReadOnboardingView: View {
     private var primaryButtonTitle: String {
         switch step {
         case .promise:
-            return "Start Demo"
+            return L10n.string(.onboardingStartDemo)
         case .comparison:
-            return "I get it"
+            return L10n.string(.onboardingIGetIt)
         case .wpmSetup, .readingGoal, .theme, .readAnything, .aiRecap, .rsvpDemo:
-            return "Continue"
+            return L10n.string(.onboardingContinue)
         case .finish:
             return ""
         }
@@ -186,10 +186,10 @@ struct FocusReadOnboardingView: View {
 
     private var continueAccessibilityHint: String {
         if step == .rsvpDemo && !canContinueFromRSVP {
-            return "Play a few demo words first."
+            return L10n.string(.onboardingPlayDemoFirstHint)
         }
         if step == .readingGoal && pendingReadingGoals.isEmpty {
-            return "Choose at least one reading type."
+            return L10n.string(.onboardingChooseReadingTypeHint)
         }
         return ""
     }
@@ -306,19 +306,21 @@ struct OnboardingReadAnythingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var highlightedIndex = 0
 
-    private let sources = [
-        OnboardingReadSource(title: "EPUB", detail: "Books", systemImage: "book.closed"),
-        OnboardingReadSource(title: "PDF", detail: "Documents", systemImage: "doc.richtext"),
-        OnboardingReadSource(title: "Paste", detail: "Text", systemImage: "doc.on.clipboard"),
-        OnboardingReadSource(title: "Photo", detail: "OCR", systemImage: "camera.viewfinder"),
-        OnboardingReadSource(title: "Book page", detail: "Scan", systemImage: "text.viewfinder"),
-        OnboardingReadSource(title: "Printed note", detail: "Capture", systemImage: "viewfinder.rectangular")
-    ]
+    private var sources: [OnboardingReadSource] {
+        [
+            OnboardingReadSource(title: L10n.string(.onboardingReadSourceEPUBTitle), detail: L10n.string(.onboardingReadSourceEPUBDetail), systemImage: "book.closed"),
+            OnboardingReadSource(title: L10n.string(.onboardingReadSourcePDFTitle), detail: L10n.string(.onboardingReadSourcePDFDetail), systemImage: "doc.richtext"),
+            OnboardingReadSource(title: L10n.string(.onboardingReadSourcePasteTitle), detail: L10n.string(.onboardingReadSourcePasteDetail), systemImage: "doc.on.clipboard"),
+            OnboardingReadSource(title: L10n.string(.onboardingReadSourcePhotoTitle), detail: L10n.string(.onboardingReadSourcePhotoDetail), systemImage: "camera.viewfinder"),
+            OnboardingReadSource(title: L10n.string(.onboardingReadSourceBookPageTitle), detail: L10n.string(.onboardingReadSourceBookPageDetail), systemImage: "text.viewfinder"),
+            OnboardingReadSource(title: L10n.string(.onboardingReadSourcePrintedNoteTitle), detail: L10n.string(.onboardingReadSourcePrintedNoteDetail), systemImage: "viewfinder.rectangular")
+        ]
+    }
 
     var body: some View {
         OnboardingStepShell(
-            title: "Read almost anything.",
-            subtitle: "Bring books, documents, pasted text, and printed words into focus."
+            title: L10n.string(.onboardingReadAnythingTitle),
+            subtitle: L10n.string(.onboardingReadAnythingSubtitle)
         ) {
             VStack(spacing: 18) {
                 LazyVGrid(
@@ -336,15 +338,15 @@ struct OnboardingReadAnythingView: View {
                 VStack(spacing: 10) {
                     OnboardingReadCapabilityRow(
                         systemImage: "wand.and.stars",
-                        text: "Imported text can be cleaned up when supported."
+                        text: L10n.string(.onboardingReadCapabilityCleanup)
                     )
                     OnboardingReadCapabilityRow(
                         systemImage: "text.viewfinder",
-                        text: "Photos and scans can become readable text through OCR."
+                        text: L10n.string(.onboardingReadCapabilityOCR)
                     )
                     OnboardingReadCapabilityRow(
                         systemImage: "play.rectangle.on.rectangle",
-                        text: "EPUBs and PDFs can become focused reading sessions."
+                        text: L10n.string(.onboardingReadCapabilitySessions)
                     )
                 }
                 .padding(16)

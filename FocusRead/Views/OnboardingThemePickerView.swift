@@ -18,8 +18,8 @@ struct OnboardingThemePickerView: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "Pick a reading feel.",
-            subtitle: "Theme changes apply instantly."
+            title: L10n.string(.onboardingThemeTitle),
+            subtitle: L10n.string(.onboardingThemeSubtitle)
         ) {
             VStack(spacing: 18) {
                 OnboardingThemeLivePreview(theme: themeManager.selectedTheme, colorScheme: colorScheme)
@@ -147,6 +147,6 @@ private struct OnboardingThemeTile: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(theme.name)
-        .accessibilityValue(isSelected ? "Selected" : "")
+        .accessibilityValue(isSelected ? L10n.string(.commonSelected) : "")
     }
 }

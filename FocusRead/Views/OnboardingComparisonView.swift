@@ -6,7 +6,9 @@ struct OnboardingComparisonView: View {
         case focusRead
 
         var id: String { rawValue }
-        var title: String { self == .normal ? "Normal" : "FocusRead" }
+        var title: String {
+            self == .normal ? L10n.string(.onboardingComparisonNormal) : L10n.string(.onboardingComparisonFocusRead)
+        }
     }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -15,15 +17,15 @@ struct OnboardingComparisonView: View {
     @State private var focusWordIndex = 0
     @State private var userSelectedMode = false
 
-    private let words = FocusReadOnboardingSample.passageWords
+    private var words: [String] { FocusReadOnboardingSample.passageWords }
 
     var body: some View {
         OnboardingStepShell(
-            title: "See the shift.",
-            subtitle: "Same words. Less scanning."
+            title: L10n.string(.onboardingComparisonTitle),
+            subtitle: L10n.string(.onboardingComparisonSubtitle)
         ) {
             VStack(spacing: 20) {
-                Picker("Reading mode", selection: modeBinding) {
+                Picker(L10n.string(.onboardingComparisonMode), selection: modeBinding) {
                     ForEach(Mode.allCases) { item in
                         Text(item.title).tag(item)
                     }
@@ -121,7 +123,7 @@ struct OnboardingComparisonView: View {
             .padding(.horizontal, 22)
             .padding(.vertical, 4)
         }
-        .accessibilityLabel("Normal reading highlights words across multiple lines")
+        .accessibilityLabel(L10n.string(.onboardingComparisonNormalAccessibility))
     }
 
     private var focusReadingView: some View {
@@ -144,7 +146,7 @@ struct OnboardingComparisonView: View {
             .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.94)))
             .padding(.horizontal, 24)
         }
-        .accessibilityLabel("FocusRead mode shows one centered word at a time")
+        .accessibilityLabel(L10n.string(.onboardingComparisonFocusReadAccessibility))
     }
 
     private var normalLines: [[OnboardingNormalWord]] {

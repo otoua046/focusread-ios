@@ -69,7 +69,7 @@ enum FocusReadReadingGoal: String, CaseIterable, Identifiable {
         case .work:
             return L10n.string(.onboardingGoalWork)
         case .research:
-            return "Research"
+            return L10n.string(.onboardingGoalResearch)
         case .languages:
             return L10n.string(.onboardingGoalLanguages)
         }
@@ -92,23 +92,31 @@ enum FocusReadReadingGoal: String, CaseIterable, Identifiable {
 }
 
 enum FocusReadOnboardingSample {
-    static let title = "FocusRead Sample"
+    static var title: String {
+        L10n.string(.onboardingSampleTitle)
+    }
 
-    static let passage = """
-    Reading is easiest when attention has a place to land. On a busy page, your eyes keep crossing each line, remembering where the last thought ended, and finding the next one. FocusRead turns that same passage into a steady stream of centered words, helping you keep momentum and return later without rereading everything.
-    """
+    static var passage: String {
+        L10n.string(.onboardingSamplePassage)
+    }
 
-    static let shortPassage = "Reading is easiest when attention has a place to land."
+    static var shortPassage: String {
+        L10n.string(.onboardingSampleShortPassage)
+    }
 
-    static let comparisonPassage = passage
+    static var comparisonPassage: String { passage }
 
-    static let recap = "The passage explains how normal reading makes your eyes cross each line while holding context in memory. FocusRead keeps words centered, helping attention stay steady and making it easier to return later without rereading."
+    static var recap: String {
+        L10n.string(.onboardingSampleRecap)
+    }
 
-    static let keyIdeas = [
-        "Eye movement adds effort on busy pages",
-        "Centered words give attention a steady place",
-        "Recaps help restore context before continuing"
-    ]
+    static var keyIdeas: [String] {
+        [
+            L10n.string(.onboardingSampleKeyIdea1),
+            L10n.string(.onboardingSampleKeyIdea2),
+            L10n.string(.onboardingSampleKeyIdea3)
+        ]
+    }
 
     static var passageWords: [String] {
         passage

@@ -182,7 +182,7 @@ enum SavedReadMapper {
         let firstLine = text
             .components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty } ?? "Pasted Text"
+            .first { !$0.isEmpty } ?? L10n.string(.readerPastedText)
         return String(firstLine.prefix(64))
     }
 

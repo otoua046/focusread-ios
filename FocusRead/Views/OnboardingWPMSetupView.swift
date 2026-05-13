@@ -11,10 +11,10 @@ struct OnboardingWPMSetupView: View {
 
         var title: String {
             switch self {
-            case .comfortable: return "Comfortable"
-            case .balanced: return "Balanced"
-            case .fast: return "Fast"
-            case .custom: return "Custom"
+            case .comfortable: return L10n.string(.onboardingWPMComfortable)
+            case .balanced: return L10n.string(.onboardingWPMBalanced)
+            case .fast: return L10n.string(.onboardingWPMFast)
+            case .custom: return L10n.string(.onboardingWPMCustom)
             }
         }
 
@@ -33,12 +33,12 @@ struct OnboardingWPMSetupView: View {
     @State private var selectedPreset: PacePreset = .balanced
     @State private var previewWordIndex = 0
 
-    private let previewWords = FocusReadOnboardingSample.passageWords
+    private var previewWords: [String] { FocusReadOnboardingSample.passageWords }
 
     var body: some View {
         OnboardingStepShell(
-            title: "Choose your starting pace.",
-            subtitle: "\(selectedWPM) words per minute"
+            title: L10n.string(.onboardingWPMTitle),
+            subtitle: L10n.format(.onboardingWPMSubtitleFormat, selectedWPM)
         ) {
             VStack(spacing: 22) {
                 livePreview
@@ -57,7 +57,7 @@ struct OnboardingWPMSetupView: View {
                                     .foregroundStyle(selectedPreset == preset ? AppTheme.primaryButtonForeground : AppTheme.primaryText)
 
                                 if let value = preset.value {
-                                    Text("\(value) WPM")
+                                    Text(L10n.format(.readerWPMBadgeFormat, value))
                                         .font(.caption.monospacedDigit().weight(.medium))
                                         .foregroundStyle(selectedPreset == preset ? AppTheme.primaryButtonForeground.opacity(0.78) : AppTheme.secondaryText)
                                 } else {
@@ -77,13 +77,13 @@ struct OnboardingWPMSetupView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .accessibilityValue(selectedPreset == preset ? "Selected" : "")
+                        .accessibilityValue(selectedPreset == preset ? L10n.string(.commonSelected) : "")
                     }
                 }
 
                 VStack(spacing: 14) {
                     HStack {
-                        Text("Pace")
+                        Text(.onboardingWPMPace)
                             .font(.headline.weight(.semibold))
                             .foregroundStyle(AppTheme.primaryText)
 
@@ -96,7 +96,7 @@ struct OnboardingWPMSetupView: View {
 
                     Slider(value: selectedWPMBinding, in: 100...1_200, step: 25)
                         .tint(AppTheme.accent)
-                        .accessibilityLabel("Default words per minute")
+                        .accessibilityLabel(L10n.string(.onboardingWPMDefaultAccessibility))
                 }
                 .padding(18)
                 .background(AppTheme.cardBackground.opacity(0.9), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
@@ -117,6 +117,7 @@ struct OnboardingWPMSetupView: View {
             }
 
             while !Task.isCancelled {
+                guard !previewWords.isEmpty else { return }
                 let delay = max(60.0 / Double(max(selectedWPM, 1)), 0.08)
                 try? await Task.sleep(for: .seconds(delay))
                 guard !Task.isCancelled else { return }
@@ -140,12 +141,12 @@ struct OnboardingWPMSetupView: View {
 
             HStack(spacing: 16) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Preview")
+                    Text(.onboardingWPMPreview)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(AppTheme.tertiaryText)
                         .textCase(.uppercase)
 
-                    Text("\(selectedWPM) WPM")
+                    Text(L10n.format(.readerWPMBadgeFormat, selectedWPM))
                         .font(.subheadline.monospacedDigit().weight(.semibold))
                         .foregroundStyle(AppTheme.secondaryText)
                 }
@@ -153,14 +154,14 @@ struct OnboardingWPMSetupView: View {
                 Spacer(minLength: 12)
 
                 OnboardingORPWordView(
-                    word: previewWords[previewWordIndex % previewWords.count],
+                    word: previewWord,
                     fontSize: 34,
                     usesAnchorLetter: true
                 )
                 .id(previewWordIndex)
                 .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.94)))
                 .frame(maxWidth: 190)
-                .accessibilityLabel("Preview word \(previewWords[previewWordIndex % previewWords.count])")
+                .accessibilityLabel(L10n.format(.onboardingWPMPreviewWordAccessibilityFormat, previewWord))
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 16)
@@ -176,6 +177,11 @@ struct OnboardingWPMSetupView: View {
                 selectedPreset = preset(matching: selectedWPM)
             }
         )
+    }
+
+    private var previewWord: String {
+        guard !previewWords.isEmpty else { return "FocusRead" }
+        return previewWords[previewWordIndex % previewWords.count]
     }
 
     private func select(_ preset: PacePreset) {

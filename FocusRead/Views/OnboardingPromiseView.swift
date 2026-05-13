@@ -4,17 +4,21 @@ struct OnboardingPromiseView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var wordIndex = 0
 
-    private let words = ["Read", "3x", "faster", "with", "less", "eye", "movement"]
+    private var words: [String] {
+        L10n.string(.onboardingPromiseWords)
+            .split(separator: "|")
+            .map(String.init)
+    }
 
     var body: some View {
         OnboardingCenteredStep {
             VStack(spacing: 26) {
                 VStack(spacing: 16) {
                     (
-                        Text("Read ")
-                        + Text("3x faster")
+                        Text(L10n.string(.onboardingPromisePrefix))
+                        + Text(L10n.string(.onboardingPromiseHighlight))
                             .foregroundStyle(AppTheme.accent)
-                        + Text("\n with less eye\nmovement.")
+                        + Text(L10n.string(.onboardingPromiseSuffix))
                     )
                     .font(.system(.largeTitle, design: .serif, weight: .semibold))
                     .foregroundStyle(AppTheme.primaryText)
@@ -22,7 +26,7 @@ struct OnboardingPromiseView: View {
                     .minimumScaleFactor(0.74)
                     .lineLimit(4)
 
-                    Text("Feel the difference in a quick demo.")
+                    Text(.onboardingPromiseSubtitle)
                         .font(.title3.weight(.medium))
                         .foregroundStyle(AppTheme.secondaryText)
                         .multilineTextAlignment(.center)
@@ -52,7 +56,7 @@ struct OnboardingPromiseView: View {
                 .frame(maxWidth: 430)
                 .shadow(color: AppTheme.subtleShadow, radius: 18, x: 0, y: 10)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("Animated FocusRead word preview")
+                .accessibilityLabel(L10n.string(.onboardingPromisePreviewAccessibility))
             }
         }
         .task(id: reduceMotion) {

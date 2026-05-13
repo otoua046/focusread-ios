@@ -46,7 +46,7 @@ struct OCRTextExtractor: DocumentTextExtractor {
             try Task.checkCancellation()
 
             await progress(DocumentImportProgress(
-                message: "Recognizing scanned PDF text...",
+                message: L10n.string(.importProgressRecognizingScannedPDFText),
                 completedUnitCount: pageIndex,
                 totalUnitCount: pageCount
             ))
@@ -70,7 +70,7 @@ struct OCRTextExtractor: DocumentTextExtractor {
         }
 
         await progress(DocumentImportProgress(
-            message: "Recognizing scanned PDF text...",
+            message: L10n.string(.importProgressRecognizingScannedPDFText),
             completedUnitCount: pageCount,
             totalUnitCount: pageCount
         ))
@@ -114,10 +114,10 @@ struct OCRTextExtractor: DocumentTextExtractor {
             try Task.checkCancellation()
 
             await progress(DocumentImportProgress(
-                message: "Recognizing text...",
+                message: L10n.string(.importProgressRecognizingText),
                 completedUnitCount: imageIndex,
                 totalUnitCount: images.count,
-                unitName: "images"
+                unitName: L10n.string(.importUnitImages)
             ))
 
             let lines = try recognizeText(in: image.cgImage, orientation: image.orientation)
@@ -134,10 +134,10 @@ struct OCRTextExtractor: DocumentTextExtractor {
         }
 
         await progress(DocumentImportProgress(
-            message: "Recognizing text...",
+            message: L10n.string(.importProgressRecognizingText),
             completedUnitCount: images.count,
             totalUnitCount: images.count,
-            unitName: "images"
+            unitName: L10n.string(.importUnitImages)
         ))
 
         let text = sections.map(\.text).joined(separator: "\n\n").focusReadNormalizedDocumentText

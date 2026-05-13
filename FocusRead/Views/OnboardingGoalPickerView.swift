@@ -6,7 +6,7 @@ struct OnboardingGoalPickerView: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "Choose what you read most.",
+            title: L10n.string(.onboardingGoalTitle),
             subtitle: nil
         ) {
             LazyVGrid(
@@ -55,7 +55,7 @@ struct OnboardingGoalPickerView: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityValue(selectedGoals.contains(goal) ? "Selected" : "Not selected")
+                    .accessibilityValue(selectedGoals.contains(goal) ? L10n.string(.commonSelected) : L10n.string(.commonNotSelected))
                 }
             }
         }

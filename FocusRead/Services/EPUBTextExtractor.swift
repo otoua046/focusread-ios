@@ -8,7 +8,7 @@ struct EPUBTextExtractor: DocumentTextExtractor {
         progress: @escaping DocumentImportProgressHandler
     ) async throws -> ImportedDocument {
         await progress(DocumentImportProgress(
-            message: "Opening EPUB...",
+            message: L10n.string(.importProgressOpeningEPUB),
             completedUnitCount: nil,
             totalUnitCount: nil
         ))
@@ -36,7 +36,7 @@ struct EPUBTextExtractor: DocumentTextExtractor {
             for (index, item) in spineItems.enumerated() {
                 try Task.checkCancellation()
                 await progress(DocumentImportProgress(
-                    message: "Extracting EPUB section \(index + 1) of \(spineItems.count)...",
+                    message: L10n.format(.importProgressExtractingEPUBSectionFormat, index + 1, spineItems.count),
                     completedUnitCount: nil,
                     totalUnitCount: nil
                 ))

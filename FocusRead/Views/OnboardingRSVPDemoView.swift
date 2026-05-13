@@ -6,7 +6,8 @@ struct OnboardingRSVPDemoView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(ReaderBehaviorSettingsKey.anchorLetterEnabled) private var anchorLetterEnabled = true
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
-    @State private var tokens: [ReadingToken] = TextTokenizer().tokenize(FocusReadOnboardingSample.passage)
+    @AppStorage(AppLanguageStorageKey.selectedLanguage) private var selectedLanguageRawValue: String = AppLanguage.systemDefault.rawValue
+    @State private var tokens: [ReadingToken] = []
     @State private var currentIndex = 0
     @State private var wordsPerMinute: Int?
     @State private var isPlaying = false
@@ -14,8 +15,8 @@ struct OnboardingRSVPDemoView: View {
 
     var body: some View {
         OnboardingStepShell(
-            title: "Try the reader.",
-            subtitle: "Press play and let the words come to you."
+            title: L10n.string(.onboardingRSVPTitle),
+            subtitle: L10n.string(.onboardingRSVPSubtitle)
         ) {
             VStack(spacing: 24) {
                 readerStage
@@ -32,23 +33,23 @@ struct OnboardingRSVPDemoView: View {
                                 .background(AppTheme.primaryButtonBackground, in: Circle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(isPlaying ? "Pause demo" : "Play demo")
+                        .accessibilityLabel(isPlaying ? L10n.string(.onboardingRSVPPause) : L10n.string(.onboardingRSVPPlay))
 
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("\(currentWPM) WPM")
+                            Text(L10n.format(.readerWPMBadgeFormat, currentWPM))
                                 .font(.headline.monospacedDigit())
                                 .foregroundStyle(AppTheme.primaryText)
 
                             Slider(value: wpmBinding, in: 180...650, step: 25)
                                 .tint(AppTheme.accent)
-                                .accessibilityLabel("Demo speed")
+                                .accessibilityLabel(L10n.string(.onboardingRSVPSpeed))
                         }
                     }
 
                     ProgressView(value: progress)
                         .tint(AppTheme.progressIndicator)
                         .animation(reduceMotion ? .easeInOut(duration: 0.12) : .smooth(duration: 0.24), value: progress)
-                        .accessibilityLabel("Demo progress")
+                        .accessibilityLabel(L10n.string(.onboardingRSVPProgress))
                 }
                 .padding(16)
                 .background(AppTheme.controlBackground.opacity(0.86), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -78,6 +79,10 @@ struct OnboardingRSVPDemoView: View {
         .onDisappear {
             isPlaying = false
         }
+        .onAppear(perform: refreshTokens)
+        .onChange(of: selectedLanguageRawValue) { _, _ in
+            refreshTokens()
+        }
     }
 
     private var readerStage: some View {
@@ -106,7 +111,7 @@ struct OnboardingRSVPDemoView: View {
         }
         .frame(height: 238)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("RSVP reader demo")
+        .accessibilityLabel(L10n.string(.onboardingRSVPDemoAccessibility))
         .accessibilityValue(accessibilityStageValue)
     }
 
@@ -130,7 +135,7 @@ struct OnboardingRSVPDemoView: View {
 
     private var accessibilityStageValue: String {
         let word = currentWordText ?? ""
-        return "\(word), word \(currentIndex + 1) of \(tokens.count)"
+        return L10n.format(.onboardingRSVPStageValueFormat, word, currentIndex + 1, tokens.count)
     }
 
     private var wpmBinding: Binding<Double> {
@@ -157,6 +162,11 @@ struct OnboardingRSVPDemoView: View {
         } else {
             currentIndex += 1
         }
+    }
+
+    private func refreshTokens() {
+        tokens = TextTokenizer().tokenize(FocusReadOnboardingSample.passage)
+        currentIndex = min(currentIndex, max(tokens.count - 1, 0))
     }
 }
 
