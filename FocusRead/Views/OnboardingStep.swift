@@ -42,6 +42,7 @@ enum FocusReadOnboardingSettingsKey {
     static let hasCompletedOnboarding = "focusread.onboarding.hasCompletedOnboarding"
     static let selectedReadingGoal = "home.selectedReadingGoal"
     static let selectedReadingGoals = "home.selectedReadingGoals"
+    static let selectedReadingInterests = "home.selectedReadingInterests"
 }
 
 enum FocusReadOnboardingMigration {
@@ -126,6 +127,66 @@ enum FocusReadReadingGoal: String, CaseIterable, Identifiable {
             return "doc.text.magnifyingglass"
         case .languages:
             return "character.book.closed"
+        }
+    }
+}
+
+enum FocusReadReadingInterest: String, CaseIterable, Identifiable, Sendable {
+    case classics
+    case fiction
+    case philosophy
+    case selfImprovement
+    case shortReads
+    case science
+    case history
+    case poetry
+    case business
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .classics:
+            return "Classics"
+        case .fiction:
+            return "Fiction"
+        case .philosophy:
+            return "Philosophy"
+        case .selfImprovement:
+            return "Self-Improvement"
+        case .shortReads:
+            return "Short Reads"
+        case .science:
+            return "Science"
+        case .history:
+            return "History"
+        case .poetry:
+            return "Poetry"
+        case .business:
+            return "Business"
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .classics:
+            return "building.columns"
+        case .fiction:
+            return "text.book.closed"
+        case .philosophy:
+            return "brain.head.profile"
+        case .selfImprovement:
+            return "sparkles"
+        case .shortReads:
+            return "timer"
+        case .science:
+            return "atom"
+        case .history:
+            return "scroll"
+        case .poetry:
+            return "quote.opening"
+        case .business:
+            return "chart.line.uptrend.xyaxis"
         }
     }
 }

@@ -10,10 +10,12 @@ struct FocusReadOnboardingView: View {
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var savedDefaultWPM: Int = ReadingSession.defaultWPM
     @AppStorage(FocusReadOnboardingSettingsKey.selectedReadingGoal) private var selectedGoalRawValue = FocusReadReadingGoal.research.rawValue
     @AppStorage(FocusReadOnboardingSettingsKey.selectedReadingGoals) private var selectedGoalsRawValue = ""
+    @AppStorage(FocusReadOnboardingSettingsKey.selectedReadingInterests) private var selectedInterestsRawValue = ""
     @State private var step: FocusReadOnboardingStep = .promise
     @State private var canContinueFromRSVP = false
     @State private var pendingDefaultWPM = ReadingSession.defaultWPM
     @State private var pendingReadingGoals: Set<FocusReadReadingGoal> = [.research]
+    @State private var pendingReadingInterests: Set<FocusReadReadingInterest> = []
 
     var body: some View {
         GeometryReader { proxy in
@@ -40,6 +42,7 @@ struct FocusReadOnboardingView: View {
         .onAppear {
             pendingDefaultWPM = savedDefaultWPM
             pendingReadingGoals = loadedReadingGoals()
+            pendingReadingInterests = loadedReadingInterests()
         }
         .onChange(of: canContinueFromRSVP) { _, canContinue in
             guard canContinue else { return }
@@ -111,7 +114,10 @@ struct FocusReadOnboardingView: View {
             OnboardingWPMSetupView(selectedWPM: $pendingDefaultWPM)
                 .padding(.horizontal, 18)
         case .readingGoal:
-            OnboardingGoalPickerView(selectedGoals: $pendingReadingGoals)
+            OnboardingGoalPickerView(
+                selectedGoals: $pendingReadingGoals,
+                selectedInterests: $pendingReadingInterests
+            )
                 .padding(.horizontal, 18)
         case .theme:
             OnboardingThemePickerView()
@@ -227,6 +233,8 @@ struct FocusReadOnboardingView: View {
             guard !orderedGoals.isEmpty else { return }
             selectedGoalsRawValue = orderedGoals.map(\.rawValue).joined(separator: ",")
             selectedGoalRawValue = orderedGoals.first?.rawValue ?? selectedGoalRawValue
+            let orderedInterests = FocusReadReadingInterest.allCases.filter { pendingReadingInterests.contains($0) }
+            selectedInterestsRawValue = orderedInterests.map(\.rawValue).joined(separator: ",")
         default:
             break
         }
@@ -242,6 +250,13 @@ struct FocusReadOnboardingView: View {
         }
 
         return [FocusReadReadingGoal(savedRawValue: selectedGoalRawValue)]
+    }
+
+    private func loadedReadingInterests() -> Set<FocusReadReadingInterest> {
+        let interests = selectedInterestsRawValue
+            .split(separator: ",")
+            .compactMap { FocusReadReadingInterest(rawValue: String($0)) }
+        return Set(interests)
     }
 }
 

@@ -2,12 +2,15 @@ import SwiftUI
 
 struct RootView: View {
     private enum MainTab: Hashable, CaseIterable {
+        case discover
         case library
         case stats
         case settings
 
         var titleKey: L10n.Key {
             switch self {
+            case .discover:
+                return .tabDiscover
             case .library:
                 return .tabLibrary
             case .stats:
@@ -19,6 +22,8 @@ struct RootView: View {
 
         var systemImage: String {
             switch self {
+            case .discover:
+                return "sparkles"
             case .library:
                 return "books.vertical"
             case .stats:
@@ -68,6 +73,23 @@ struct RootView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else {
                 TabView(selection: $selectedTab) {
+                    DiscoverView(
+                        store: readingHistoryStore,
+                        onResume: { read in
+                            resume(read)
+                        },
+                        onAddImportedDocument: { document in
+                            addImportedDocumentToLibrary(document)
+                        },
+                        onReadImportedDocument: { document in
+                            startReading(importedDocument: document)
+                        }
+                    )
+                    .tabItem {
+                        Label(MainTab.discover.titleKey, systemImage: MainTab.discover.systemImage)
+                    }
+                    .tag(MainTab.discover)
+
                     LibraryView(
                         store: readingHistoryStore,
                         readingStatsStore: readingStatsStore,
@@ -243,6 +265,11 @@ struct RootView: View {
     }
 
     private func startReading(importedDocument: ImportedDocument) {
+        if let existingRead = existingDiscoverRead(for: importedDocument) {
+            resume(existingRead)
+            return
+        }
+
         let tokens = tokenizer.tokenize(importedDocument)
         guard !tokens.isEmpty else { return }
         let session = ReadingSession(
@@ -285,6 +312,74 @@ struct RootView: View {
             readingStatsStore: readingStatsStore,
             savedReadID: savedRead.id
         )
+    }
+
+    @discardableResult
+    private func addImportedDocumentToLibrary(_ importedDocument: ImportedDocument) -> SavedRead? {
+        if let existingRead = existingDiscoverRead(for: importedDocument) {
+            updateExistingRead(existingRead, with: importedDocument)
+            return existingRead
+        }
+
+        let tokens = tokenizer.tokenize(importedDocument)
+        guard !tokens.isEmpty else { return nil }
+
+        let savedRead = SavedReadMapper.makeSavedRead(from: importedDocument, tokens: tokens)
+        readingHistoryStore.save(savedRead)
+        attachThumbnail(for: savedRead, previewImageData: importedDocument.previewImageData)
+        return savedRead
+    }
+
+    private func existingDiscoverRead(for importedDocument: ImportedDocument) -> SavedRead? {
+        return readingHistoryStore.savedReads.first { read in
+            if let externalSourceID = importedDocument.externalSourceID,
+               read.externalSourceID == externalSourceID {
+                return true
+            }
+            if read.originalFileName == importedDocument.fileName {
+                return true
+            }
+            return read.displayTitle.discoverIdentityComponent == importedDocument.displayTitle.discoverIdentityComponent
+                && (read.author ?? read.authorName ?? "").discoverIdentityComponent == (importedDocument.author ?? "").discoverIdentityComponent
+        }
+    }
+
+    private func updateExistingRead(_ existingRead: SavedRead, with importedDocument: ImportedDocument) {
+        var updatedRead = existingRead
+        var didUpdate = false
+
+        if updatedRead.externalSourceID == nil, let externalSourceID = importedDocument.externalSourceID {
+            updatedRead.externalSourceID = externalSourceID
+            didUpdate = true
+        }
+
+        let cleanTitle = importedDocument.displayTitle.discoverCleanBookTitle
+        if !cleanTitle.isEmpty,
+           (updatedRead.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                || updatedRead.displayTitle.discoverIdentityComponent == (updatedRead.originalFileName ?? "").discoverIdentityComponent
+                || (
+                    updatedRead.displayTitle.discoverCanonicalTitleComponent == cleanTitle.discoverCanonicalTitleComponent
+                    && cleanTitle.count < updatedRead.displayTitle.count
+                )) {
+            updatedRead.displayTitle = cleanTitle
+            didUpdate = true
+        }
+
+        if let cleanAuthor = importedDocument.author?.discoverCleanAuthorName.nilIfBlank,
+           updatedRead.author?.discoverCleanAuthorName.nilIfBlank == nil {
+            updatedRead.author = cleanAuthor
+            updatedRead.authorName = cleanAuthor
+            didUpdate = true
+        }
+
+        if didUpdate {
+            updatedRead.updatedAt = Date()
+            readingHistoryStore.save(updatedRead, durability: .immediate)
+        }
+
+        if importedDocument.previewImageData != nil {
+            attachThumbnail(for: updatedRead, previewImageData: importedDocument.previewImageData, forceSave: true)
+        }
     }
 
     private func resume(_ read: SavedRead) {
@@ -346,20 +441,23 @@ struct RootView: View {
         )
     }
 
-    private func attachThumbnail(for read: SavedRead, previewImageData: Data?) {
+    private func attachThumbnail(for read: SavedRead, previewImageData: Data?, forceSave: Bool = false) {
         Task {
             let updatedRead = await ThumbnailGeneratorService.shared.attachThumbnail(
                 to: read,
                 previewImageData: previewImageData
             )
 
-            guard updatedRead.thumbnailPath != read.thumbnailPath else {
+            guard forceSave || updatedRead.thumbnailPath != read.thumbnailPath else {
                 return
             }
 
             await MainActor.run {
                 if var latestRead = readingHistoryStore.read(withID: read.id) {
                     latestRead.thumbnailPath = updatedRead.thumbnailPath
+                    if forceSave {
+                        latestRead.updatedAt = Date()
+                    }
                     readingHistoryStore.save(latestRead, durability: .immediate)
                 }
             }

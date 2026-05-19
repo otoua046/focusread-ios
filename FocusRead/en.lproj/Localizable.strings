@@ -8,6 +8,7 @@
 "common.notSelected" = "Not selected";
 "common.words" = "words";
 
+"tab.discover" = "Discover";
 "tab.library" = "Library";
 "tab.stats" = "My Stats";
 "tab.settings" = "Settings";
