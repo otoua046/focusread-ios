@@ -40,7 +40,7 @@ struct OnboardingRSVPDemoView: View {
                                 .font(.headline.monospacedDigit())
                                 .foregroundStyle(AppTheme.primaryText)
 
-                            Slider(value: wpmBinding, in: 180...650, step: 25)
+                            Slider(value: wpmBinding, in: wpmRange, step: 25)
                                 .tint(AppTheme.accent)
                                 .accessibilityLabel(L10n.string(.onboardingRSVPSpeed))
                         }
@@ -126,6 +126,10 @@ struct OnboardingRSVPDemoView: View {
 
     private var currentWPM: Int {
         wordsPerMinute ?? defaultWPM
+    }
+
+    private var wpmRange: ClosedRange<Double> {
+        Double(ReadingSession.minimumWPM)...Double(ReadingSession.maximumWPM)
     }
 
     private var currentWordText: String? {
