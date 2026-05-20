@@ -237,6 +237,14 @@ struct QuickReadEditorSheet: View {
                         guard let pastedText = strings.first else { return }
                         text = pastedText
                     }
+                    .buttonStyle(.focusReadSecondaryAction(
+                        shape: .capsule,
+                        fullWidth: false,
+                        minHeight: 44,
+                        horizontalPadding: 14,
+                        verticalPadding: 10,
+                        font: .subheadline.weight(.semibold)
+                    ))
                     .accessibilityLabel(L10n.string(.quickReadPaste))
                 }
                 .listRowBackground(theme.cardBackground)
