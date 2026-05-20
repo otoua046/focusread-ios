@@ -466,11 +466,11 @@ enum DiscoverImportDeduper {
                read.externalSourceID == externalSourceID {
                 return true
             }
+            guard importedDocument.externalSourceID != nil else { return false }
             if read.originalFileName == importedDocument.fileName {
                 return discoverTitleMatches(read, importedDocument: importedDocument)
                     && discoverAuthorsAreCompatible(read, importedDocument: importedDocument)
             }
-            guard importedDocument.externalSourceID != nil else { return false }
             return discoverTitleMatches(read, importedDocument: importedDocument)
                 && discoverAuthorMatches(read, importedDocument: importedDocument)
         }

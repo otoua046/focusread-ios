@@ -1453,6 +1453,37 @@ struct DiscoverMappingTests {
         #expect(matchedRead == nil)
     }
 
+    @Test func nonDiscoverImportDoesNotDeduplicateByFilenameOnly() {
+        let tokenizer = TextTokenizer()
+        let existingDocument = ImportedDocument(
+            fileName: "document.pdf",
+            displayTitle: "Document",
+            author: nil,
+            text: "First readable document text with enough words for a library item.",
+            sourceType: .pdf,
+            languageCode: "en"
+        )
+        let existingRead = SavedReadMapper.makeSavedRead(
+            from: existingDocument,
+            tokens: tokenizer.tokenize(existingDocument)
+        )
+        let incomingDocument = ImportedDocument(
+            fileName: "document.pdf",
+            displayTitle: "Document",
+            author: nil,
+            text: "Second readable document text with different content to import separately.",
+            sourceType: .pdf,
+            languageCode: "en"
+        )
+
+        let matchedRead = DiscoverImportDeduper.existingRead(
+            for: incomingDocument,
+            in: [existingRead]
+        )
+
+        #expect(matchedRead == nil)
+    }
+
     @Test func discoverImportCanDeduplicateByTitleAndAuthorWhenSourceIDIsPresent() {
         let tokenizer = TextTokenizer()
         let existingDocument = ImportedDocument(
