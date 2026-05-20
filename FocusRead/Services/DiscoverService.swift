@@ -213,8 +213,8 @@ actor DiscoverService {
             return cached
         }
 
-        async let metadataBooks = searchMetadataBooks(query: query, limit: 24)
-        async let openLibraryResult = validatedSearchSnapshot(query: query, currentBooks: currentBooks)
+        async let metadataBooks = searchMetadataBooks(query: query, limit: 24, languageCodes: languageCodes)
+        async let openLibraryResult = validatedSearchSnapshot(query: query, currentBooks: currentBooks, languageCodes: languageCodes)
         let resolvedMetadataBooks = await metadataBooks
         let resolvedOpenLibraryResult = await openLibraryResult
         let merged = Self.curatedPresentation(
@@ -254,7 +254,7 @@ actor DiscoverService {
             return cached
         }
 
-        let metadataBooks = await searchMetadataBooks(query: query, limit: 24)
+        let metadataBooks = await searchMetadataBooks(query: query, limit: 24, languageCodes: languageCodes)
         let merged = Self.curatedPresentation(
             Self.merged(currentBooks + metadataBooks),
             limit: 36
@@ -277,7 +277,8 @@ actor DiscoverService {
 
     func validatedSearchSnapshot(
         query: String,
-        currentBooks: [DiscoverBook]
+        currentBooks: [DiscoverBook],
+        languageCodes: [String] = ["en"]
     ) async -> DiscoverSearchValidationSnapshot {
         let limit = Self.searchValidationLimit(currentBooks: currentBooks)
         guard limit > 0 else {
@@ -291,7 +292,7 @@ actor DiscoverService {
                 didComplete: true
             )
         }
-        let snapshot = await searchValidatedReadableBooks(query: query, limit: limit)
+        let snapshot = await searchValidatedReadableBooks(query: query, limit: limit, languageCodes: languageCodes)
         return DiscoverSearchValidationSnapshot(result: snapshot.result, didComplete: snapshot.didComplete)
     }
 
@@ -328,9 +329,9 @@ actor DiscoverService {
         return merged
     }
 
-    private func searchMetadataBooks(query: String, limit: Int) async -> [DiscoverBook] {
+    private func searchMetadataBooks(query: String, limit: Int, languageCodes: [String] = ["en"]) async -> [DiscoverBook] {
         do {
-            return try await metadataBooks(query: query, limit: limit)
+            return try await metadataBooks(query: query, limit: limit, languageCode: Self.primaryLanguageCode(from: languageCodes))
         } catch is CancellationError {
             return []
         } catch {
@@ -341,12 +342,14 @@ actor DiscoverService {
 
     private func searchValidatedReadableBooks(
         query: String,
-        limit: Int
+        limit: Int,
+        languageCodes: [String] = ["en"]
     ) async -> (result: OpenLibraryValidatedSearchResult, didComplete: Bool) {
         do {
             let openLibraryService = self.openLibraryService
+            let languageCode = Self.primaryLanguageCode(from: languageCodes)
             let result = try await Self.withTimeout(seconds: 6) {
-                try await openLibraryService.validatedSearchResult(query, limit: limit)
+                try await openLibraryService.validatedSearchResult(query, limit: limit, languageCode: languageCode)
             }
             return (result, true)
         } catch is CancellationError {
@@ -379,13 +382,15 @@ actor DiscoverService {
         return readableCount >= 12 ? 4 : 8
     }
 
-    private func metadataBooks(query: String, limit: Int, page: Int = 1) async throws -> [DiscoverBook] {
+    private func metadataBooks(query: String, limit: Int, page: Int = 1, languageCode: String = "en") async throws -> [DiscoverBook] {
         let normalizedQuery = query.discoverIdentityComponent
         guard !normalizedQuery.isEmpty else { return [] }
+        let normalizedLanguage = Self.primaryLanguageCode(from: [languageCode])
         let key = [
             normalizedQuery,
             "\(max(page, 1))",
-            "\(max(limit, 1))"
+            "\(max(limit, 1))",
+            normalizedLanguage
         ].joined(separator: "|")
         if let cached = metadataCache[key] {
             DiscoverNetworkLog.cache("metadata hit \(key)")
@@ -399,7 +404,7 @@ actor DiscoverService {
 
         let openLibraryService = self.openLibraryService
         let books = try await Self.withTimeout(seconds: 5) {
-            try await openLibraryService.metadataSearch(query, limit: limit, page: page)
+            try await openLibraryService.metadataSearch(query, limit: limit, page: page, languageCode: normalizedLanguage)
         }
         metadataCache[key] = books
         await persistentMetadataCache.store(books, for: key)
@@ -407,13 +412,15 @@ actor DiscoverService {
         return books
     }
 
-    private func readableCandidates(query: String, limit: Int, page: Int = 1) async throws -> [OpenLibraryBookCandidate] {
+    private func readableCandidates(query: String, limit: Int, page: Int = 1, languageCode: String = "en") async throws -> [OpenLibraryBookCandidate] {
         let normalizedQuery = query.discoverIdentityComponent
         guard !normalizedQuery.isEmpty else { return [] }
+        let normalizedLanguage = Self.primaryLanguageCode(from: [languageCode])
         let key = [
             normalizedQuery,
             "\(max(page, 1))",
-            "\(max(limit, 1))"
+            "\(max(limit, 1))",
+            normalizedLanguage
         ].joined(separator: "|")
         if let cached = readableCandidateCache[key] {
             DiscoverNetworkLog.cache("readable candidates hit \(key)")
@@ -422,20 +429,22 @@ actor DiscoverService {
 
         let openLibraryService = self.openLibraryService
         let candidates = try await Self.withTimeout(seconds: 5) {
-            try await openLibraryService.readableCandidates(query, limit: limit, page: page)
+            try await openLibraryService.readableCandidates(query, limit: limit, page: page, languageCode: normalizedLanguage)
         }
         readableCandidateCache[key] = candidates
         cacheCoverReferences(from: candidates.map(\.book))
         return candidates
     }
 
-    private func validatedReadableBooks(query: String, limit: Int, page: Int = 1) async -> [DiscoverBook] {
+    private func validatedReadableBooks(query: String, limit: Int, page: Int = 1, languageCode: String = "en") async -> [DiscoverBook] {
         let normalizedQuery = query.discoverIdentityComponent
         guard !normalizedQuery.isEmpty else { return [] }
+        let normalizedLanguage = Self.primaryLanguageCode(from: [languageCode])
         let key = [
             normalizedQuery,
             "\(max(page, 1))",
-            "\(max(limit, 1))"
+            "\(max(limit, 1))",
+            normalizedLanguage
         ].joined(separator: "|")
         if let cached = validatedReadableCache[key] {
             DiscoverNetworkLog.cache("validated readable hit \(key)")
@@ -447,7 +456,8 @@ actor DiscoverService {
             let candidates = try await readableCandidates(
                 query: query,
                 limit: min(max(limit * 3, limit), 50),
-                page: page
+                page: page,
+                languageCode: normalizedLanguage
             )
             let books = try await Self.withTimeout(seconds: 6) {
                 try await openLibraryService.validatedBooks(from: candidates, limit: limit)
@@ -628,7 +638,8 @@ actor DiscoverService {
                 fetchedMetadataBooks = await shelfMetadataBooks(
                     metadataQuery.query,
                     page: metadataQuery.page,
-                    limit: 32
+                    limit: 32,
+                    languageCode: languageCode
                 )
                 let enrichedGutenbergBooks = Self.curatedPresentation(
                     Self.merged(fetchedGutenbergBooks + fetchedMetadataBooks),
@@ -646,7 +657,8 @@ actor DiscoverService {
                 let validatedBooks = await validatedReadableBooks(
                     query: queryPage.query,
                     limit: max(6, requestedPageSize - resolvedBooks.count + 4),
-                    page: queryPage.page
+                    page: queryPage.page,
+                    languageCode: languageCode
                 )
                 let enrichedValidatedBooks = Self.curatedPresentation(
                     Self.merged(validatedBooks + fetchedMetadataBooks),
@@ -807,9 +819,9 @@ actor DiscoverService {
         }
     }
 
-    private func shelfMetadataBooks(_ query: String, page: Int, limit: Int) async -> [DiscoverBook] {
+    private func shelfMetadataBooks(_ query: String, page: Int, limit: Int, languageCode: String) async -> [DiscoverBook] {
         do {
-            return try await metadataBooks(query: query, limit: limit, page: page)
+            return try await metadataBooks(query: query, limit: limit, page: page, languageCode: languageCode)
         } catch {
             discoverDebugLog("Discover metadata shelf request failed for \(query) page \(page)")
             return []
@@ -857,6 +869,10 @@ actor DiscoverService {
             result.append(code)
         }
         return unique.isEmpty ? ["en"] : unique
+    }
+
+    private static func primaryLanguageCode(from languageCodes: [String]) -> String {
+        normalizedLanguageCodes(languageCodes).first ?? "en"
     }
 
     private nonisolated static func logSearch(
@@ -1281,7 +1297,7 @@ extension ImportedDocument {
             author: resolvedAuthor,
             externalSourceID: book.externalSourceID,
             sourceType: sourceType,
-            languageCode: languageCode,
+            languageCode: languageCode?.nilIfSuspiciousMetadataValue ?? book.languageCode?.nilIfSuspiciousMetadataValue,
             sections: sections,
             previewImageData: coverData ?? previewImageData,
             cleanupMode: cleanupMode,

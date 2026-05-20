@@ -131,11 +131,16 @@ struct DiscoverMappingTests {
     }
 
     @Test func openLibrarySearchRequiresValidatedArchiveResources() async throws {
-        let requestedFields = DiscoverRequestedSearchFields()
+        let requestedParameters = DiscoverRequestedSearchParameters()
         let session = Self.mockSession { request in
             let url = try #require(request.url)
             if url.host == "openlibrary.org", url.path == "/search.json" {
-                await requestedFields.append(Self.queryValue("fields", in: url) ?? "")
+                await requestedParameters.append(
+                    q: Self.queryValue("q", in: url) ?? "",
+                    lang: Self.queryValue("lang", in: url),
+                    language: Self.queryValue("language", in: url),
+                    fields: Self.queryValue("fields", in: url) ?? ""
+                )
                 return Self.jsonResponse(for: url, body: """
                 {
                   "docs": [
@@ -233,7 +238,11 @@ struct DiscoverMappingTests {
         let books = try await service.search("readable classics", limit: 5)
 
         #expect(books.map(\.title) == ["EPUB Winner", "PDF Backup", "Text Backup"])
-        let fields = await requestedFields.values.first ?? ""
+        let requestParameters = try #require(await requestedParameters.values.first)
+        #expect(requestParameters.q == "readable classics language:eng")
+        #expect(requestParameters.lang == "en")
+        #expect(requestParameters.language == nil)
+        let fields = requestParameters.fields
         #expect(fields.contains("ia"))
         #expect(fields.contains("public_scan_b"))
         #expect(fields.contains("ebook_access"))
@@ -252,6 +261,32 @@ struct DiscoverMappingTests {
             "https://archive.org/download/pdf-id/scan.pdf",
             "https://archive.org/download/txt-id/plain.txt"
         ])
+    }
+
+    @Test func openLibraryReadableSearchUsesLanguageQuerySyntax() async throws {
+        let requestedParameters = DiscoverRequestedSearchParameters()
+        let session = Self.mockSession { request in
+            let url = try #require(request.url)
+            if url.host == "openlibrary.org", url.path == "/search.json" {
+                await requestedParameters.append(
+                    q: Self.queryValue("q", in: url) ?? "",
+                    lang: Self.queryValue("lang", in: url),
+                    language: Self.queryValue("language", in: url),
+                    fields: Self.queryValue("fields", in: url) ?? ""
+                )
+                return Self.jsonResponse(for: url, body: #"{"docs":[]}"#)
+            }
+
+            return Self.jsonResponse(for: url, statusCode: 404, body: #"{"error":"not found"}"#)
+        }
+        let service = OpenLibraryDiscoveryService(session: session)
+
+        _ = try await service.readableCandidates("conte", limit: 3, languageCode: "fr")
+
+        let requestParameters = try #require(await requestedParameters.values.first)
+        #expect(requestParameters.q == "conte language:fre")
+        #expect(requestParameters.lang == "fr")
+        #expect(requestParameters.language == nil)
     }
 
     @Test func archiveMetadataResourcesAreCachedAfterFirstLookup() async throws {
@@ -915,7 +950,7 @@ struct DiscoverMappingTests {
             if url.host == "openlibrary.org",
                url.path == "/search.json",
                Self.queryValue("has_fulltext", in: url) == nil,
-               Self.queryValue("q", in: url) == "classic literature",
+               Self.queryValue("q", in: url) == "classic literature language:eng",
                let limit = Self.queryValue("limit", in: url).flatMap(Int.init) {
                 await metadataLimits.append(limit)
                 return Self.jsonResponse(for: url, body: #"{"docs":[]}"#)
@@ -1258,6 +1293,48 @@ struct DiscoverMappingTests {
         let enrichedDocument = document.withDiscoverMetadata(from: book, coverData: nil)
 
         #expect(enrichedDocument.previewImageData == epubPreviewData)
+    }
+
+    @Test func discoverMetadataPreservesCatalogLanguageWhenExtractionIsMissingLanguage() {
+        let document = ImportedDocument(
+            fileName: "conte.txt",
+            displayTitle: "Conte",
+            author: nil,
+            text: "Readable text with enough words for a library item.",
+            sourceType: .txt,
+            languageCode: nil
+        )
+        let book = book(
+            id: "openlibrary-french",
+            source: .openLibrary,
+            sourceID: "OLFRW",
+            title: "Conte",
+            author: "French Author",
+            coverURL: nil
+        )
+        let catalogBook = DiscoverBook(
+            id: book.id,
+            source: book.source,
+            sourceID: book.sourceID,
+            title: book.title,
+            author: book.author,
+            coverURL: book.coverURL,
+            subjects: book.subjects,
+            availability: book.availability,
+            webURL: book.webURL,
+            languageCode: "fr",
+            pageCount: book.pageCount,
+            description: book.description,
+            firstPublishYear: book.firstPublishYear,
+            downloadCount: book.downloadCount,
+            ratingAverage: book.ratingAverage,
+            ratingCount: book.ratingCount,
+            editionCount: book.editionCount
+        )
+
+        let enrichedDocument = document.withDiscoverMetadata(from: catalogBook, coverData: nil)
+
+        #expect(enrichedDocument.languageCode == "fr")
     }
 
     @MainActor
@@ -1890,15 +1967,22 @@ private actor DiscoverRequestedLimits {
     }
 }
 
-private actor DiscoverRequestedSearchFields {
-    private var requestedFields: [String] = []
-
-    var values: [String] {
-        requestedFields
+private actor DiscoverRequestedSearchParameters {
+    struct Entry {
+        let q: String
+        let lang: String?
+        let language: String?
+        let fields: String
     }
 
-    func append(_ fields: String) {
-        requestedFields.append(fields)
+    private var requestedParameters: [Entry] = []
+
+    var values: [Entry] {
+        requestedParameters
+    }
+
+    func append(q: String, lang: String?, language: String?, fields: String) {
+        requestedParameters.append(Entry(q: q, lang: lang, language: language, fields: fields))
     }
 }
 

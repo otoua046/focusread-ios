@@ -188,7 +188,8 @@ final class DiscoverViewModel: ObservableObject {
         let validationBaseBooks = latestBooks
         async let validationSnapshot = service.validatedSearchSnapshot(
             query: query,
-            currentBooks: validationBaseBooks
+            currentBooks: validationBaseBooks,
+            languageCodes: languageCodes
         )
 
         let metadataResults = await service.metadataEnrichedSearch(

@@ -45,26 +45,28 @@ struct OpenLibraryDiscoveryService: Sendable {
         )
     }
 
-    func search(_ query: String, limit: Int = 18, page: Int = 1) async throws -> [DiscoverBook] {
-        try await validatedSearchResult(query, limit: limit, page: page).books
+    func search(_ query: String, limit: Int = 18, page: Int = 1, languageCode: String = "en") async throws -> [DiscoverBook] {
+        try await validatedSearchResult(query, limit: limit, page: page, languageCode: languageCode).books
     }
 
-    func readableCandidates(_ query: String, limit: Int = 24, page: Int = 1) async throws -> [OpenLibraryBookCandidate] {
-        try await readableCandidateResult(query, limit: limit, page: page).candidates
+    func readableCandidates(_ query: String, limit: Int = 24, page: Int = 1, languageCode: String = "en") async throws -> [OpenLibraryBookCandidate] {
+        try await readableCandidateResult(query, limit: limit, page: page, languageCode: languageCode).candidates
     }
 
-    func readableCandidateResult(_ query: String, limit: Int = 24, page: Int = 1) async throws -> OpenLibraryCandidateSearchResult {
+    func readableCandidateResult(_ query: String, limit: Int = 24, page: Int = 1, languageCode: String = "en") async throws -> OpenLibraryCandidateSearchResult {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             return OpenLibraryCandidateSearchResult(candidates: [], rawCount: 0, filteredReasonCounts: [:])
         }
+        let language = Self.openLibraryLanguage(for: languageCode)
+        let searchQuery = Self.query(trimmed, constrainedTo: language.searchCode)
 
         var components = URLComponents(string: "https://openlibrary.org/search.json")!
         components.queryItems = [
-            URLQueryItem(name: "q", value: trimmed),
+            URLQueryItem(name: "q", value: searchQuery),
             URLQueryItem(name: "has_fulltext", value: "true"),
             URLQueryItem(name: "public_scan", value: "true"),
-            URLQueryItem(name: "language", value: "eng"),
+            URLQueryItem(name: "lang", value: language.preferenceCode),
             URLQueryItem(name: "fields", value: Self.readableSearchFields),
             URLQueryItem(name: "limit", value: "\(min(max(limit, 1), 50))"),
             URLQueryItem(name: "page", value: "\(max(page, 1))")
@@ -78,14 +80,16 @@ struct OpenLibraryDiscoveryService: Sendable {
         return result
     }
 
-    func metadataSearch(_ query: String, limit: Int = 24, page: Int = 1) async throws -> [DiscoverBook] {
+    func metadataSearch(_ query: String, limit: Int = 24, page: Int = 1, languageCode: String = "en") async throws -> [DiscoverBook] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return [] }
+        let language = Self.openLibraryLanguage(for: languageCode)
+        let searchQuery = Self.query(trimmed, constrainedTo: language.searchCode)
 
         var components = URLComponents(string: "https://openlibrary.org/search.json")!
         components.queryItems = [
-            URLQueryItem(name: "q", value: trimmed),
-            URLQueryItem(name: "language", value: "eng"),
+            URLQueryItem(name: "q", value: searchQuery),
+            URLQueryItem(name: "lang", value: language.preferenceCode),
             URLQueryItem(name: "limit", value: "\(min(max(limit, 1), 50))"),
             URLQueryItem(name: "page", value: "\(max(page, 1))")
         ]
@@ -97,6 +101,33 @@ struct OpenLibraryDiscoveryService: Sendable {
             "Discover pagination event=provider-raw provider=openlibrary-metadata query=\(trimmed.discoverIdentityComponent) requestedPage=\(page) requestedCursor=nil limit=\(limit) fetchedRaw=\(response.docs.count) readable=\(books.filter(\.isReadable).count) mapped=\(books.count)"
         )
         return books
+    }
+
+    private static func query(_ query: String, constrainedTo languageSearchCode: String) -> String {
+        guard query.range(of: #"(?i)\blanguage:"#, options: .regularExpression) == nil else {
+            return query
+        }
+        return "\(query) language:\(languageSearchCode)"
+    }
+
+    private static func openLibraryLanguage(for languageCode: String) -> (preferenceCode: String, searchCode: String) {
+        let normalized = languageCode.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let preferenceCode = normalized.split(separator: "-").first.map(String.init) ?? "en"
+        let searchCode: String
+        switch preferenceCode {
+        case "ar": searchCode = "ara"
+        case "de": searchCode = "ger"
+        case "en": searchCode = "eng"
+        case "es": searchCode = "spa"
+        case "fr": searchCode = "fre"
+        case "it": searchCode = "ita"
+        case "ja": searchCode = "jpn"
+        case "ko": searchCode = "kor"
+        case "pt": searchCode = "por"
+        case "zh": searchCode = "chi"
+        default: searchCode = "eng"
+        }
+        return (preferenceCode.isEmpty ? "en" : preferenceCode, searchCode)
     }
 
     static func books(from data: Data, decoder: JSONDecoder = JSONDecoder()) throws -> [DiscoverBook] {
@@ -192,11 +223,12 @@ struct OpenLibraryDiscoveryService: Sendable {
         await validatedBooksWithDiagnostics(from: candidates, limit: limit).books
     }
 
-    func validatedSearchResult(_ query: String, limit: Int = 18, page: Int = 1) async throws -> OpenLibraryValidatedSearchResult {
+    func validatedSearchResult(_ query: String, limit: Int = 18, page: Int = 1, languageCode: String = "en") async throws -> OpenLibraryValidatedSearchResult {
         let candidateResult = try await readableCandidateResult(
             query,
             limit: min(max(limit * 3, limit), 50),
-            page: page
+            page: page,
+            languageCode: languageCode
         )
         let validation = await validatedBooksWithDiagnostics(from: candidateResult.candidates, limit: limit)
         return OpenLibraryValidatedSearchResult(
