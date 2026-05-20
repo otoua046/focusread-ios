@@ -4,6 +4,23 @@ struct OpenLibraryDiscoveryService: Sendable {
     private let networkClient: DiscoverNetworkClient
     private let decoder: JSONDecoder
     private let archiveMetadataService: InternetArchiveMetadataService
+    private static let readableSearchFields = [
+        "key",
+        "title",
+        "author_name",
+        "cover_i",
+        "ia",
+        "ebook_access",
+        "public_scan_b",
+        "subject",
+        "language",
+        "number_of_pages_median",
+        "first_publish_year",
+        "ratings_average",
+        "ratings_count",
+        "edition_count",
+        "first_sentence"
+    ].joined(separator: ",")
 
     init(
         networkClient: DiscoverNetworkClient = .shared,
@@ -48,6 +65,7 @@ struct OpenLibraryDiscoveryService: Sendable {
             URLQueryItem(name: "has_fulltext", value: "true"),
             URLQueryItem(name: "public_scan", value: "true"),
             URLQueryItem(name: "language", value: "eng"),
+            URLQueryItem(name: "fields", value: Self.readableSearchFields),
             URLQueryItem(name: "limit", value: "\(min(max(limit, 1), 50))"),
             URLQueryItem(name: "page", value: "\(max(page, 1))")
         ]
@@ -304,36 +322,41 @@ final actor InternetArchiveMetadataService {
     }
 
     func downloadableResource(for identifier: String) async throws -> DiscoverArchiveResource {
-        let safeIdentifier = identifier.discoverSafeFileComponent
-        if let cached = resourceCache[safeIdentifier] {
-            DiscoverNetworkLog.cache("archive metadata hit \(safeIdentifier)")
-            return cached
-        }
-        if let cached = await persistentCache.resource(for: safeIdentifier) {
-            resourceCache[safeIdentifier] = cached
-            return cached
-        }
-        if let retryAfter = failedResourceRetryAfter[safeIdentifier], retryAfter > Date() {
+        let archiveIdentifier = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !archiveIdentifier.isEmpty,
+              let encodedIdentifier = Self.encodedArchiveIdentifierPathComponent(archiveIdentifier) else {
             throw DiscoverServiceError.noReadableFormat
         }
 
-        let url = URL(string: "https://archive.org/metadata/\(safeIdentifier)")!
+        if let cached = resourceCache[archiveIdentifier] {
+            DiscoverNetworkLog.cache("archive metadata hit \(archiveIdentifier.discoverSafeFileComponent)")
+            return cached
+        }
+        if let cached = await persistentCache.resource(for: archiveIdentifier) {
+            resourceCache[archiveIdentifier] = cached
+            return cached
+        }
+        if let retryAfter = failedResourceRetryAfter[archiveIdentifier], retryAfter > Date() {
+            throw DiscoverServiceError.noReadableFormat
+        }
+
+        let url = URL(string: "https://archive.org/metadata/\(encodedIdentifier)")!
         do {
             let data = try await networkClient.data(for: url, kind: .availability, timeout: 10)
             let metadata = try decoder.decode(InternetArchiveMetadataResponse.self, from: data)
-            guard let resource = Self.preferredResource(in: metadata.files, identifier: safeIdentifier) else {
-                discoverDebugLog("Discover archive metadata has no readable resource for \(safeIdentifier)")
-                markResourceFailure(for: safeIdentifier)
+            guard let resource = Self.preferredResource(in: metadata.files, identifier: archiveIdentifier) else {
+                discoverDebugLog("Discover archive metadata has no readable resource for \(archiveIdentifier.discoverSafeFileComponent)")
+                markResourceFailure(for: archiveIdentifier)
                 throw DiscoverServiceError.noReadableFormat
             }
-            failedResourceRetryAfter[safeIdentifier] = nil
-            resourceCache[safeIdentifier] = resource
-            await persistentCache.store(resource, for: safeIdentifier)
+            failedResourceRetryAfter[archiveIdentifier] = nil
+            resourceCache[archiveIdentifier] = resource
+            await persistentCache.store(resource, for: archiveIdentifier)
             return resource
         } catch let error as DiscoverServiceError {
             throw error
         } catch {
-            markResourceFailure(for: safeIdentifier)
+            markResourceFailure(for: archiveIdentifier)
             throw DiscoverServiceError.unavailable
         }
     }
@@ -360,8 +383,11 @@ final actor InternetArchiveMetadataService {
         from file: InternetArchiveFileResponse,
         identifier: String
     ) -> DiscoverArchiveResource? {
+        guard let encodedIdentifier = encodedArchiveIdentifierPathComponent(identifier) else {
+            return nil
+        }
         guard let encodedName = file.name.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-              let url = URL(string: "https://archive.org/download/\(identifier)/\(encodedName)") else {
+              let url = URL(string: "https://archive.org/download/\(encodedIdentifier)/\(encodedName)") else {
             return nil
         }
 
@@ -393,6 +419,12 @@ final actor InternetArchiveMetadataService {
             return false
         }
         return !name.contains("_meta") && !name.contains("_files")
+    }
+
+    private nonisolated static func encodedArchiveIdentifierPathComponent(_ identifier: String) -> String? {
+        var allowed = CharacterSet.urlPathAllowed
+        allowed.remove(charactersIn: "/?#")
+        return identifier.addingPercentEncoding(withAllowedCharacters: allowed)
     }
 }
 

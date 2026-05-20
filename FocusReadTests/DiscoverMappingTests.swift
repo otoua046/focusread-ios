@@ -131,9 +131,11 @@ struct DiscoverMappingTests {
     }
 
     @Test func openLibrarySearchRequiresValidatedArchiveResources() async throws {
+        let requestedFields = DiscoverRequestedSearchFields()
         let session = Self.mockSession { request in
             let url = try #require(request.url)
             if url.host == "openlibrary.org", url.path == "/search.json" {
+                await requestedFields.append(Self.queryValue("fields", in: url) ?? "")
                 return Self.jsonResponse(for: url, body: """
                 {
                   "docs": [
@@ -231,6 +233,10 @@ struct DiscoverMappingTests {
         let books = try await service.search("readable classics", limit: 5)
 
         #expect(books.map(\.title) == ["EPUB Winner", "PDF Backup", "Text Backup"])
+        let fields = await requestedFields.values.first ?? ""
+        #expect(fields.contains("ia"))
+        #expect(fields.contains("public_scan_b"))
+        #expect(fields.contains("ebook_access"))
         #expect(books.map { $0.availability?.preferredFormat } == [.epub, .pdf, .plainText])
         #expect(books.allSatisfy { $0.isReadable })
         #expect(books[0].availability?.localFileName == "epub-winner.epub")
@@ -272,6 +278,34 @@ struct DiscoverMappingTests {
 
         #expect(firstResource == secondResource)
         #expect(await counter.value == 1)
+    }
+
+    @Test func archiveMetadataUsesLosslessIdentifierPath() async throws {
+        let dottedIdentifier = "gov.uspto.patents.application.10743335"
+        let session = Self.mockSession { request in
+            let url = try #require(request.url)
+            if url.host == "archive.org", url.path == "/metadata/\(dottedIdentifier)" {
+                return Self.jsonResponse(for: url, body: """
+                {
+                  "files": [
+                    { "name": "application.pdf", "format": "Text PDF" }
+                  ]
+                }
+                """)
+            }
+
+            if url.host == "archive.org", url.path == "/metadata/gov-uspto-patents-application-10743335" {
+                return Self.jsonResponse(for: url, statusCode: 404, body: #"{"error":"wrong identifier"}"#)
+            }
+
+            return Self.jsonResponse(for: url, statusCode: 404, body: #"{"error":"not found"}"#)
+        }
+        let service = Self.archiveService(session: session)
+
+        let resource = try await service.downloadableResource(for: dottedIdentifier)
+
+        #expect(resource.format == .pdf)
+        #expect(resource.url.absoluteString == "https://archive.org/download/\(dottedIdentifier)/application.pdf")
     }
 
     @Test func archiveMetadataFailuresUseCooldown() async throws {
@@ -1853,6 +1887,18 @@ private actor DiscoverRequestedLimits {
 
     func append(_ limit: Int) {
         requestedLimits.append(limit)
+    }
+}
+
+private actor DiscoverRequestedSearchFields {
+    private var requestedFields: [String] = []
+
+    var values: [String] {
+        requestedFields
+    }
+
+    func append(_ fields: String) {
+        requestedFields.append(fields)
     }
 }
 

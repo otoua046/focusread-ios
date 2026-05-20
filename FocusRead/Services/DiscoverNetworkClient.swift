@@ -575,9 +575,10 @@ actor DiscoverArchiveResourceCache {
     }
 
     func resource(for identifier: String, maxAge: TimeInterval = 60 * 60 * 24 * 30) -> DiscoverArchiveResource? {
-        let key = identifier.discoverSafeFileComponent
+        let key = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { return nil }
         if let entry = memory[key], !entry.isExpired(maxAge: maxAge) {
-            DiscoverNetworkLog.cache("availability memory hit \(key)")
+            DiscoverNetworkLog.cache("availability memory hit \(key.discoverSafeFileComponent)")
             return entry.resource
         }
 
@@ -585,26 +586,27 @@ actor DiscoverArchiveResourceCache {
         guard let data = try? Data(contentsOf: fileURL),
               let entry = try? decoder.decode(Entry.self, from: data),
               !entry.isExpired(maxAge: maxAge) else {
-            DiscoverNetworkLog.cache("availability miss \(key)")
+            DiscoverNetworkLog.cache("availability miss \(key.discoverSafeFileComponent)")
             return nil
         }
 
         memory[key] = entry
-        DiscoverNetworkLog.cache("availability disk hit \(key)")
+        DiscoverNetworkLog.cache("availability disk hit \(key.discoverSafeFileComponent)")
         return entry.resource
     }
 
     func store(_ resource: DiscoverArchiveResource, for identifier: String) {
-        let key = identifier.discoverSafeFileComponent
+        let key = identifier.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { return }
         let entry = Entry(storedAt: Date(), resource: resource)
         memory[key] = entry
         do {
             try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
             let data = try encoder.encode(entry)
             try data.write(to: fileURL(for: key), options: [.atomic])
-            DiscoverNetworkLog.cache("availability store \(key)")
+            DiscoverNetworkLog.cache("availability store \(key.discoverSafeFileComponent)")
         } catch {
-            DiscoverNetworkLog.cache("availability disk skipped \(key)")
+            DiscoverNetworkLog.cache("availability disk skipped \(key.discoverSafeFileComponent)")
         }
     }
 
