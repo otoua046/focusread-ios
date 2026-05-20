@@ -457,7 +457,6 @@ actor DiscoverService {
             cacheCoverReferences(from: canonical)
             return canonical
         } catch {
-            validatedReadableCache[key] = []
             return []
         }
     }

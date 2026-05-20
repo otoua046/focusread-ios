@@ -331,36 +331,10 @@ struct RootView: View {
     }
 
     private func existingDiscoverRead(for importedDocument: ImportedDocument) -> SavedRead? {
-        return readingHistoryStore.savedReads.first { read in
-            if let externalSourceID = importedDocument.externalSourceID,
-               read.externalSourceID == externalSourceID {
-                return true
-            }
-            if read.originalFileName == importedDocument.fileName {
-                return discoverTitleMatches(read, importedDocument: importedDocument)
-                    && discoverAuthorsAreCompatible(read, importedDocument: importedDocument)
-            }
-            return discoverTitleMatches(read, importedDocument: importedDocument)
-                && discoverAuthorMatches(read, importedDocument: importedDocument)
-        }
-    }
-
-    private func discoverTitleMatches(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
-        let readTitle = read.displayTitle.discoverIdentityComponent
-        let importedTitle = importedDocument.displayTitle.discoverIdentityComponent
-        return !readTitle.isEmpty && readTitle == importedTitle
-    }
-
-    private func discoverAuthorMatches(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
-        let readAuthor = (read.author ?? read.authorName ?? "").discoverIdentityComponent
-        let importedAuthor = (importedDocument.author ?? "").discoverIdentityComponent
-        return !readAuthor.isEmpty && readAuthor == importedAuthor
-    }
-
-    private func discoverAuthorsAreCompatible(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
-        let readAuthor = (read.author ?? read.authorName ?? "").discoverIdentityComponent
-        let importedAuthor = (importedDocument.author ?? "").discoverIdentityComponent
-        return readAuthor.isEmpty || importedAuthor.isEmpty || readAuthor == importedAuthor
+        DiscoverImportDeduper.existingRead(
+            for: importedDocument,
+            in: readingHistoryStore.savedReads
+        )
     }
 
     private func updateExistingRead(_ existingRead: SavedRead, with importedDocument: ImportedDocument) {
@@ -482,5 +456,41 @@ struct RootView: View {
                 }
             }
         }
+    }
+}
+
+enum DiscoverImportDeduper {
+    static func existingRead(for importedDocument: ImportedDocument, in reads: [SavedRead]) -> SavedRead? {
+        reads.first { read in
+            if let externalSourceID = importedDocument.externalSourceID,
+               read.externalSourceID == externalSourceID {
+                return true
+            }
+            if read.originalFileName == importedDocument.fileName {
+                return discoverTitleMatches(read, importedDocument: importedDocument)
+                    && discoverAuthorsAreCompatible(read, importedDocument: importedDocument)
+            }
+            guard importedDocument.externalSourceID != nil else { return false }
+            return discoverTitleMatches(read, importedDocument: importedDocument)
+                && discoverAuthorMatches(read, importedDocument: importedDocument)
+        }
+    }
+
+    private static func discoverTitleMatches(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
+        let readTitle = read.displayTitle.discoverIdentityComponent
+        let importedTitle = importedDocument.displayTitle.discoverIdentityComponent
+        return !readTitle.isEmpty && readTitle == importedTitle
+    }
+
+    private static func discoverAuthorMatches(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
+        let readAuthor = (read.author ?? read.authorName ?? "").discoverIdentityComponent
+        let importedAuthor = (importedDocument.author ?? "").discoverIdentityComponent
+        return !readAuthor.isEmpty && readAuthor == importedAuthor
+    }
+
+    private static func discoverAuthorsAreCompatible(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
+        let readAuthor = (read.author ?? read.authorName ?? "").discoverIdentityComponent
+        let importedAuthor = (importedDocument.author ?? "").discoverIdentityComponent
+        return readAuthor.isEmpty || importedAuthor.isEmpty || readAuthor == importedAuthor
     }
 }

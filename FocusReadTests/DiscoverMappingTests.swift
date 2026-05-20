@@ -925,6 +925,91 @@ struct DiscoverMappingTests {
         #expect(await metadataLimits.values.contains(32))
     }
 
+    @Test func validatedReadableSearchRetriesAfterTransientFailure() async throws {
+        let pageOneCandidateRequests = DiscoverMockCounter()
+        let session = Self.mockSession { request in
+            let url = try #require(request.url)
+            if url.host == "gutendex.com" {
+                return Self.jsonResponse(for: url, body: #"{"results":[]}"#)
+            }
+
+            if url.host == "openlibrary.org",
+               url.path == "/search.json",
+               Self.queryValue("has_fulltext", in: url) == nil {
+                return Self.jsonResponse(for: url, body: #"{"docs":[]}"#)
+            }
+
+            if url.host == "openlibrary.org",
+               url.path == "/search.json",
+               Self.queryValue("has_fulltext", in: url) == "true" {
+                let page = Self.queryValue("page", in: url).flatMap(Int.init) ?? 1
+                guard page == 1 else {
+                    return Self.jsonResponse(for: url, body: #"{"docs":[]}"#)
+                }
+
+                let requestCount = await pageOneCandidateRequests.incrementAndReturnValue()
+                if requestCount == 1 {
+                    throw URLError(.timedOut)
+                }
+                return Self.jsonResponse(for: url, body: """
+                {
+                  "docs": [
+                    {
+                      "key": "/works/OLRETRYW",
+                      "title": "Retry Readable",
+                      "author_name": ["Retry Author"],
+                      "ia": ["retry-readable"],
+                      "ebook_access": "public",
+                      "public_scan_b": true,
+                      "language": ["eng"]
+                    }
+                  ]
+                }
+                """)
+            }
+
+            if url.host == "archive.org", url.path == "/metadata/retry-readable" {
+                return Self.jsonResponse(for: url, body: """
+                {
+                  "files": [
+                    { "name": "retry-readable.epub", "format": "EPUB" }
+                  ]
+                }
+                """)
+            }
+
+            return Self.jsonResponse(for: url, statusCode: 404, body: #"{"error":"not found"}"#)
+        }
+        let archiveService = Self.archiveService(session: session)
+        let service = DiscoverService(
+            gutenbergService: GutenbergDiscoveryService(session: session),
+            openLibraryService: OpenLibraryDiscoveryService(session: session, archiveMetadataService: archiveService),
+            archiveMetadataService: archiveService,
+            persistentMetadataCache: Self.persistentBookCache(),
+            shelfSnapshotCache: DiscoverShelfSnapshotCache(directoryURL: Self.temporaryCacheDirectory(named: "ShelfSnapshot")),
+            session: session
+        )
+
+        let firstResult = await service.shelfPage(
+            sectionID: "popular-classics",
+            title: "Popular Classics",
+            existingBooks: [],
+            page: 1,
+            pageSize: 1
+        )
+        let secondResult = await service.shelfPage(
+            sectionID: "popular-classics",
+            title: "Popular Classics",
+            existingBooks: [],
+            page: 1,
+            pageSize: 1
+        )
+
+        #expect(firstResult.books.isEmpty)
+        #expect(secondResult.books.map(\.title) == ["Retry Readable"])
+        #expect(await pageOneCandidateRequests.value == 2)
+    }
+
     @Test func shelfPageTreatsNetworkRefusalsAsEmptyPages() async throws {
         let session = Self.mockSession { _ in
             throw URLError(.cannotConnectToHost)
@@ -1224,6 +1309,69 @@ struct DiscoverMappingTests {
         )
 
         #expect(viewModel.actionState(for: unrelatedBook) == .idle)
+    }
+
+    @Test func nonDiscoverImportDoesNotDeduplicateByTitleAndAuthorOnly() {
+        let tokenizer = TextTokenizer()
+        let existingDocument = ImportedDocument(
+            fileName: "first-file.epub",
+            displayTitle: "Common Title",
+            author: "Same Author",
+            text: "Readable text with enough words for a library item.",
+            sourceType: .epub,
+            languageCode: "en"
+        )
+        let existingRead = SavedReadMapper.makeSavedRead(
+            from: existingDocument,
+            tokens: tokenizer.tokenize(existingDocument)
+        )
+        let incomingDocument = ImportedDocument(
+            fileName: "second-file.epub",
+            displayTitle: "Common Title",
+            author: "Same Author",
+            text: "Different readable text that should become a separate import.",
+            sourceType: .epub,
+            languageCode: "en"
+        )
+
+        let matchedRead = DiscoverImportDeduper.existingRead(
+            for: incomingDocument,
+            in: [existingRead]
+        )
+
+        #expect(matchedRead == nil)
+    }
+
+    @Test func discoverImportCanDeduplicateByTitleAndAuthorWhenSourceIDIsPresent() {
+        let tokenizer = TextTokenizer()
+        let existingDocument = ImportedDocument(
+            fileName: "discover-seed.epub",
+            displayTitle: "Common Title",
+            author: "Same Author",
+            text: "Readable text with enough words for a library item.",
+            sourceType: .epub,
+            languageCode: "en"
+        )
+        let existingRead = SavedReadMapper.makeSavedRead(
+            from: existingDocument,
+            tokens: tokenizer.tokenize(existingDocument)
+        )
+        let incomingDocument = ImportedDocument(
+            fileName: "different-discover-file.epub",
+            displayTitle: "Common Title",
+            author: "Same Author",
+            externalSourceID: "projectGutenberg:1234",
+            text: "Readable Discover text with enough words for a library item.",
+            sourceType: .epub,
+            languageCode: "en"
+        )
+
+        let matchedRead = DiscoverImportDeduper.existingRead(
+            for: incomingDocument,
+            in: [existingRead]
+        )
+
+        #expect(matchedRead?.id == existingRead.id)
     }
 
     @Test func mergedEnrichesGutenbergDuplicateWorksWithoutReplacingReadableResource() {
