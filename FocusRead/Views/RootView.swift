@@ -236,7 +236,9 @@ struct RootView: View {
 
     private func markOnboardingCompleteForExistingLibraryIfNeeded() {
         guard !hasCompletedOnboarding else { return }
-        guard !readingHistoryStore.savedReads.isEmpty else { return }
+        guard !readingHistoryStore.savedReads.isEmpty || FocusReadOnboardingMigration.hasExistingInstallSignal(
+            hasPersistedReadingHistory: readingHistoryStore.hasPersistedReadingHistory
+        ) else { return }
         hasCompletedOnboarding = true
     }
 

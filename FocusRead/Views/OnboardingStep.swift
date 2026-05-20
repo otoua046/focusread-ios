@@ -44,6 +44,44 @@ enum FocusReadOnboardingSettingsKey {
     static let selectedReadingGoals = "home.selectedReadingGoals"
 }
 
+enum FocusReadOnboardingMigration {
+    static func hasExistingInstallSignal(
+        userDefaults: UserDefaults = .standard,
+        hasPersistedReadingHistory: Bool
+    ) -> Bool {
+        if hasPersistedReadingHistory {
+            return true
+        }
+
+        return existingInstallDefaultsKeys.contains { key in
+            userDefaults.object(forKey: key) != nil
+        }
+    }
+
+    private static let existingInstallDefaultsKeys = [
+        FocusReadOnboardingSettingsKey.selectedReadingGoal,
+        FocusReadOnboardingSettingsKey.selectedReadingGoals,
+        TypographySettingsKey.fontFamily,
+        TypographySettingsKey.fontSize,
+        TypographySettingsKey.fontWeight,
+        TypographySettingsKey.isItalic,
+        TypographySettingsKey.textColor,
+        TypographySettingsKey.appearance,
+        ReaderBehaviorSettingsKey.defaultWPM,
+        ReaderBehaviorSettingsKey.hapticsEnabled,
+        ReaderBehaviorSettingsKey.reverseWPMDialDirection,
+        ReaderBehaviorSettingsKey.punctuationPausesEnabled,
+        ReaderBehaviorSettingsKey.longWordDelayMode,
+        ReaderBehaviorSettingsKey.smartCleanupMode,
+        ReaderBehaviorSettingsKey.anchorLetterEnabled,
+        ReaderBehaviorSettingsKey.displayMode,
+        AppLanguageStorageKey.selectedLanguage,
+        FocusReadThemeStorageKey.selectedThemeID,
+        "library_view_mode",
+        "library_sort_mode"
+    ]
+}
+
 enum FocusReadReadingGoal: String, CaseIterable, Identifiable {
     case study
     case books

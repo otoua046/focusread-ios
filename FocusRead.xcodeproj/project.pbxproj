@@ -73,6 +73,7 @@
 		740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000107 /* ReaderSearchServiceTests.swift */; };
 		740000000000000000000008 /* ReaderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000108 /* ReaderViewModelTests.swift */; };
 		740000000000000000000009 /* ThumbnailImageNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */; };
+		74000000000000000000000A /* OnboardingMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74000000000000000000010A /* OnboardingMigrationTests.swift */; };
 		750000000000000000000001 /* ReadingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000101 /* ReadingStats.swift */; };
 		750000000000000000000002 /* ReadingStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000102 /* ReadingStatsStore.swift */; };
 		750000000000000000000003 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000103 /* StatsView.swift */; };
@@ -206,6 +207,7 @@
 		740000000000000000000107 /* ReaderSearchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSearchServiceTests.swift; sourceTree = "<group>"; };
 		740000000000000000000108 /* ReaderViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModelTests.swift; sourceTree = "<group>"; };
 		740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailImageNormalizerTests.swift; sourceTree = "<group>"; };
+		74000000000000000000010A /* OnboardingMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingMigrationTests.swift; sourceTree = "<group>"; };
 		750000000000000000000101 /* ReadingStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStats.swift; sourceTree = "<group>"; };
 		750000000000000000000102 /* ReadingStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStore.swift; sourceTree = "<group>"; };
 		750000000000000000000103 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
@@ -443,6 +445,7 @@
 				740000000000000000000107 /* ReaderSearchServiceTests.swift */,
 				740000000000000000000108 /* ReaderViewModelTests.swift */,
 				740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */,
+				74000000000000000000010A /* OnboardingMigrationTests.swift */,
 				750000000000000000000104 /* ReadingStatsStoreTests.swift */,
 				760000000000000000000103 /* AIRecapStoreTests.swift */,
 				760000000000000000000105 /* AIRecapServiceTests.swift */,
@@ -741,6 +744,7 @@
 				740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */,
 				740000000000000000000008 /* ReaderViewModelTests.swift in Sources */,
 				740000000000000000000009 /* ThumbnailImageNormalizerTests.swift in Sources */,
+				74000000000000000000000A /* OnboardingMigrationTests.swift in Sources */,
 				750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */,
 				760000000000000000000003 /* AIRecapStoreTests.swift in Sources */,
 				760000000000000000000005 /* AIRecapServiceTests.swift in Sources */,
