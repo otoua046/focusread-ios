@@ -466,8 +466,9 @@ struct RootView: View {
                 to: read,
                 previewImageData: previewImageData
             )
+            let thumbnailDidChange = updatedRead.thumbnailPath != read.thumbnailPath
 
-            guard forceSave || updatedRead.thumbnailPath != read.thumbnailPath else {
+            guard thumbnailDidChange else {
                 return
             }
 

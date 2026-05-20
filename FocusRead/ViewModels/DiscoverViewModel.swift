@@ -509,8 +509,8 @@ final class DiscoverViewModel: ObservableObject {
             )
             if readWithThumbnail.thumbnailPath != updated.thumbnailPath {
                 updated.thumbnailPath = readWithThumbnail.thumbnailPath
+                didUpdate = true
             }
-            didUpdate = true
         }
 
         guard didUpdate else { return existing }
