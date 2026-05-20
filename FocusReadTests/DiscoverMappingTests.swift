@@ -870,6 +870,61 @@ struct DiscoverMappingTests {
         #expect(await openLibraryCounter.value == 0)
     }
 
+    @Test func shelfMetadataCacheKeepsDistinctLimits() async throws {
+        let metadataLimits = DiscoverRequestedLimits()
+        let session = Self.mockSession { request in
+            let url = try #require(request.url)
+            if url.host == "gutendex.com" {
+                return Self.jsonResponse(for: url, body: #"{"results":[]}"#)
+            }
+
+            if url.host == "openlibrary.org",
+               url.path == "/search.json",
+               Self.queryValue("has_fulltext", in: url) == nil,
+               Self.queryValue("q", in: url) == "classic literature",
+               let limit = Self.queryValue("limit", in: url).flatMap(Int.init) {
+                await metadataLimits.append(limit)
+                return Self.jsonResponse(for: url, body: #"{"docs":[]}"#)
+            }
+
+            if url.host == "openlibrary.org", url.path == "/search.json" {
+                return Self.jsonResponse(for: url, body: #"{"docs":[]}"#)
+            }
+
+            return Self.jsonResponse(for: url, statusCode: 404, body: #"{"error":"not found"}"#)
+        }
+        let archiveService = Self.archiveService(session: session)
+        let persistentMetadataCache = Self.persistentBookCache()
+        let service = DiscoverService(
+            gutenbergService: GutenbergDiscoveryService(session: session),
+            openLibraryService: OpenLibraryDiscoveryService(session: session, archiveMetadataService: archiveService),
+            archiveMetadataService: archiveService,
+            persistentMetadataCache: persistentMetadataCache,
+            shelfSnapshotCache: DiscoverShelfSnapshotCache(directoryURL: Self.temporaryCacheDirectory(named: "ShelfSnapshot")),
+            session: session
+        )
+        let hydratedSeed = book(
+            id: "hydrated-seed",
+            source: .projectGutenberg,
+            sourceID: "seed",
+            title: "classic",
+            author: "literature",
+            coverURL: nil
+        )
+
+        _ = await service.hydratedBook(hydratedSeed)
+        _ = await service.shelfPage(
+            sectionID: "popular-classics",
+            title: "Popular Classics",
+            existingBooks: [],
+            page: 1,
+            pageSize: 20
+        )
+
+        #expect(await metadataLimits.values.contains(12))
+        #expect(await metadataLimits.values.contains(32))
+    }
+
     @Test func shelfPageTreatsNetworkRefusalsAsEmptyPages() async throws {
         let session = Self.mockSession { _ in
             throw URLError(.cannotConnectToHost)
@@ -1638,6 +1693,18 @@ private actor DiscoverMockCounter {
     func incrementAndReturnValue() -> Int {
         count += 1
         return count
+    }
+}
+
+private actor DiscoverRequestedLimits {
+    private var requestedLimits: [Int] = []
+
+    var values: [Int] {
+        requestedLimits
+    }
+
+    func append(_ limit: Int) {
+        requestedLimits.append(limit)
     }
 }
 

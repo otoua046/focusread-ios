@@ -384,7 +384,8 @@ actor DiscoverService {
         guard !normalizedQuery.isEmpty else { return [] }
         let key = [
             normalizedQuery,
-            "\(max(page, 1))"
+            "\(max(page, 1))",
+            "\(max(limit, 1))"
         ].joined(separator: "|")
         if let cached = metadataCache[key] {
             DiscoverNetworkLog.cache("metadata hit \(key)")

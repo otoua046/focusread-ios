@@ -40,7 +40,7 @@ struct RootView: View {
     @StateObject private var cloudSyncManager = CloudSyncManager()
     @StateObject private var documentOpenInViewModel = DocumentImportViewModel()
     @State private var readerViewModel: ReaderViewModel?
-    @State private var selectedTab: MainTab = .library
+    @State private var selectedTab: MainTab = .discover
     @State private var isReplayingOnboarding = false
     @AppStorage(FocusReadOnboardingSettingsKey.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
