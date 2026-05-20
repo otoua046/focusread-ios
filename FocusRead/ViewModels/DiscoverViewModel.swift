@@ -1095,7 +1095,7 @@ private struct DiscoverSavedReadLookup {
     private let byExternalSourceID: [String: SavedRead]
     private let byFileName: [String: SavedRead]
     private let byTitleAuthor: [String: SavedRead]
-    private let byTitleOnly: [String: SavedRead]
+    private let byTitle: [String: [SavedRead]]
 
     init(reads: [SavedRead]) {
         byExternalSourceID = Dictionary(
@@ -1122,20 +1122,23 @@ private struct DiscoverSavedReadLookup {
             },
             uniquingKeysWith: { first, _ in first }
         )
-        byTitleOnly = Dictionary(
-            reads.compactMap { read in
-                let canonicalTitle = read.displayTitle.discoverCanonicalTitleComponent
-                guard !canonicalTitle.isEmpty else { return nil }
-                return (canonicalTitle, read)
-            },
-            uniquingKeysWith: { first, _ in first }
-        )
+        byTitle = Dictionary(grouping: reads, by: { read in
+            read.displayTitle.discoverCanonicalTitleComponent
+        }).filter { !$0.key.isEmpty }
     }
 
     func existingRead(for book: DiscoverBook) -> SavedRead? {
         byExternalSourceID[book.externalSourceID]
             ?? book.duplicateFileName.flatMap { byFileName[$0] }
             ?? byTitleAuthor[book.titleAuthorFingerprint]
-            ?? byTitleOnly[book.title.discoverCanonicalTitleComponent]
+            ?? byTitle[book.title.discoverCanonicalTitleComponent]?.first {
+                authorsAreCompatible($0, book: book)
+            }
+    }
+
+    private func authorsAreCompatible(_ read: SavedRead, book: DiscoverBook) -> Bool {
+        let readAuthor = (read.author ?? read.authorName ?? "").discoverCanonicalAuthorComponent
+        let bookAuthor = (book.author ?? "").discoverCanonicalAuthorComponent
+        return readAuthor.isEmpty || bookAuthor.isEmpty || readAuthor == bookAuthor
     }
 }

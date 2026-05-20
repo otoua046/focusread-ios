@@ -337,11 +337,30 @@ struct RootView: View {
                 return true
             }
             if read.originalFileName == importedDocument.fileName {
-                return true
+                return discoverTitleMatches(read, importedDocument: importedDocument)
+                    && discoverAuthorsAreCompatible(read, importedDocument: importedDocument)
             }
-            return read.displayTitle.discoverIdentityComponent == importedDocument.displayTitle.discoverIdentityComponent
-                && (read.author ?? read.authorName ?? "").discoverIdentityComponent == (importedDocument.author ?? "").discoverIdentityComponent
+            return discoverTitleMatches(read, importedDocument: importedDocument)
+                && discoverAuthorMatches(read, importedDocument: importedDocument)
         }
+    }
+
+    private func discoverTitleMatches(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
+        let readTitle = read.displayTitle.discoverIdentityComponent
+        let importedTitle = importedDocument.displayTitle.discoverIdentityComponent
+        return !readTitle.isEmpty && readTitle == importedTitle
+    }
+
+    private func discoverAuthorMatches(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
+        let readAuthor = (read.author ?? read.authorName ?? "").discoverIdentityComponent
+        let importedAuthor = (importedDocument.author ?? "").discoverIdentityComponent
+        return !readAuthor.isEmpty && readAuthor == importedAuthor
+    }
+
+    private func discoverAuthorsAreCompatible(_ read: SavedRead, importedDocument: ImportedDocument) -> Bool {
+        let readAuthor = (read.author ?? read.authorName ?? "").discoverIdentityComponent
+        let importedAuthor = (importedDocument.author ?? "").discoverIdentityComponent
+        return readAuthor.isEmpty || importedAuthor.isEmpty || readAuthor == importedAuthor
     }
 
     private func updateExistingRead(_ existingRead: SavedRead, with importedDocument: ImportedDocument) {

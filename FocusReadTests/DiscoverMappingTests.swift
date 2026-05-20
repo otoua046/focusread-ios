@@ -1145,6 +1145,32 @@ struct DiscoverMappingTests {
         #expect(updatedRead.thumbnailPath != nil)
     }
 
+    @MainActor
+    @Test func existingReadLookupDoesNotMatchSameTitleWithDifferentAuthor() {
+        let store = temporaryStore()
+        let existingDocument = ImportedDocument(
+            fileName: "common-title-first-author.epub",
+            displayTitle: "Common Title",
+            author: "First Author",
+            text: "Readable text with enough words for a library item.",
+            sourceType: .epub,
+            languageCode: "en"
+        )
+        store.save(SavedReadMapper.makeSavedRead(from: existingDocument, tokens: TextTokenizer().tokenize(existingDocument)))
+
+        let viewModel = DiscoverViewModel(store: store, service: DiscoverService())
+        let unrelatedBook = book(
+            id: "gutenberg-999",
+            source: .projectGutenberg,
+            sourceID: "999",
+            title: "Common Title",
+            author: "Second Author",
+            coverURL: nil
+        )
+
+        #expect(viewModel.actionState(for: unrelatedBook) == .idle)
+    }
+
     @Test func mergedEnrichesGutenbergDuplicateWorksWithoutReplacingReadableResource() {
         let gutenberg = book(
             id: "gutenberg-1342",
