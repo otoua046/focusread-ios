@@ -28,14 +28,8 @@ struct ReaderControlsView: View {
                     viewModel.rewindWord()
                 } label: {
                     Image(systemName: "gobackward")
-                        .foregroundStyle(AppTheme.controlForeground)
-                        .frame(width: 44, height: 44)
-                        .background(AppTheme.controlBackground, in: Circle())
-                        .overlay {
-                            Circle().strokeBorder(AppTheme.border, lineWidth: 1)
-                        }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.focusReadIconControl(tone: .regular, visualSize: 44, tapTargetSize: 44))
                 .accessibilityLabel(L10n.string(.readerRewindWord))
 
                 Button {
@@ -43,25 +37,16 @@ struct ReaderControlsView: View {
                 } label: {
                     Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(AppTheme.primaryButtonForeground)
-                        .frame(width: 62, height: 62)
-                        .background(AppTheme.primaryButtonBackground, in: Circle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.focusReadIconControl(tone: .prominent, visualSize: 62, tapTargetSize: 62))
                 .accessibilityLabel(viewModel.isPlaying ? L10n.string(.readerPause) : L10n.string(.readerPlay))
 
                 Button {
                     viewModel.skipWord()
                 } label: {
                     Image(systemName: "goforward")
-                        .foregroundStyle(AppTheme.controlForeground)
-                        .frame(width: 44, height: 44)
-                        .background(AppTheme.controlBackground, in: Circle())
-                        .overlay {
-                            Circle().strokeBorder(AppTheme.border, lineWidth: 1)
-                        }
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.focusReadIconControl(tone: .regular, visualSize: 44, tapTargetSize: 44))
                 .accessibilityLabel(L10n.string(.readerSkipWord))
 
                 if viewModel.sectionNavigationAvailable {

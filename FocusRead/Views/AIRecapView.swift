@@ -252,7 +252,13 @@ private struct AIRecapSessionRow: View {
                 } label: {
                     Label(.aiRecapGenerate, systemImage: "sparkles")
                 }
-                .buttonStyle(.aiRecapPrimary)
+                .buttonStyle(.focusReadProminentAction(
+                    shape: .rounded(10),
+                    minHeight: 38,
+                    horizontalPadding: 12,
+                    verticalPadding: 9,
+                    font: .footnote.weight(.semibold)
+                ))
                 .disabled(!canGenerate)
             } else {
                 Text(.aiRecapNoGenerated)
@@ -284,17 +290,17 @@ private struct AIRecapSessionRow: View {
             Button(.aiRecapRead) {
                 onRead(recap)
             }
-            .buttonStyle(.aiRecapPrimary)
+            .buttonStyle(primaryActionStyle)
 
             Button(.aiRecapRSVP) {
                 onRSVP(recap)
             }
-            .buttonStyle(.aiRecapSecondary)
+            .buttonStyle(secondaryActionStyle)
 
             Button(.aiRecapRegenerate) {
                 onRegenerate()
             }
-            .buttonStyle(.aiRecapSecondary)
+            .buttonStyle(secondaryActionStyle)
             .disabled(!canGenerate)
         }
     }
@@ -304,19 +310,41 @@ private struct AIRecapSessionRow: View {
             Button(.aiRecapRead) {
                 onRead(recap)
             }
-            .buttonStyle(.aiRecapPrimary)
+            .buttonStyle(primaryActionStyle)
 
             Button(.aiRecapRSVP) {
                 onRSVP(recap)
             }
-            .buttonStyle(.aiRecapSecondary)
+            .buttonStyle(secondaryActionStyle)
 
             Button(.aiRecapRegenerate) {
                 onRegenerate()
             }
-            .buttonStyle(.aiRecapSecondary)
+            .buttonStyle(secondaryActionStyle)
             .disabled(!canGenerate)
         }
+    }
+
+    private var primaryActionStyle: FocusReadProminentActionButtonStyle {
+        .focusReadProminentAction(
+            shape: .rounded(10),
+            fullWidth: false,
+            minHeight: 38,
+            horizontalPadding: 12,
+            verticalPadding: 9,
+            font: .footnote.weight(.semibold)
+        )
+    }
+
+    private var secondaryActionStyle: FocusReadSecondaryActionButtonStyle {
+        .focusReadSecondaryAction(
+            shape: .rounded(10),
+            fullWidth: false,
+            minHeight: 38,
+            horizontalPadding: 12,
+            verticalPadding: 9,
+            font: .footnote.weight(.semibold)
+        )
     }
 }
 
@@ -366,61 +394,5 @@ private struct AIRecapTextView: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .focusReadThemeRefresh()
-    }
-}
-
-private struct AIRecapButtonStyle: ButtonStyle {
-    enum Kind {
-        case primary
-        case secondary
-    }
-
-    let kind: Kind
-
-    @Environment(\.focusReadTheme) private var theme
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(foregroundColor)
-            .lineLimit(1)
-            .minimumScaleFactor(0.82)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(backgroundColor.opacity(configuration.isPressed ? 0.78 : 1), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay {
-                if kind == .secondary {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .strokeBorder(theme.border.opacity(0.55), lineWidth: 1)
-                }
-            }
-    }
-
-    private var foregroundColor: Color {
-        switch kind {
-        case .primary:
-            return AppTheme.primaryButtonForeground
-        case .secondary:
-            return theme.primaryText
-        }
-    }
-
-    private var backgroundColor: Color {
-        switch kind {
-        case .primary:
-            return AppTheme.primaryButtonBackground
-        case .secondary:
-            return theme.controlBackground
-        }
-    }
-}
-
-private extension ButtonStyle where Self == AIRecapButtonStyle {
-    static var aiRecapPrimary: AIRecapButtonStyle {
-        AIRecapButtonStyle(kind: .primary)
-    }
-
-    static var aiRecapSecondary: AIRecapButtonStyle {
-        AIRecapButtonStyle(kind: .secondary)
     }
 }

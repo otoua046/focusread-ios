@@ -58,10 +58,8 @@ struct FocusReadOnboardingView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 15, weight: .semibold))
-                        .frame(width: 44, height: 44)
-                        .background(AppTheme.controlBackground, in: Circle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.focusReadIconControl(tone: .regular, visualSize: 44, tapTargetSize: 44))
                 .accessibilityLabel(L10n.string(.onboardingBack))
             } else {
                 Color.clear
@@ -139,11 +137,7 @@ struct FocusReadOnboardingView: View {
             Button(primaryButtonTitle) {
                 moveForward()
             }
-            .font(.headline.weight(.semibold))
-            .foregroundStyle(AppTheme.primaryButtonForeground)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 15)
-            .background(AppTheme.primaryButtonBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .buttonStyle(.focusReadProminentAction())
             .disabled(!canContinueCurrentStep)
             .opacity(canContinueCurrentStep ? 1 : 0.45)
             .accessibilityHint(continueAccessibilityHint)

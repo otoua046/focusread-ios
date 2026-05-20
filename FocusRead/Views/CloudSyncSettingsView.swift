@@ -51,11 +51,9 @@ struct CloudSyncSettingsView: View {
                         cloudSyncManager.syncNow()
                     } label: {
                         Label(.cloudSyncNow, systemImage: "arrow.triangle.2.circlepath")
-                            .font(.subheadline.weight(.semibold))
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(AppTheme.accent)
+                    .buttonStyle(.focusReadProminentAction(font: .subheadline.weight(.semibold)))
                     .disabled(!cloudSyncManager.isSyncEnabled || cloudSyncManager.status.kind == .syncing)
                 }
 

@@ -368,6 +368,14 @@ final class ReaderViewModel: ObservableObject {
     }
 
     var locationIndicatorTitle: String {
+        if let secondaryTitle = locationIndicatorSecondaryTitle {
+            return L10n.format(.readerDocumentLocationFormat, locationIndicatorPrimaryTitle, secondaryTitle)
+        }
+
+        return locationIndicatorPrimaryTitle
+    }
+
+    var locationIndicatorPrimaryTitle: String {
         if case .aiRecap = displayContext {
             return L10n.string(.readerAIRecap)
         }
@@ -376,20 +384,32 @@ final class ReaderViewModel: ObservableObject {
         case .pastedText:
             return L10n.string(.readerPastedText)
         case .txt:
-            if let structureTitle = currentStructureLocationTitle {
-                return structureTitle
-            }
             return session.document.fileName ?? session.document.title
         case .pdf:
-            if let structureTitle = currentStructureLocationTitle {
-                return L10n.format(.readerDocumentLocationFormat, session.document.fileName ?? session.document.title, structureTitle)
-            }
-            return L10n.format(.readerDocumentLocationFormat, session.document.fileName ?? session.document.title, L10n.format(.readerPageFormat, currentSectionNumber))
+            return session.document.fileName ?? session.document.title
         case .image:
-            return L10n.format(.readerDocumentLocationFormat, session.document.fileName ?? session.document.title, L10n.format(.readerPageFormat, currentSectionNumber))
+            return session.document.fileName ?? session.document.title
         case .epub:
-            let location = currentEPUBLocationTitle ?? L10n.format(currentEPUBSectionKindFormatKey, currentSectionNumber)
-            return L10n.format(.readerDocumentLocationFormat, session.document.fileName ?? session.document.title, location)
+            return session.document.fileName ?? session.document.title
+        }
+    }
+
+    var locationIndicatorSecondaryTitle: String? {
+        if case .aiRecap = displayContext {
+            return nil
+        }
+
+        switch session.document.sourceType {
+        case .pastedText:
+            return nil
+        case .txt:
+            return currentStructureLocationTitle
+        case .pdf:
+            return currentStructureLocationTitle ?? L10n.format(.readerPageFormat, currentSectionNumber)
+        case .image:
+            return L10n.format(.readerPageFormat, currentSectionNumber)
+        case .epub:
+            return currentEPUBLocationTitle ?? L10n.format(currentEPUBSectionKindFormatKey, currentSectionNumber)
         }
     }
 

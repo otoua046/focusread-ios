@@ -226,16 +226,14 @@ struct LibraryView: View {
                 .foregroundStyle(theme.primaryText)
                 .padding(.top, 4)
             } else {
-                HStack(spacing: 8) {
+                HStack(spacing: 0) {
                     ImportSourceMenu(
                         viewModel: documentImportViewModel,
                         onSourceSelected: {}
                     ) {
                         Image(systemName: "plus")
                             .font(.title2.weight(.semibold))
-                            .foregroundStyle(theme.primaryText)
                             .frame(width: 44, height: 44)
-                            .background(theme.controlBackground.opacity(0.8), in: Circle())
                     }
                     .accessibilityLabel(L10n.string(.libraryImportAccessibility))
 
@@ -247,6 +245,7 @@ struct LibraryView: View {
                         }
                     )
                 }
+                .focusReadAccessoryToolbarGroup(tone: .action)
                 .padding(.top, 4)
             }
         }
@@ -851,11 +850,9 @@ struct LibraryControlsMenu: View {
                 Text(.librarySortBy)
             }
         } label: {
-            Image(systemName: "ellipsis.circle")
+            Image(systemName: "ellipsis")
                 .font(.title2)
-                .foregroundStyle(theme.primaryText)
                 .frame(width: 44, height: 44)
-                .background(theme.controlBackground.opacity(0.8), in: Circle())
         }
         .menuStyle(.borderlessButton)
     }

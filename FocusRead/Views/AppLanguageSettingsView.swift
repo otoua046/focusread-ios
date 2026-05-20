@@ -93,15 +93,13 @@ struct AppLanguageSettingsView: View {
         if language == .systemDefault {
             Image(systemName: language.symbolName)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(theme.accent)
                 .frame(width: 38, height: 38)
-                .background(theme.controlBackground, in: Circle())
+                .focusReadIconControlSurface(tone: .regular)
         } else {
             Text(language.shortCode)
                 .font(.caption2.weight(.bold))
-                .foregroundStyle(theme.accent)
                 .frame(width: 38, height: 38)
-                .background(theme.controlBackground, in: Circle())
+                .focusReadIconControlSurface(tone: .regular)
         }
     }
 

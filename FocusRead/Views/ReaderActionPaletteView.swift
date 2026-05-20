@@ -44,61 +44,70 @@ struct ReaderActionPaletteView: View {
     @ViewBuilder
     private var actionCluster: some View {
         if isPresented {
-            VStack(alignment: .trailing, spacing: spacing) {
-                HStack(spacing: spacing) {
-                    if isTranslateSupported {
-                        ReaderActionItem(
-                            title: L10n.string(.readerTranslate),
-                            systemImage: "translate",
-                            size: actionSize,
-                            onPressedChange: updateInteractionState
-                        ) {
-                            runAndClose(onTranslate)
-                        }
-                    }
-                    
-                    ReaderActionItem(
-                        title: L10n.string(.readerSettings),
-                        systemImage: "gearshape",
-                        size: actionSize,
-                        onPressedChange: updateInteractionState
-                    ) {
-                        runAndClose(onSettings)
-                    }
+            paletteActions
+            .transition(actionTransition)
+        }
+    }
 
+    @ViewBuilder
+    private var paletteActions: some View {
+        paletteActionsContent
+    }
+
+    private var paletteActionsContent: some View {
+        VStack(alignment: .trailing, spacing: spacing) {
+            HStack(spacing: spacing) {
+                if isTranslateSupported {
                     ReaderActionItem(
-                        title: L10n.string(.readerAIRecap),
-                        systemImage: "sparkles",
+                        title: L10n.string(.readerTranslate),
+                        systemImage: "translate",
                         size: actionSize,
-                        isEnabled: isAIRecapSupported,
                         onPressedChange: updateInteractionState
                     ) {
-                        runAndClose(onAIRecap)
+                        runAndClose(onTranslate)
                     }
                 }
 
-                HStack(spacing: spacing) {
-                    ReaderActionItem(
-                        title: L10n.string(.readerDictionary),
-                        systemImage: "book",
-                        size: actionSize,
-                        onPressedChange: updateInteractionState
-                    ) {
-                        runAndClose(onDictionary)
-                    }
-                    .accessibilityHint(currentWord.isEmpty ? L10n.string(.readerDictionaryHint) : L10n.format(.readerDictionaryCurrentWordHintFormat, currentWord))
+                ReaderActionItem(
+                    title: L10n.string(.readerSettings),
+                    systemImage: "gearshape",
+                    size: actionSize,
+                    onPressedChange: updateInteractionState
+                ) {
+                    runAndClose(onSettings)
+                }
 
-                    ReaderActionItem(
-                        title: L10n.string(.readerLookup),
-                        systemImage: "magnifyingglass",
-                        size: actionSize,
-                        onPressedChange: updateInteractionState
-                    ) {
-                        runAndClose(onLookup)
-                    }
+                ReaderActionItem(
+                    title: L10n.string(.readerAIRecap),
+                    systemImage: "sparkles",
+                    size: actionSize,
+                    isEnabled: isAIRecapSupported,
+                    onPressedChange: updateInteractionState
+                ) {
+                    runAndClose(onAIRecap)
                 }
             }
-            .transition(actionTransition)
+
+            HStack(spacing: spacing) {
+                ReaderActionItem(
+                    title: L10n.string(.readerDictionary),
+                    systemImage: "book",
+                    size: actionSize,
+                    onPressedChange: updateInteractionState
+                ) {
+                    runAndClose(onDictionary)
+                }
+                .accessibilityHint(currentWord.isEmpty ? L10n.string(.readerDictionaryHint) : L10n.format(.readerDictionaryCurrentWordHintFormat, currentWord))
+
+                ReaderActionItem(
+                    title: L10n.string(.readerLookup),
+                    systemImage: "magnifyingglass",
+                    size: actionSize,
+                    onPressedChange: updateInteractionState
+                ) {
+                    runAndClose(onLookup)
+                }
+            }
         }
     }
 
@@ -111,18 +120,8 @@ struct ReaderActionPaletteView: View {
         } label: {
             Image(systemName: isPresented ? "xmark" : "ellipsis")
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(AppTheme.primaryText)
                 .frame(width: triggerSize, height: triggerSize)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay {
-                    Circle()
-                        .strokeBorder(AppTheme.materialHighlightStroke, lineWidth: 1)
-                }
-                .overlay {
-                    Circle()
-                        .strokeBorder(AppTheme.materialLowlightStroke, lineWidth: 0.5)
-                }
-                .shadow(color: AppTheme.overlayShadow.opacity(isPresented ? 1 : 0.58), radius: 14, x: 0, y: 8)
+                .focusReadIconControlSurface(tone: .regular)
         }
         .buttonStyle(ReaderPaletteButtonStyle(onPressedChange: updateInteractionState))
         .accessibilityLabel(isPresented ? L10n.string(.readerCloseQuickActions) : L10n.string(.readerQuickActions))
@@ -174,18 +173,8 @@ private struct ReaderActionItem: View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(AppTheme.primaryText)
                 .frame(width: size, height: size)
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay {
-                    Circle()
-                        .strokeBorder(AppTheme.materialHighlightStroke, lineWidth: 1)
-                }
-                .overlay {
-                    Circle()
-                        .strokeBorder(AppTheme.materialLowlightStroke, lineWidth: 0.5)
-                }
-                .shadow(color: AppTheme.overlayShadow.opacity(0.86), radius: 10, x: 0, y: 5)
+                .focusReadIconControlSurface(tone: .regular)
                 .opacity(isEnabled ? 1 : 0.42)
         }
         .buttonStyle(ReaderPaletteButtonStyle(onPressedChange: onPressedChange))

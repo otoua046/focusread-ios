@@ -31,10 +31,8 @@ struct DocumentImportView: View {
                         viewModel.dismissImport()
                     } label: {
                         Image(systemName: "xmark")
-                            .frame(width: 36, height: 36)
-                            .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.focusReadIconControl(tone: .regular, visualSize: 36, tapTargetSize: 44))
                     .accessibilityLabel(L10n.string(.importCloseAccessibility))
                 }
             }
@@ -99,27 +97,17 @@ struct DocumentImportView: View {
                 onStartReading(document)
             } label: {
                 Label(.importStartReading, systemImage: "play.fill")
-                    .font(.headline)
-                    .foregroundStyle(AppTheme.primaryButtonForeground)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 15)
-                    .background(AppTheme.primaryButtonBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
+            .buttonStyle(.focusReadProminentAction())
 
             Button {
                 viewModel.chooseAnotherFile()
             } label: {
                 Label(.importChooseAnotherFile, systemImage: "folder")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(AppTheme.primaryText)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(AppTheme.controlBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .strokeBorder(AppTheme.border, lineWidth: 1)
-                    }
             }
+            .buttonStyle(.focusReadSecondaryAction(font: .subheadline.weight(.medium)))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
@@ -152,28 +140,18 @@ struct DocumentImportView: View {
                         viewModel.retryImport()
                     } label: {
                         Label(.commonRetry, systemImage: "arrow.clockwise")
-                            .font(.headline)
-                            .foregroundStyle(AppTheme.primaryButtonForeground)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 15)
-                            .background(AppTheme.primaryButtonBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     }
+                    .buttonStyle(.focusReadProminentAction())
                 }
 
                 Button {
                     viewModel.chooseAnotherFile()
                 } label: {
                     Label(.importChooseAnotherFile, systemImage: "folder")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(AppTheme.primaryText)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(AppTheme.controlBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .strokeBorder(AppTheme.border, lineWidth: 1)
-                        }
                 }
+                .buttonStyle(.focusReadSecondaryAction(font: .subheadline.weight(.medium)))
             }
             .padding(.top, 10)
         }

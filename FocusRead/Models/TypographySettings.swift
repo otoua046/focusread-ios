@@ -9,6 +9,10 @@ enum TypographySettingsKey {
     static let appearance = "appearance"
 }
 
+enum UISettingsKey {
+    static let liquidGlassEnabled = FocusReadUISettingsKey.liquidGlassEnabled
+}
+
 enum ReaderBehaviorSettingsKey {
     static let defaultWPM = "defaultWPM"
     static let hapticsEnabled = "hapticsEnabled"
