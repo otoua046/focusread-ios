@@ -262,6 +262,7 @@
 "import.document.detail.format" = "%d 단어 • %@";
 "import.startReading" = "읽기 시작";
 "import.chooseAnotherFile" = "다른 파일 선택";
+"import.source.quickRead" = "빠른 읽기";
 "import.source.files" = "파일";
 "import.source.camera" = "카메라";
 "import.source.photoLibrary" = "사진 보관함";
@@ -308,6 +309,15 @@
 "import.error.imageImportFailed.message" = "FocusRead가 선택한 이미지를 불러오지 못했습니다.";
 "import.error.unsupportedFile.message" = "이 파일 형식은 아직 지원되지 않습니다.";
 
+"quickRead.title" = "빠른 읽기";
+"quickRead.title.section" = "제목";
+"quickRead.title.placeholder" = "선택 사항 제목";
+"quickRead.text.section" = "텍스트";
+"quickRead.text.placeholder" = "텍스트를 붙여넣거나 입력하세요";
+"quickRead.paste" = "붙여넣기";
+"quickRead.startReading" = "읽기 시작";
+"quickRead.generatedTitle.format" = "빠른 읽기 %@";
+
 "library.title" = "라이브러리";
 "library.import.accessibility" = "가져오기";
 "library.search.placeholder" = "책 또는 저자 검색";
@@ -336,6 +346,7 @@
 "library.sort.title" = "제목";
 "library.sort.author" = "저자";
 "library.sort.manual" = "수동";
+"library.source.quickRead" = "빠른 읽기";
 "library.source.pasted" = "붙여넣음";
 "library.source.text" = "텍스트";
 "library.source.pdf" = "PDF";

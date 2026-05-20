@@ -262,6 +262,7 @@
 "import.document.detail.format" = "%d parole • %@";
 "import.startReading" = "Inizia a leggere";
 "import.chooseAnotherFile" = "Scegli un altro file";
+"import.source.quickRead" = "Lettura rapida";
 "import.source.files" = "File";
 "import.source.camera" = "Fotocamera";
 "import.source.photoLibrary" = "Libreria foto";
@@ -308,6 +309,15 @@
 "import.error.imageImportFailed.message" = "FocusRead non ha potuto caricare l’immagine selezionata.";
 "import.error.unsupportedFile.message" = "Questo tipo di file non è ancora supportato.";
 
+"quickRead.title" = "Lettura rapida";
+"quickRead.title.section" = "Titolo";
+"quickRead.title.placeholder" = "Titolo facoltativo";
+"quickRead.text.section" = "Testo";
+"quickRead.text.placeholder" = "Incolla o digita il testo";
+"quickRead.paste" = "Incolla";
+"quickRead.startReading" = "Inizia lettura";
+"quickRead.generatedTitle.format" = "Lettura rapida %@";
+
 "library.title" = "Libreria";
 "library.import.accessibility" = "Importa";
 "library.search.placeholder" = "Cerca libri o autori";
@@ -336,6 +346,7 @@
 "library.sort.title" = "Titolo";
 "library.sort.author" = "Autore";
 "library.sort.manual" = "Manuale";
+"library.source.quickRead" = "Lettura rapida";
 "library.source.pasted" = "Incollato";
 "library.source.text" = "Testo";
 "library.source.pdf" = "PDF";

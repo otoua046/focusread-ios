@@ -262,6 +262,7 @@
 "import.document.detail.format" = "%d كلمة • %@";
 "import.startReading" = "بدء القراءة";
 "import.chooseAnotherFile" = "اختيار ملف آخر";
+"import.source.quickRead" = "قراءة سريعة";
 "import.source.files" = "الملفات";
 "import.source.camera" = "الكاميرا";
 "import.source.photoLibrary" = "مكتبة الصور";
@@ -308,6 +309,15 @@
 "import.error.imageImportFailed.message" = "تعذر على FocusRead تحميل الصورة المحددة.";
 "import.error.unsupportedFile.message" = "نوع الملف هذا غير مدعوم بعد.";
 
+"quickRead.title" = "قراءة سريعة";
+"quickRead.title.section" = "العنوان";
+"quickRead.title.placeholder" = "عنوان اختياري";
+"quickRead.text.section" = "النص";
+"quickRead.text.placeholder" = "الصق النص أو اكتبْه";
+"quickRead.paste" = "لصق";
+"quickRead.startReading" = "ابدأ القراءة";
+"quickRead.generatedTitle.format" = "قراءة سريعة %@";
+
 "library.title" = "المكتبة";
 "library.import.accessibility" = "استيراد";
 "library.search.placeholder" = "ابحث عن كتب أو مؤلفين";
@@ -336,6 +346,7 @@
 "library.sort.title" = "العنوان";
 "library.sort.author" = "المؤلف";
 "library.sort.manual" = "يدوي";
+"library.source.quickRead" = "قراءة سريعة";
 "library.source.pasted" = "ملصق";
 "library.source.text" = "نص";
 "library.source.pdf" = "PDF";

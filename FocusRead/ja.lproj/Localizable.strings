@@ -262,6 +262,7 @@
 "import.document.detail.format" = "%d 語 • %@";
 "import.startReading" = "読み始める";
 "import.chooseAnotherFile" = "別のファイルを選ぶ";
+"import.source.quickRead" = "クイックリード";
 "import.source.files" = "ファイル";
 "import.source.camera" = "カメラ";
 "import.source.photoLibrary" = "写真ライブラリ";
@@ -308,6 +309,15 @@
 "import.error.imageImportFailed.message" = "FocusRead は選択した画像を読み込めませんでした。";
 "import.error.unsupportedFile.message" = "このファイル形式にはまだ対応していません。";
 
+"quickRead.title" = "クイックリード";
+"quickRead.title.section" = "タイトル";
+"quickRead.title.placeholder" = "任意のタイトル";
+"quickRead.text.section" = "テキスト";
+"quickRead.text.placeholder" = "テキストを貼り付けるか入力してください";
+"quickRead.paste" = "貼り付け";
+"quickRead.startReading" = "読み始める";
+"quickRead.generatedTitle.format" = "クイックリード %@";
+
 "library.title" = "ライブラリ";
 "library.import.accessibility" = "読み込み";
 "library.search.placeholder" = "本または著者を検索";
@@ -336,6 +346,7 @@
 "library.sort.title" = "タイトル";
 "library.sort.author" = "著者";
 "library.sort.manual" = "手動";
+"library.source.quickRead" = "クイックリード";
 "library.source.pasted" = "ペースト";
 "library.source.text" = "テキスト";
 "library.source.pdf" = "PDF";
