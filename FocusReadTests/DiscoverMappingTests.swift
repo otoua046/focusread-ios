@@ -1021,7 +1021,7 @@ struct DiscoverMappingTests {
     }
 
     @MainActor
-    @Test func targetShelfPaginationStartsAfterSeededProviderCycle() async throws {
+    @Test func targetShelfPaginationStartsAtFirstProviderPageForSeededShelves() async throws {
         let requestedPages = DiscoverRequestedPages()
         let session = Self.mockSession { request in
             let url = try #require(request.url)
@@ -1063,7 +1063,7 @@ struct DiscoverMappingTests {
             let section = try #require(viewModel.sections.first { $0.id == shelfID })
             #expect(section.books.count > (initialCounts[shelfID] ?? 0))
         }
-        #expect(await requestedPages.values == [2, 2])
+        #expect(await requestedPages.values == [1, 1])
     }
 
     @Test func discoverImportedDocumentsRoundTripExternalSourceIDForAddAndReadDeduping() throws {

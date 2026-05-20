@@ -941,8 +941,8 @@ final class DiscoverViewModel: ObservableObject {
 }
 
 private struct DiscoverShelfPaginationState {
-    // Initial shelves already represent the first provider cycle, so load-more starts at page 2 of the first source.
-    var nextPage = 4
+    // Initial shelves are seeded from fixed curated IDs, so load-more starts at the first provider page.
+    var nextPage = 1
     var isLoading = false
     var emptyPageCount = 0
     var lastTriggerAt: Date?
