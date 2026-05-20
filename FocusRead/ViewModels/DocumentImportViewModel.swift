@@ -10,6 +10,7 @@ final class DocumentImportViewModel: ObservableObject {
     @Published var isImportSheetPresented = false
     @Published var isCameraCapturePresented = false
     @Published var isPhotoLibraryPickerPresented = false
+    @Published var isQuickReadEditorPresented = false
     @Published private(set) var state: DocumentImportState = .idle
     @AppStorage(ReaderBehaviorSettingsKey.smartCleanupMode) private var smartCleanupMode: String = ""
 
@@ -33,6 +34,8 @@ final class DocumentImportViewModel: ObservableObject {
 
     func presentImportSource(_ source: ImportSource) {
         switch source {
+        case .quickRead:
+            isQuickReadEditorPresented = true
         case .files:
             presentFilePicker()
         case .camera:
@@ -88,6 +91,7 @@ final class DocumentImportViewModel: ObservableObject {
         importTask = nil
         activeImportID = nil
         isImportSheetPresented = false
+        isQuickReadEditorPresented = false
         state = .idle
     }
 

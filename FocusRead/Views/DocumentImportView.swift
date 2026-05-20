@@ -202,9 +202,99 @@ struct ImportSourceMenu<MenuLabel: View>: View {
     }
 }
 
+struct QuickReadEditorSheet: View {
+    let onCancel: () -> Void
+    let onStartReading: (String, String?) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.focusReadTheme) private var theme
+    @FocusState private var isTextFocused: Bool
+    @State private var title = ""
+    @State private var text = ""
+
+    private var trimmedText: String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var trimmedTitle: String? {
+        let value = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField(L10n.string(.quickReadTitlePlaceholder), text: $title)
+                        .textInputAutocapitalization(.words)
+                        .foregroundStyle(theme.primaryText)
+                } header: {
+                    Text(.quickReadTitleSection)
+                }
+                .listRowBackground(theme.cardBackground)
+
+                Section {
+                    ZStack(alignment: .topLeading) {
+                        TextEditor(text: $text)
+                            .focused($isTextFocused)
+                            .font(.body)
+                            .foregroundStyle(theme.primaryText)
+                            .lineSpacing(3)
+                            .frame(minHeight: 320)
+                            .scrollContentBackground(.hidden)
+
+                        if text.isEmpty {
+                            Text(.quickReadTextPlaceholder)
+                                .font(.body)
+                                .foregroundStyle(theme.secondaryText)
+                                .padding(.top, 8)
+                                .padding(.leading, 5)
+                                .allowsHitTesting(false)
+                        }
+                    }
+                } header: {
+                    Text(.quickReadTextSection)
+                } footer: {
+                    PasteButton(payloadType: String.self) { strings in
+                        guard let pastedText = strings.first else { return }
+                        text = pastedText
+                    }
+                    .accessibilityLabel(L10n.string(.quickReadPaste))
+                }
+                .listRowBackground(theme.cardBackground)
+            }
+            .scrollContentBackground(.hidden)
+            .background(FocusReadBackground())
+            .navigationTitle(L10n.key(.quickReadTitle))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(.commonCancel) {
+                        onCancel()
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(.quickReadStartReading) {
+                        onStartReading(trimmedText, trimmedTitle)
+                        dismiss()
+                    }
+                    .disabled(trimmedText.isEmpty)
+                }
+            }
+        }
+        .presentationCornerRadius(22)
+        .task {
+            isTextFocused = true
+        }
+    }
+}
+
 private struct DocumentImportFlowModifier: ViewModifier {
     @ObservedObject var viewModel: DocumentImportViewModel
     let onStartImportedDocument: (ImportedDocument) -> Void
+    let onStartQuickRead: (String, String?) -> Void
 
     func body(content: Content) -> some View {
         content
@@ -213,6 +303,19 @@ private struct DocumentImportFlowModifier: ViewModifier {
                     viewModel.dismissImport()
                     onStartImportedDocument(document)
                 }
+            }
+            .sheet(isPresented: $viewModel.isQuickReadEditorPresented) {
+                QuickReadEditorSheet(
+                    onCancel: {
+                        viewModel.isQuickReadEditorPresented = false
+                    },
+                    onStartReading: { text, title in
+                        viewModel.isQuickReadEditorPresented = false
+                        onStartQuickRead(text, title)
+                    }
+                )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $viewModel.isCameraCapturePresented) {
                 CameraCaptureView(
@@ -242,11 +345,13 @@ private struct DocumentImportFlowModifier: ViewModifier {
 extension View {
     func documentImportFlow(
         viewModel: DocumentImportViewModel,
-        onStartImportedDocument: @escaping (ImportedDocument) -> Void
+        onStartImportedDocument: @escaping (ImportedDocument) -> Void,
+        onStartQuickRead: @escaping (String, String?) -> Void
     ) -> some View {
         modifier(DocumentImportFlowModifier(
             viewModel: viewModel,
-            onStartImportedDocument: onStartImportedDocument
+            onStartImportedDocument: onStartImportedDocument,
+            onStartQuickRead: onStartQuickRead
         ))
     }
 }

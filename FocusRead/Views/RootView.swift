@@ -82,6 +82,9 @@ struct RootView: View {
                         onStartImportedDocument: { document in
                             startReading(importedDocument: document)
                         },
+                        onStartQuickRead: { text, title in
+                            startQuickRead(text: text, title: title)
+                        },
                         onOpenRecapRSVP: { read, recap in
                             startRecapRSVP(for: read, recap: recap)
                         }
@@ -126,6 +129,9 @@ struct RootView: View {
             viewModel: documentOpenInViewModel,
             onStartImportedDocument: { document in
                 startReading(importedDocument: document)
+            },
+            onStartQuickRead: { text, title in
+                startQuickRead(text: text, title: title)
             }
         )
         .fullScreenCover(isPresented: $isReplayingOnboarding) {
@@ -248,6 +254,31 @@ struct RootView: View {
         readerViewModel = ReaderViewModel(
             session: session,
             importedDocument: importedDocument,
+            readingHistoryStore: readingHistoryStore,
+            readingStatsStore: readingStatsStore,
+            savedReadID: savedRead.id
+        )
+    }
+
+    private func startQuickRead(text: String, title: String?) {
+        let normalizedText = text.focusReadNormalizedDocumentText
+        let tokens = tokenizer.tokenize(normalizedText)
+        guard !tokens.isEmpty else { return }
+
+        let savedRead = SavedReadMapper.makeSavedRead(
+            from: normalizedText,
+            tokens: tokens,
+            providedTitle: title
+        )
+        readingHistoryStore.save(savedRead)
+
+        let session = ReadingSession(
+            tokens: tokens,
+            document: SavedReadMapper.readingDocument(from: savedRead),
+            wordsPerMinute: defaultWPM
+        )
+        readerViewModel = ReaderViewModel(
+            session: session,
             readingHistoryStore: readingHistoryStore,
             readingStatsStore: readingStatsStore,
             savedReadID: savedRead.id
