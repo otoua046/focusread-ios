@@ -428,6 +428,38 @@ struct DiscoverMappingTests {
         #expect(await counter.value == 0)
     }
 
+    @MainActor
+    @Test func viewModelSkipsRepeatCuratedLoadAfterShelvesPopulate() async throws {
+        let counter = DiscoverMockCounter()
+        let session = Self.mockSession { request in
+            let url = try #require(request.url)
+            if url.host == "gutendex.com" {
+                await counter.increment()
+                return Self.jsonResponse(for: url, body: #"{"results":[]}"#)
+            }
+            return Self.jsonResponse(for: url, statusCode: 404, body: #"{"error":"not found"}"#)
+        }
+        let archiveService = Self.archiveService(session: session)
+        let service = DiscoverService(
+            gutenbergService: GutenbergDiscoveryService(session: session),
+            openLibraryService: OpenLibraryDiscoveryService(session: session, archiveMetadataService: archiveService),
+            archiveMetadataService: archiveService,
+            persistentMetadataCache: Self.persistentBookCache(),
+            session: session
+        )
+        let viewModel = DiscoverViewModel(store: temporaryStore(), service: service)
+
+        await viewModel.loadCuratedIfNeeded()
+        let initialRequestCount = await counter.value
+
+        #expect(viewModel.hasAttemptedCuratedLoad)
+        #expect(!viewModel.sections.isEmpty)
+
+        await viewModel.loadCuratedIfNeeded()
+
+        #expect(await counter.value == initialRequestCount)
+    }
+
     @Test func openLibraryValidationQuietlySkipsRefusedArchiveURLs() async throws {
         let session = Self.mockSession { request in
             let url = try #require(request.url)

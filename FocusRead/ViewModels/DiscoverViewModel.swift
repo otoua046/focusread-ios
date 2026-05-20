@@ -82,6 +82,7 @@ final class DiscoverViewModel: ObservableObject {
 
     func loadCuratedIfNeeded() async {
         guard !isLoadingSections else { return }
+        guard !hasAttemptedCuratedLoad || sections.isEmpty else { return }
         let initialLoadStartedAt = Date()
         isLoadingSections = true
         message = nil
