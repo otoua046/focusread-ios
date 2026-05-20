@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 
 enum FocusReadOnboardingMode: Equatable {
     case firstLaunch
@@ -119,8 +120,14 @@ enum FocusReadOnboardingSample {
     }
 
     static var passageWords: [String] {
-        passage
-            .split { $0.isWhitespace || $0.isNewline }
-            .map(String.init)
+        words(in: passage)
+    }
+
+    static func words(in text: String) -> [String] {
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = text
+
+        return tokenizer.tokens(for: text.startIndex..<text.endIndex)
+            .map { String(text[$0]) }
     }
 }
