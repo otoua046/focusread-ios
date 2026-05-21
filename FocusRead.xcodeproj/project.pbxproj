@@ -25,16 +25,6 @@
 		71000000000000000000000E /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010F /* AppTheme.swift */; };
 		71000000000000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010E /* Assets.xcassets */; };
 		710000000000000000000122 /* ReaderActionPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000121 /* ReaderActionPaletteView.swift */; };
-		7A0000000000000000000001 /* OnboardingStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000101 /* OnboardingStep.swift */; };
-		7A0000000000000000000002 /* FocusReadOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000102 /* FocusReadOnboardingView.swift */; };
-		7A000000000000000000000A /* OnboardingPromiseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A000000000000000000010A /* OnboardingPromiseView.swift */; };
-		7A0000000000000000000003 /* OnboardingRSVPDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000103 /* OnboardingRSVPDemoView.swift */; };
-		7A0000000000000000000004 /* OnboardingComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000104 /* OnboardingComparisonView.swift */; };
-		7A0000000000000000000005 /* OnboardingWPMSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000105 /* OnboardingWPMSetupView.swift */; };
-		7A0000000000000000000006 /* OnboardingGoalPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000106 /* OnboardingGoalPickerView.swift */; };
-		7A0000000000000000000007 /* OnboardingThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000107 /* OnboardingThemePickerView.swift */; };
-		7A0000000000000000000008 /* OnboardingAIRecapDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000108 /* OnboardingAIRecapDemoView.swift */; };
-		7A0000000000000000000009 /* OnboardingFinishView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000109 /* OnboardingFinishView.swift */; };
 		720000000000000000000001 /* DocumentImportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000101 /* DocumentImportModels.swift */; };
 		720000000000000000000002 /* DocumentTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000102 /* DocumentTextExtractor.swift */; };
 		720000000000000000000003 /* DocumentPickerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000103 /* DocumentPickerService.swift */; };
@@ -63,6 +53,13 @@
 		72000000000000000000001A /* LibraryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011A /* LibraryViewModel.swift */; };
 		72000000000000000000001B /* ThumbnailGeneratorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000120 /* ThumbnailGeneratorService.swift */; };
 		72000000000000000000001C /* NativeSearchBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72000000000000000000011C /* NativeSearchBarView.swift */; };
+		72D000000000000000000001 /* DiscoverBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D000000000000000000101 /* DiscoverBook.swift */; };
+		72D000000000000000000002 /* GutenbergDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D000000000000000000102 /* GutenbergDiscoveryService.swift */; };
+		72D000000000000000000003 /* OpenLibraryDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D000000000000000000103 /* OpenLibraryDiscoveryService.swift */; };
+		72D000000000000000000004 /* DiscoverService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D000000000000000000104 /* DiscoverService.swift */; };
+		72D000000000000000000005 /* DiscoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D000000000000000000105 /* DiscoverViewModel.swift */; };
+		72D000000000000000000006 /* DiscoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D000000000000000000106 /* DiscoverView.swift */; };
+		72D000000000000000000007 /* DiscoverNetworkClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72D000000000000000000107 /* DiscoverNetworkClient.swift */; };
 		730000000000000000000001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 730000000000000000000101 /* ZIPFoundation */; };
 		740000000000000000000001 /* EPUBTextExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000101 /* EPUBTextExtractorTests.swift */; };
 		740000000000000000000002 /* minimal.epub in Resources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000102 /* minimal.epub */; };
@@ -74,6 +71,7 @@
 		740000000000000000000008 /* ReaderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000108 /* ReaderViewModelTests.swift */; };
 		740000000000000000000009 /* ThumbnailImageNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */; };
 		74000000000000000000000A /* OnboardingMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74000000000000000000010A /* OnboardingMigrationTests.swift */; };
+		74D000000000000000000001 /* DiscoverMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74D000000000000000000101 /* DiscoverMappingTests.swift */; };
 		750000000000000000000001 /* ReadingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000101 /* ReadingStats.swift */; };
 		750000000000000000000002 /* ReadingStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000102 /* ReadingStatsStore.swift */; };
 		750000000000000000000003 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000103 /* StatsView.swift */; };
@@ -87,6 +85,10 @@
 		760000000000000000000007 /* AIRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000107 /* AIRecapView.swift */; };
 		760000000000000000000008 /* AIRecapSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000108 /* AIRecapSettings.swift */; };
 		760000000000000000000009 /* AIRecapSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 760000000000000000000109 /* AIRecapSettingsTests.swift */; };
+		770000000000000000000001 /* AppLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000101 /* AppLocalization.swift */; };
+		770000000000000000000002 /* AppLanguageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000102 /* AppLanguageSettingsView.swift */; };
+		770000000000000000000003 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000201 /* Localizable.strings */; };
+		770000000000000000000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000202 /* InfoPlist.strings */; };
 		780000000000000000000001 /* CloudSyncModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000101 /* CloudSyncModels.swift */; };
 		780000000000000000000002 /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000102 /* CloudKitService.swift */; };
 		780000000000000000000003 /* SyncConflictResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000103 /* SyncConflictResolver.swift */; };
@@ -94,10 +96,6 @@
 		780000000000000000000005 /* CloudSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000105 /* CloudSyncManager.swift */; };
 		780000000000000000000006 /* CloudSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000106 /* CloudSyncTests.swift */; };
 		780000000000000000000009 /* CloudSyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780000000000000000000108 /* CloudSyncSettingsView.swift */; };
-		770000000000000000000001 /* AppLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000101 /* AppLocalization.swift */; };
-		770000000000000000000002 /* AppLanguageSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000102 /* AppLanguageSettingsView.swift */; };
-		770000000000000000000003 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000201 /* Localizable.strings */; };
-		770000000000000000000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 770000000000000000000202 /* InfoPlist.strings */; };
 		790000000000000000000001 /* FocusReadWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000107 /* FocusReadWidgetShared.swift */; };
 		790000000000000000000002 /* FocusReadWidgetShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000107 /* FocusReadWidgetShared.swift */; };
 		790000000000000000000003 /* FocusReadStatsWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000101 /* FocusReadStatsWidgetBundle.swift */; };
@@ -105,6 +103,16 @@
 		790000000000000000000005 /* FocusReadStatsWidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000103 /* FocusReadStatsWidgetViews.swift */; };
 		790000000000000000000006 /* FocusReadWidgetTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790000000000000000000104 /* FocusReadWidgetTheme.swift */; };
 		790000000000000000000007 /* FocusReadStatsWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 790000000000000000000011 /* FocusReadStatsWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7A0000000000000000000001 /* OnboardingStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000101 /* OnboardingStep.swift */; };
+		7A0000000000000000000002 /* FocusReadOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000102 /* FocusReadOnboardingView.swift */; };
+		7A0000000000000000000003 /* OnboardingRSVPDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000103 /* OnboardingRSVPDemoView.swift */; };
+		7A0000000000000000000004 /* OnboardingComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000104 /* OnboardingComparisonView.swift */; };
+		7A0000000000000000000005 /* OnboardingWPMSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000105 /* OnboardingWPMSetupView.swift */; };
+		7A0000000000000000000006 /* OnboardingGoalPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000106 /* OnboardingGoalPickerView.swift */; };
+		7A0000000000000000000007 /* OnboardingThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000107 /* OnboardingThemePickerView.swift */; };
+		7A0000000000000000000008 /* OnboardingAIRecapDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000108 /* OnboardingAIRecapDemoView.swift */; };
+		7A0000000000000000000009 /* OnboardingFinishView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000109 /* OnboardingFinishView.swift */; };
+		7A000000000000000000000A /* OnboardingPromiseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A000000000000000000010A /* OnboardingPromiseView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -142,7 +150,6 @@
 		4BB9D3082FAACCED00E05D79 /* E001005.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = E001005.pdf; sourceTree = "<group>"; };
 		4BB9D3092FAACCED00E05D79 /* The Psychology of Persuasion.pdf */ = {isa = PBXFileReference; lastKnownFileType = image.pdf; path = "The Psychology of Persuasion.pdf"; sourceTree = "<group>"; };
 		710000000000000000000011 /* FocusRead.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FocusRead.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		790000000000000000000011 /* FocusReadStatsWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FocusReadStatsWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		710000000000000000000101 /* FocusReadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadApp.swift; sourceTree = "<group>"; };
 		710000000000000000000102 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		710000000000000000000103 /* FocusReadBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadBackground.swift; sourceTree = "<group>"; };
@@ -159,16 +166,6 @@
 		71000000000000000000010E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		71000000000000000000010F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		710000000000000000000121 /* ReaderActionPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderActionPaletteView.swift; sourceTree = "<group>"; };
-		7A0000000000000000000101 /* OnboardingStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStep.swift; sourceTree = "<group>"; };
-		7A0000000000000000000102 /* FocusReadOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadOnboardingView.swift; sourceTree = "<group>"; };
-		7A000000000000000000010A /* OnboardingPromiseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPromiseView.swift; sourceTree = "<group>"; };
-		7A0000000000000000000103 /* OnboardingRSVPDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRSVPDemoView.swift; sourceTree = "<group>"; };
-		7A0000000000000000000104 /* OnboardingComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComparisonView.swift; sourceTree = "<group>"; };
-		7A0000000000000000000105 /* OnboardingWPMSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWPMSetupView.swift; sourceTree = "<group>"; };
-		7A0000000000000000000106 /* OnboardingGoalPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingGoalPickerView.swift; sourceTree = "<group>"; };
-		7A0000000000000000000107 /* OnboardingThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingThemePickerView.swift; sourceTree = "<group>"; };
-		7A0000000000000000000108 /* OnboardingAIRecapDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAIRecapDemoView.swift; sourceTree = "<group>"; };
-		7A0000000000000000000109 /* OnboardingFinishView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFinishView.swift; sourceTree = "<group>"; };
 		720000000000000000000101 /* DocumentImportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportModels.swift; sourceTree = "<group>"; };
 		720000000000000000000102 /* DocumentTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentTextExtractor.swift; sourceTree = "<group>"; };
 		720000000000000000000103 /* DocumentPickerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPickerService.swift; sourceTree = "<group>"; };
@@ -197,6 +194,13 @@
 		72000000000000000000011A /* LibraryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryViewModel.swift; sourceTree = "<group>"; };
 		72000000000000000000011C /* NativeSearchBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSearchBarView.swift; sourceTree = "<group>"; };
 		720000000000000000000120 /* ThumbnailGeneratorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailGeneratorService.swift; sourceTree = "<group>"; };
+		72D000000000000000000101 /* DiscoverBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverBook.swift; sourceTree = "<group>"; };
+		72D000000000000000000102 /* GutenbergDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GutenbergDiscoveryService.swift; sourceTree = "<group>"; };
+		72D000000000000000000103 /* OpenLibraryDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenLibraryDiscoveryService.swift; sourceTree = "<group>"; };
+		72D000000000000000000104 /* DiscoverService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverService.swift; sourceTree = "<group>"; };
+		72D000000000000000000105 /* DiscoverViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverViewModel.swift; sourceTree = "<group>"; };
+		72D000000000000000000106 /* DiscoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverView.swift; sourceTree = "<group>"; };
+		72D000000000000000000107 /* DiscoverNetworkClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverNetworkClient.swift; sourceTree = "<group>"; };
 		740000000000000000000011 /* FocusReadTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FocusReadTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		740000000000000000000101 /* EPUBTextExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EPUBTextExtractorTests.swift; sourceTree = "<group>"; };
 		740000000000000000000102 /* minimal.epub */ = {isa = PBXFileReference; lastKnownFileType = file; path = minimal.epub; sourceTree = "<group>"; };
@@ -208,6 +212,7 @@
 		740000000000000000000108 /* ReaderViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModelTests.swift; sourceTree = "<group>"; };
 		740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailImageNormalizerTests.swift; sourceTree = "<group>"; };
 		74000000000000000000010A /* OnboardingMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingMigrationTests.swift; sourceTree = "<group>"; };
+		74D000000000000000000101 /* DiscoverMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoverMappingTests.swift; sourceTree = "<group>"; };
 		750000000000000000000101 /* ReadingStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStats.swift; sourceTree = "<group>"; };
 		750000000000000000000102 /* ReadingStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStore.swift; sourceTree = "<group>"; };
 		750000000000000000000103 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
@@ -221,14 +226,6 @@
 		760000000000000000000107 /* AIRecapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapView.swift; sourceTree = "<group>"; };
 		760000000000000000000108 /* AIRecapSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapSettings.swift; sourceTree = "<group>"; };
 		760000000000000000000109 /* AIRecapSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRecapSettingsTests.swift; sourceTree = "<group>"; };
-		780000000000000000000101 /* CloudSyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncModels.swift; sourceTree = "<group>"; };
-		780000000000000000000102 /* CloudKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
-		780000000000000000000103 /* SyncConflictResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncConflictResolver.swift; sourceTree = "<group>"; };
-		780000000000000000000104 /* LocalToCloudMigrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalToCloudMigrationService.swift; sourceTree = "<group>"; };
-		780000000000000000000105 /* CloudSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncManager.swift; sourceTree = "<group>"; };
-		780000000000000000000106 /* CloudSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncTests.swift; sourceTree = "<group>"; };
-		780000000000000000000107 /* FocusRead.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusRead.entitlements; sourceTree = "<group>"; };
-		780000000000000000000108 /* CloudSyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncSettingsView.swift; sourceTree = "<group>"; };
 		770000000000000000000101 /* AppLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLocalization.swift; sourceTree = "<group>"; };
 		770000000000000000000102 /* AppLanguageSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguageSettingsView.swift; sourceTree = "<group>"; };
 		770000000000000000000301 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -251,6 +248,15 @@
 		770000000000000000000328 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		770000000000000000000329 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		77000000000000000000032A /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		780000000000000000000101 /* CloudSyncModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncModels.swift; sourceTree = "<group>"; };
+		780000000000000000000102 /* CloudKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
+		780000000000000000000103 /* SyncConflictResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncConflictResolver.swift; sourceTree = "<group>"; };
+		780000000000000000000104 /* LocalToCloudMigrationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalToCloudMigrationService.swift; sourceTree = "<group>"; };
+		780000000000000000000105 /* CloudSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncManager.swift; sourceTree = "<group>"; };
+		780000000000000000000106 /* CloudSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncTests.swift; sourceTree = "<group>"; };
+		780000000000000000000107 /* FocusRead.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusRead.entitlements; sourceTree = "<group>"; };
+		780000000000000000000108 /* CloudSyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncSettingsView.swift; sourceTree = "<group>"; };
+		790000000000000000000011 /* FocusReadStatsWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FocusReadStatsWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		790000000000000000000101 /* FocusReadStatsWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadStatsWidgetBundle.swift; sourceTree = "<group>"; };
 		790000000000000000000102 /* FocusReadStatsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadStatsWidget.swift; sourceTree = "<group>"; };
 		790000000000000000000103 /* FocusReadStatsWidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadStatsWidgetViews.swift; sourceTree = "<group>"; };
@@ -258,6 +264,16 @@
 		790000000000000000000105 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		790000000000000000000106 /* FocusReadStatsWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FocusReadStatsWidgets.entitlements; sourceTree = "<group>"; };
 		790000000000000000000107 /* FocusReadWidgetShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadWidgetShared.swift; sourceTree = "<group>"; };
+		7A0000000000000000000101 /* OnboardingStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStep.swift; sourceTree = "<group>"; };
+		7A0000000000000000000102 /* FocusReadOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadOnboardingView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000103 /* OnboardingRSVPDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRSVPDemoView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000104 /* OnboardingComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComparisonView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000105 /* OnboardingWPMSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWPMSetupView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000106 /* OnboardingGoalPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingGoalPickerView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000107 /* OnboardingThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingThemePickerView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000108 /* OnboardingAIRecapDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAIRecapDemoView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000109 /* OnboardingFinishView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFinishView.swift; sourceTree = "<group>"; };
+		7A000000000000000000010A /* OnboardingPromiseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPromiseView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -344,6 +360,7 @@
 				760000000000000000000108 /* AIRecapSettings.swift */,
 				780000000000000000000101 /* CloudSyncModels.swift */,
 				72000000000000000000010D /* SavedRead.swift */,
+				72D000000000000000000101 /* DiscoverBook.swift */,
 				71000000000000000000010C /* TypographySettings.swift */,
 				720000000000000000000101 /* DocumentImportModels.swift */,
 			);
@@ -376,6 +393,10 @@
 				780000000000000000000105 /* CloudSyncManager.swift */,
 				720000000000000000000110 /* SavedReadMapper.swift */,
 				720000000000000000000120 /* ThumbnailGeneratorService.swift */,
+				72D000000000000000000102 /* GutenbergDiscoveryService.swift */,
+				72D000000000000000000103 /* OpenLibraryDiscoveryService.swift */,
+				72D000000000000000000104 /* DiscoverService.swift */,
+				72D000000000000000000107 /* DiscoverNetworkClient.swift */,
 				720000000000000000000112 /* WordLookupService.swift */,
 				720000000000000000000117 /* ReaderSearchService.swift */,
 			);
@@ -390,6 +411,7 @@
 				720000000000000000000109 /* DocumentImportViewModel.swift */,
 				720000000000000000000118 /* GoToViewModel.swift */,
 				72000000000000000000011A /* LibraryViewModel.swift */,
+				72D000000000000000000105 /* DiscoverViewModel.swift */,
 				760000000000000000000106 /* AIRecapViewModel.swift */,
 			);
 			path = ViewModels;
@@ -419,6 +441,7 @@
 				720000000000000000000115 /* CameraCaptureView.swift */,
 				720000000000000000000116 /* PhotoLibraryPicker.swift */,
 				720000000000000000000111 /* HistorySidebarView.swift */,
+				72D000000000000000000106 /* DiscoverView.swift */,
 				760000000000000000000107 /* AIRecapView.swift */,
 				720000000000000000000113 /* DictionaryLookupView.swift */,
 				720000000000000000000119 /* GoToNavigationView.swift */,
@@ -446,6 +469,7 @@
 				740000000000000000000108 /* ReaderViewModelTests.swift */,
 				740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */,
 				74000000000000000000010A /* OnboardingMigrationTests.swift */,
+				74D000000000000000000101 /* DiscoverMappingTests.swift */,
 				750000000000000000000104 /* ReadingStatsStoreTests.swift */,
 				760000000000000000000103 /* AIRecapStoreTests.swift */,
 				760000000000000000000105 /* AIRecapServiceTests.swift */,
@@ -530,25 +554,6 @@
 			productReference = 710000000000000000000011 /* FocusRead.app */;
 			productType = "com.apple.product-type.application";
 		};
-		790000000000000000000070 /* FocusReadStatsWidgets */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 790000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadStatsWidgets" */;
-			buildPhases = (
-				790000000000000000000071 /* Sources */,
-				790000000000000000000020 /* Frameworks */,
-				790000000000000000000073 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = FocusReadStatsWidgets;
-			packageProductDependencies = (
-			);
-			productName = FocusReadStatsWidgets;
-			productReference = 790000000000000000000011 /* FocusReadStatsWidgets.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 		740000000000000000000070 /* FocusReadTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 740000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadTests" */;
@@ -569,6 +574,25 @@
 			productReference = 740000000000000000000011 /* FocusReadTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		790000000000000000000070 /* FocusReadStatsWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 790000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadStatsWidgets" */;
+			buildPhases = (
+				790000000000000000000071 /* Sources */,
+				790000000000000000000020 /* Frameworks */,
+				790000000000000000000073 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FocusReadStatsWidgets;
+			packageProductDependencies = (
+			);
+			productName = FocusReadStatsWidgets;
+			productReference = 790000000000000000000011 /* FocusReadStatsWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -582,12 +606,12 @@
 					710000000000000000000070 = {
 						CreatedOnToolsVersion = 26.4;
 					};
-					790000000000000000000070 = {
-						CreatedOnToolsVersion = 26.4;
-					};
 					740000000000000000000070 = {
 						CreatedOnToolsVersion = 26.4;
 						TestTargetID = 710000000000000000000070;
+					};
+					790000000000000000000070 = {
+						CreatedOnToolsVersion = 26.4;
 					};
 				};
 			};
@@ -680,6 +704,7 @@
 				710000000000000000000006 /* ReadingToken.swift in Sources */,
 				710000000000000000000007 /* ReadingSession.swift in Sources */,
 				720000000000000000000001 /* DocumentImportModels.swift in Sources */,
+				72D000000000000000000001 /* DiscoverBook.swift in Sources */,
 				750000000000000000000001 /* ReadingStats.swift in Sources */,
 				790000000000000000000001 /* FocusReadWidgetShared.swift in Sources */,
 				760000000000000000000001 /* AIRecap.swift in Sources */,
@@ -701,6 +726,10 @@
 				720000000000000000000006 /* OCRTextExtractor.swift in Sources */,
 				720000000000000000000007 /* PDFTextExtractor.swift in Sources */,
 				720000000000000000000008 /* DocumentImportService.swift in Sources */,
+				72D000000000000000000002 /* GutenbergDiscoveryService.swift in Sources */,
+				72D000000000000000000003 /* OpenLibraryDiscoveryService.swift in Sources */,
+				72D000000000000000000004 /* DiscoverService.swift in Sources */,
+				72D000000000000000000007 /* DiscoverNetworkClient.swift in Sources */,
 				720000000000000000000014 /* ImageOCRImportService.swift in Sources */,
 				72000000000000000000000B /* SmartCleanupService.swift in Sources */,
 				72000000000000000000000C /* DocumentStructureAnalyzerService.swift in Sources */,
@@ -728,9 +757,11 @@
 				720000000000000000000019 /* GoToNavigationView.swift in Sources */,
 				770000000000000000000002 /* AppLanguageSettingsView.swift in Sources */,
 				72000000000000000000001A /* LibraryViewModel.swift in Sources */,
+				72D000000000000000000005 /* DiscoverViewModel.swift in Sources */,
 				72000000000000000000001B /* ThumbnailGeneratorService.swift in Sources */,
 				72000000000000000000001C /* NativeSearchBarView.swift in Sources */,
 				750000000000000000000003 /* StatsView.swift in Sources */,
+				72D000000000000000000006 /* DiscoverView.swift in Sources */,
 				71000000000000000000000E /* AppTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -745,6 +776,7 @@
 				740000000000000000000008 /* ReaderViewModelTests.swift in Sources */,
 				740000000000000000000009 /* ThumbnailImageNormalizerTests.swift in Sources */,
 				74000000000000000000000A /* OnboardingMigrationTests.swift in Sources */,
+				74D000000000000000000001 /* DiscoverMappingTests.swift in Sources */,
 				750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */,
 				760000000000000000000003 /* AIRecapStoreTests.swift in Sources */,
 				760000000000000000000005 /* AIRecapServiceTests.swift in Sources */,
@@ -926,6 +958,42 @@
 			};
 			name = Release;
 		};
+		740000000000000000000091 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WFH2TCAAQ8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FocusRead.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FocusRead";
+			};
+			name = Debug;
+		};
+		740000000000000000000092 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = WFH2TCAAQ8;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FocusRead.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FocusRead";
+			};
+			name = Release;
+		};
 		790000000000000000000091 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -979,42 +1047,6 @@
 			};
 			name = Release;
 		};
-		740000000000000000000091 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = WFH2TCAAQ8;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app.tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FocusRead.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FocusRead";
-			};
-			name = Debug;
-		};
-		740000000000000000000092 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = WFH2TCAAQ8;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.otoua046.app.tests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/FocusRead.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/FocusRead";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1036,20 +1068,20 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		790000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadStatsWidgets" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				790000000000000000000091 /* Debug */,
-				790000000000000000000092 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		740000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				740000000000000000000091 /* Debug */,
 				740000000000000000000092 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		790000000000000000000090 /* Build configuration list for PBXNativeTarget "FocusReadStatsWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				790000000000000000000091 /* Debug */,
+				790000000000000000000092 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

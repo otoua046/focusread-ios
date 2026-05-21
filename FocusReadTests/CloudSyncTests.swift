@@ -492,6 +492,38 @@ final class CloudSyncTests: XCTestCase {
     }
 
     @MainActor
+    func testManagerDoesNotRetryNonRetryableUnavailableICloud() async throws {
+        let suiteName = "FocusReadCloudSyncTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+        let cloudKitService = NonRetryingUnavailableCloudKitService()
+        let manager = CloudSyncManager(
+            cloudKitService: cloudKitService,
+            userDefaults: defaults,
+            retryDelayNanoseconds: 10_000_000,
+            maxAutomaticRetryAttempts: 3
+        )
+        let historyStore = LocalReadingHistoryStore(storageDirectory: temporaryDirectory())
+        let statsStore = LocalReadingStatsStore(storageDirectory: temporaryDirectory())
+        let recapStore = LocalAIRecapStore(storageDirectory: temporaryDirectory())
+
+        manager.configure(
+            readingHistoryStore: historyStore,
+            readingStatsStore: statsStore,
+            recapStore: recapStore
+        )
+        manager.syncNow()
+        try await Task.sleep(for: .milliseconds(180))
+
+        XCTAssertEqual(cloudKitService.availabilityCallCount, 1)
+        XCTAssertEqual(manager.status.kind, .unavailable)
+        manager.isSyncEnabled = false
+    }
+
+    @MainActor
     func testManagerSerializesQueuedSyncRuns() async throws {
         let suiteName = "FocusReadCloudSyncTests-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -830,6 +862,31 @@ final class CloudSyncTests: XCTestCase {
 private final class UnavailableCloudKitService: CloudKitServing {
     func availability() async -> CloudSyncAvailability {
         .unavailable("iCloud unavailable in tests.")
+    }
+
+    func fetchSnapshot() async throws -> CloudSyncSnapshot {
+        XCTFail("Unavailable iCloud should not fetch snapshots.")
+        return .empty()
+    }
+
+    func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws {
+        XCTFail("Unavailable iCloud should not save snapshots.")
+    }
+}
+
+@MainActor
+private final class NonRetryingUnavailableCloudKitService: CloudKitServing {
+    private var availabilityCalls = 0
+
+    nonisolated var allowsAutomaticUnavailableRetry: Bool { false }
+
+    var availabilityCallCount: Int {
+        availabilityCalls
+    }
+
+    func availability() async -> CloudSyncAvailability {
+        availabilityCalls += 1
+        return .unavailable("iCloud unavailable in tests.")
     }
 
     func fetchSnapshot() async throws -> CloudSyncSnapshot {

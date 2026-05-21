@@ -100,6 +100,7 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
     var displayTitle: String
     var authorName: String?
     var originalFileName: String?
+    var externalSourceID: String? = nil
     var sourceType: SavedReadSourceType
     var languageCode: String?
     var thumbnailPath: String?
@@ -128,6 +129,7 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
         displayTitle = read.displayTitle
         authorName = read.authorName
         originalFileName = read.originalFileName
+        externalSourceID = read.externalSourceID
         sourceType = read.sourceType
         languageCode = read.languageCode
         thumbnailPath = read.thumbnailPath
@@ -178,6 +180,7 @@ struct SyncedSavedRead: Identifiable, Codable, Equatable, Sendable {
             displayTitle: displayTitle,
             authorName: authorName,
             originalFileName: originalFileName,
+            externalSourceID: externalSourceID,
             sourceType: sourceType,
             languageCode: languageCode,
             thumbnailPath: thumbnailPath,

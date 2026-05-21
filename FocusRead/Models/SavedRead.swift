@@ -5,6 +5,7 @@ struct SavedRead: Identifiable, Codable, Equatable, Sendable {
     var displayTitle: String
     var authorName: String?
     var originalFileName: String?
+    var externalSourceID: String? = nil
     var sourceType: SavedReadSourceType
     var languageCode: String?
     var thumbnailPath: String?

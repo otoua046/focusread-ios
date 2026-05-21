@@ -47,7 +47,6 @@ struct SmartCleanupService: Sendable {
     static func displayTitleAfterCleanup(for document: ImportedDocument) -> String {
         let currentTitle = document.displayTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         let deterministicTitle = deterministicDisplayTitle(from: document.fileName)
-        let rawBaseName = (document.fileName as NSString).deletingPathExtension
 
         guard !currentTitle.isEmpty else {
             return deterministicTitle

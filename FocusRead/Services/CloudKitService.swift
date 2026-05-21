@@ -8,9 +8,15 @@ enum CloudSyncAvailability: Equatable, Sendable {
 }
 
 protocol CloudKitServing: AnyObject, Sendable {
+    var allowsAutomaticUnavailableRetry: Bool { get }
+
     func availability() async -> CloudSyncAvailability
     func fetchSnapshot() async throws -> CloudSyncSnapshot
     func saveSnapshot(_ snapshot: CloudSyncSnapshot) async throws
+}
+
+extension CloudKitServing {
+    var allowsAutomaticUnavailableRetry: Bool { true }
 }
 
 enum CloudKitServiceFactory {
@@ -24,6 +30,8 @@ enum CloudKitServiceFactory {
 }
 
 final class UnconfiguredCloudKitService: CloudKitServing {
+    var allowsAutomaticUnavailableRetry: Bool { false }
+
     func availability() async -> CloudSyncAvailability {
         .unavailable("iCloud Sync is not configured for this build.")
     }

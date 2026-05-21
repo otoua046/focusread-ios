@@ -167,7 +167,11 @@ final class CloudSyncManager: ObservableObject {
             guard canContinueSync else { return }
             status = SyncStatus(kind: .unavailable, lastSyncedAt: status.lastSyncedAt, message: message)
             logger.info("iCloud sync unavailable: \(message, privacy: .public)")
-            scheduleAutomaticRetry(reason: "availability unavailable")
+            if cloudKitService.allowsAutomaticUnavailableRetry {
+                scheduleAutomaticRetry(reason: "availability unavailable")
+            } else {
+                resetAutomaticRetryState()
+            }
             return
         }
 

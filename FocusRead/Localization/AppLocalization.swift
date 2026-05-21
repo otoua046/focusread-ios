@@ -200,6 +200,7 @@ enum L10n {
         case commonNotSelected = "common.notSelected"
         case commonWords = "common.words"
 
+        case tabDiscover = "tab.discover"
         case tabLibrary = "tab.library"
         case tabStats = "tab.stats"
         case tabSettings = "tab.settings"
