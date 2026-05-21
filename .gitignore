@@ -4,3 +4,7 @@ DerivedData/
 build/
 xcuserdata/
 *.xcuserstate
+benchmarks/traces/
+benchmarks/results/
+*.trace
+*.xcresult

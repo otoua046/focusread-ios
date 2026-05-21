@@ -50,6 +50,17 @@
                ReferencedContainer = "container:FocusRead.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "YES"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "7D0000000000000000000070"
+               BuildableName = "FocusReadUITests.xctest"
+               BlueprintName = "FocusReadUITests"
+               ReferencedContainer = "container:FocusRead.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

@@ -23,22 +23,24 @@ struct DocumentImportService: Sendable {
         smartCleanupMode: SmartCleanupMode,
         progress: @escaping DocumentImportProgressHandler
     ) async throws -> ImportedDocument {
-        let document = switch file.fileExtension {
-        case "txt":
-            try await textExtractor.extractText(from: file, progress: progress)
-        case "pdf":
-            try await pdfExtractor.extractText(from: file, progress: progress)
-        case "epub":
-            try await epubExtractor.extractText(from: file, progress: progress)
-        default:
-            throw DocumentImportError.unsupportedFileType(file.fileExtension)
-        }
+        try await FocusReadBenchmarkSignposts.measure("DocumentImport") {
+            let document = switch file.fileExtension {
+            case "txt":
+                try await textExtractor.extractText(from: file, progress: progress)
+            case "pdf":
+                try await pdfExtractor.extractText(from: file, progress: progress)
+            case "epub":
+                try await epubExtractor.extractText(from: file, progress: progress)
+            default:
+                throw DocumentImportError.unsupportedFileType(file.fileExtension)
+            }
 
-        return await smartCleanupService.clean(
-            document,
-            mode: smartCleanupMode,
-            progress: progress
-        )
+            return await smartCleanupService.clean(
+                document,
+                mode: smartCleanupMode,
+                progress: progress
+            )
+        }
     }
 }
 

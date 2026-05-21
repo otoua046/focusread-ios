@@ -2,50 +2,54 @@ import Foundation
 
 struct TextTokenizer: Sendable {
     func tokenize(_ input: String) -> [ReadingToken] {
-        var tokens: [ReadingToken] = []
-        var sentenceIndex = 0
-        tokenize(
-            input,
-            tokens: &tokens,
-            startingSentenceIndex: &sentenceIndex,
-            sourceSection: nil
-        )
-        return tokens
+        FocusReadBenchmarkSignposts.measure("TextTokenization") {
+            var tokens: [ReadingToken] = []
+            var sentenceIndex = 0
+            tokenize(
+                input,
+                tokens: &tokens,
+                startingSentenceIndex: &sentenceIndex,
+                sourceSection: nil
+            )
+            return tokens
+        }
     }
 
     func tokenize(_ document: ImportedDocument) -> [ReadingToken] {
-        var tokens: [ReadingToken] = []
-        var sentenceIndex = 0
+        FocusReadBenchmarkSignposts.measure("TextTokenization") {
+            var tokens: [ReadingToken] = []
+            var sentenceIndex = 0
 
-        for section in document.sections {
-            if let last = tokens.last, last.pauseKind != .paragraphBreak {
-                tokens[tokens.count - 1] = ReadingToken(
-                    id: last.id,
-                    text: last.text,
-                    rawText: last.rawText,
-                    globalWordIndex: last.globalWordIndex,
-                    sourcePageNumber: last.sourcePageNumber,
-                    sourceChapterNumber: last.sourceChapterNumber,
-                    sourceChapterTitle: last.sourceChapterTitle,
-                    sourceSectionIndex: last.sourceSectionIndex,
-                    pauseKind: .paragraphBreak,
-                    sentenceIndex: last.sentenceIndex,
-                    containsNumber: last.containsNumber
-                )
-                if last.pauseKind != .sentenceEnd {
-                    sentenceIndex += 1
+            for section in document.sections {
+                if let last = tokens.last, last.pauseKind != .paragraphBreak {
+                    tokens[tokens.count - 1] = ReadingToken(
+                        id: last.id,
+                        text: last.text,
+                        rawText: last.rawText,
+                        globalWordIndex: last.globalWordIndex,
+                        sourcePageNumber: last.sourcePageNumber,
+                        sourceChapterNumber: last.sourceChapterNumber,
+                        sourceChapterTitle: last.sourceChapterTitle,
+                        sourceSectionIndex: last.sourceSectionIndex,
+                        pauseKind: .paragraphBreak,
+                        sentenceIndex: last.sentenceIndex,
+                        containsNumber: last.containsNumber
+                    )
+                    if last.pauseKind != .sentenceEnd {
+                        sentenceIndex += 1
+                    }
                 }
+
+                tokenize(
+                    section.text,
+                    tokens: &tokens,
+                    startingSentenceIndex: &sentenceIndex,
+                    sourceSection: section
+                )
             }
 
-            tokenize(
-                section.text,
-                tokens: &tokens,
-                startingSentenceIndex: &sentenceIndex,
-                sourceSection: section
-            )
+            return tokens
         }
-
-        return tokens
     }
 
     private func tokenize(
