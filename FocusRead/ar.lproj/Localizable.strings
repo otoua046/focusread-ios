@@ -8,6 +8,7 @@
 "common.notSelected" = "غير محدد";
 "common.words" = "كلمة";
 
+"tab.discover" = "استكشاف";
 "tab.library" = "المكتبة";
 "tab.stats" = "إحصاءاتي";
 "tab.settings" = "الإعدادات";
@@ -32,6 +33,7 @@
 "settings.section.appAppearance" = "مظهر التطبيق";
 "settings.appearance" = "المظهر";
 "settings.appLanguage" = "لغة التطبيق";
+"settings.liquidGlass" = "الزجاج السائل";
 "settings.theme" = "السمة";
 "settings.typography" = "الخطوط";
 "settings.section.readerBehavior" = "سلوك القارئ";

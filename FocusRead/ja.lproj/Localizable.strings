@@ -8,6 +8,7 @@
 "common.notSelected" = "未選択";
 "common.words" = "語";
 
+"tab.discover" = "発見";
 "tab.library" = "ライブラリ";
 "tab.stats" = "統計";
 "tab.settings" = "設定";
@@ -32,6 +33,7 @@
 "settings.section.appAppearance" = "アプリの外観";
 "settings.appearance" = "外観";
 "settings.appLanguage" = "アプリの言語";
+"settings.liquidGlass" = "リキッドガラス";
 "settings.theme" = "テーマ";
 "settings.typography" = "タイポグラフィ";
 "settings.section.readerBehavior" = "リーダーの動作";
