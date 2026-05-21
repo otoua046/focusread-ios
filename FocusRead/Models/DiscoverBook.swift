@@ -369,9 +369,13 @@ extension String {
     }
 
     var discoverIdentityComponent: String {
-        folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+        let folded = folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
             .lowercased()
-            .replacingOccurrences(of: "[^a-z0-9]+", with: " ", options: .regularExpression)
+        let normalized = folded.unicodeScalars.map { scalar in
+            CharacterSet.alphanumerics.contains(scalar) ? String(scalar) : " "
+        }.joined()
+        return normalized
+            .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 

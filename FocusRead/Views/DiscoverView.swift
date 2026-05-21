@@ -1229,19 +1229,8 @@ private struct BookDetailView: View {
     private func floatingControlIcon(_ systemImage: String) -> some View {
         Image(systemName: systemImage)
             .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(theme.primaryText)
             .frame(width: 42, height: 42)
-            .background(theme.cardBackground.opacity(0.88), in: Circle())
-            .overlay {
-                Circle()
-                    .strokeBorder(theme.border.opacity(0.18), lineWidth: 1)
-            }
-            .shadow(
-                color: theme.colorScheme == .dark ? Color.black.opacity(0.32) : Color.black.opacity(0.10),
-                radius: 14,
-                x: 0,
-                y: 8
-            )
+            .focusReadIconControlSurface(tone: .regular)
     }
 
     private var heroDetailCard: some View {
@@ -1347,11 +1336,9 @@ private struct BookDetailView: View {
                 foregroundStyle: Color(uiColor: theme.palette.primaryButtonForeground)
             )
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 56)
-            .background(Color(uiColor: theme.palette.primaryButtonBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .opacity(actionState.isWorking && !actionState.isWorkingOn(.read) ? 0.68 : 1)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.focusReadProminentAction(shape: .rounded(16), minHeight: 56))
         .disabled(actionState.isWorking)
         .accessibilityLabel(Text(actionState.isAdded ? "Resume book" : "Read book"))
     }
@@ -1367,15 +1354,9 @@ private struct BookDetailView: View {
                 isWorking: actionState.isWorkingOn(.add)
             )
             .frame(minWidth: 92)
-            .frame(minHeight: 56)
-            .background(theme.controlBackground.opacity(0.72), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(theme.border.opacity(0.18), lineWidth: 1)
-            }
             .opacity(actionState.isAdded || (actionState.isWorking && !actionState.isWorkingOn(.add)) ? 0.70 : 1)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.focusReadSecondaryAction(shape: .rounded(16), fullWidth: false, minHeight: 56))
         .disabled(actionState.isAdded || actionState.isWorking)
         .accessibilityLabel(Text(actionState.isAdded ? "Added to Library" : "Add to Library"))
     }

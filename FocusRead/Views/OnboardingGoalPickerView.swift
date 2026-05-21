@@ -47,14 +47,7 @@ struct OnboardingGoalPickerView: View {
                             }
                             .foregroundStyle(isSelected ? AppTheme.primaryButtonForeground : AppTheme.primaryText)
                             .frame(maxWidth: .infinity, minHeight: 118)
-                            .background(
-                                isSelected ? AppTheme.primaryButtonBackground : AppTheme.controlBackground,
-                                in: RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            )
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                                    .strokeBorder(isSelected ? AppTheme.accent.opacity(0.9) : AppTheme.border.opacity(0.68), lineWidth: 1)
-                            }
+                            .focusReadSelectableCard(isSelected: isSelected)
                         }
                         .buttonStyle(.plain)
                         .accessibilityValue(selectedGoals.contains(goal) ? L10n.string(.commonSelected) : L10n.string(.commonNotSelected))
@@ -99,14 +92,7 @@ struct OnboardingGoalPickerView: View {
                         .foregroundStyle(isSelected ? AppTheme.primaryButtonForeground : AppTheme.primaryText)
                         .frame(maxWidth: .infinity, minHeight: 42)
                         .padding(.horizontal, 12)
-                        .background(
-                            isSelected ? AppTheme.primaryButtonBackground : AppTheme.controlBackground.opacity(0.86),
-                            in: Capsule()
-                        )
-                        .overlay {
-                            Capsule()
-                                .strokeBorder(isSelected ? AppTheme.accent.opacity(0.85) : AppTheme.border.opacity(0.6), lineWidth: 1)
-                        }
+                        .focusReadSelectableChip(isSelected: isSelected)
                     }
                     .buttonStyle(.plain)
                     .accessibilityValue(selectedInterests.contains(interest) ? L10n.string(.commonSelected) : L10n.string(.commonNotSelected))

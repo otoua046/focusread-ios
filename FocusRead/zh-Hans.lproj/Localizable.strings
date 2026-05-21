@@ -8,6 +8,7 @@
 "common.notSelected" = "未选中";
 "common.words" = "词";
 
+"tab.discover" = "发现";
 "tab.library" = "书库";
 "tab.stats" = "统计";
 "tab.settings" = "设置";
@@ -32,6 +33,7 @@
 "settings.section.appAppearance" = "App 外观";
 "settings.appearance" = "外观";
 "settings.appLanguage" = "App 语言";
+"settings.liquidGlass" = "液态玻璃";
 "settings.theme" = "主题";
 "settings.typography" = "排版";
 "settings.section.readerBehavior" = "阅读行为";

@@ -20,6 +20,7 @@ struct TypographySettingsView: View {
     @AppStorage(TypographySettingsKey.isItalic) private var isItalic: Bool = false
     @AppStorage(TypographySettingsKey.textColor) private var textColor: String = ReaderTextColor.primary.rawValue
     @AppStorage(TypographySettingsKey.appearance) private var appearance: String = AppAppearance.system.rawValue
+    @AppStorage(UISettingsKey.liquidGlassEnabled) private var liquidGlassEnabled = true
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
     @AppStorage(ReaderBehaviorSettingsKey.hapticsEnabled) private var hapticsEnabled: Bool = true
     @AppStorage(ReaderBehaviorSettingsKey.reverseWPMDialDirection) private var reverseWPMDialDirection: Bool = false
@@ -132,6 +133,16 @@ struct TypographySettingsView: View {
                     settingsDivider
 
                     themeNavigationRow
+
+                    settingsDivider
+
+                    settingsRow(
+                        title: L10n.string(.settingsLiquidGlass)
+                    ) {
+                        Toggle(L10n.string(.settingsLiquidGlass), isOn: $liquidGlassEnabled)
+                            .labelsHidden()
+                            .tint(AppTheme.accent)
+                    }
                 }
 
                 settingsSection(L10n.string(.settingsSectionReading)) {
@@ -362,14 +373,10 @@ struct TypographySettingsView: View {
             } label: {
                 Image(systemName: "minus")
                     .font(.system(size: 14, weight: .bold))
-                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
+                    .frame(width: 44, height: 36)
                     .contentShape(Rectangle())
             }
             .accessibilityLabel(L10n.string(.settingsDecreaseDailyGoal))
-
-            Rectangle()
-                .fill(AppTheme.border)
-                .frame(width: 1, height: 18)
 
             Button {
                 let nextGoal = min(100_000, readingStatsStore.snapshot.dailyGoalWords + 100)
@@ -377,19 +384,12 @@ struct TypographySettingsView: View {
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 14, weight: .bold))
-                    .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
+                    .frame(width: 44, height: 36)
                     .contentShape(Rectangle())
             }
             .accessibilityLabel(L10n.string(.settingsIncreaseDailyGoal))
         }
-        .frame(width: 118, height: 30, alignment: .center)
-        .foregroundStyle(AppTheme.primaryText)
-        .background(AppTheme.controlBackground, in: Capsule())
-        .overlay {
-            Capsule()
-                .strokeBorder(AppTheme.border, lineWidth: 1)
-        }
-        .buttonStyle(.plain)
+        .focusReadAccessoryToolbarGroup(tone: .action)
         .accessibilityLabel(L10n.string(.settingsDailyGoal))
     }
 
@@ -567,6 +567,7 @@ struct TypographySettingsView: View {
 
     private func resetAllSettings() {
         appearance = AppAppearance.system.rawValue
+        liquidGlassEnabled = true
         themeManager.reset()
         defaultWPM = ReadingSession.defaultWPM
         hapticsEnabled = true
@@ -755,6 +756,8 @@ struct ProCTAHeaderView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .layoutPriority(1)
+
+            Spacer(minLength: 0)
 
             Image(systemName: "chevron.right")
                 .font(.footnote.weight(.semibold))
@@ -1063,11 +1066,7 @@ struct TypographyDetailSettingsView: View {
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 9)
                                     .foregroundStyle(textColor == color.rawValue ? AppTheme.primaryButtonForeground : AppTheme.controlForeground)
-                                    .background(textColor == color.rawValue ? AppTheme.primaryButtonBackground : AppTheme.controlBackground, in: Capsule())
-                                    .overlay {
-                                        Capsule()
-                                            .strokeBorder(textColor == color.rawValue ? AppTheme.primaryText.opacity(0.18) : AppTheme.border, lineWidth: 1)
-                                    }
+                                    .focusReadSelectableChip(isSelected: textColor == color.rawValue)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -1382,11 +1381,7 @@ private struct ThemePreviewCard: View {
             }
             .padding(10)
             .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
-            .background(AppTheme.controlBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(isSelected ? AppTheme.accent : AppTheme.border, lineWidth: isSelected ? 1.4 : 1)
-            }
+            .focusReadSelectableCard(isSelected: isSelected, shape: .rounded(14))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(theme.name)

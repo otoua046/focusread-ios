@@ -33,7 +33,7 @@ struct OnboardingFinishView: View {
                         Label(.onboardingTrySampleText, systemImage: "play.circle")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(OnboardingPrimaryActionButtonStyle())
+                    .buttonStyle(.focusReadProminentAction())
 
                     Button {
                         onComplete(.importBook)
@@ -41,7 +41,7 @@ struct OnboardingFinishView: View {
                         Label(.onboardingImportBook, systemImage: "square.and.arrow.down")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(OnboardingSecondaryActionButtonStyle())
+                    .buttonStyle(.focusReadSecondaryAction())
 
                     Button(mode == .replay ? L10n.string(.onboardingBackToSettings) : L10n.string(.onboardingGoToLibrary)) {
                         onComplete(.showLibrary)
@@ -54,31 +54,5 @@ struct OnboardingFinishView: View {
                 .frame(maxWidth: 420)
             }
         }
-    }
-}
-
-private struct OnboardingPrimaryActionButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline.weight(.semibold))
-            .foregroundStyle(AppTheme.primaryButtonForeground)
-            .padding(.vertical, 15)
-            .background(AppTheme.primaryButtonBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .opacity(configuration.isPressed ? 0.78 : 1)
-    }
-}
-
-private struct OnboardingSecondaryActionButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.headline.weight(.semibold))
-            .foregroundStyle(AppTheme.primaryText)
-            .padding(.vertical, 15)
-            .background(AppTheme.controlBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(AppTheme.border.opacity(0.76), lineWidth: 1)
-            }
-            .opacity(configuration.isPressed ? 0.78 : 1)
     }
 }

@@ -8,6 +8,7 @@
 "common.notSelected" = "선택되지 않음";
 "common.words" = "단어";
 
+"tab.discover" = "발견";
 "tab.library" = "라이브러리";
 "tab.stats" = "내 통계";
 "tab.settings" = "설정";
@@ -32,6 +33,7 @@
 "settings.section.appAppearance" = "앱 모양";
 "settings.appearance" = "모양";
 "settings.appLanguage" = "앱 언어";
+"settings.liquidGlass" = "리퀴드 글래스";
 "settings.theme" = "테마";
 "settings.typography" = "타이포그래피";
 "settings.section.readerBehavior" = "리더 동작";

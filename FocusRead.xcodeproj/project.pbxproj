@@ -23,6 +23,7 @@
 		71000000000000000000000C /* TypographySettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010C /* TypographySettings.swift */; };
 		71000000000000000000000D /* TypographySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010D /* TypographySettingsView.swift */; };
 		71000000000000000000000E /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010F /* AppTheme.swift */; };
+		710000000000000000000123 /* FocusReadControlStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000124 /* FocusReadControlStyles.swift */; };
 		71000000000000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010E /* Assets.xcassets */; };
 		710000000000000000000122 /* ReaderActionPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000121 /* ReaderActionPaletteView.swift */; };
 		720000000000000000000001 /* DocumentImportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000101 /* DocumentImportModels.swift */; };
@@ -165,6 +166,7 @@
 		71000000000000000000010D /* TypographySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypographySettingsView.swift; sourceTree = "<group>"; };
 		71000000000000000000010E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		71000000000000000000010F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		710000000000000000000124 /* FocusReadControlStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadControlStyles.swift; sourceTree = "<group>"; };
 		710000000000000000000121 /* ReaderActionPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderActionPaletteView.swift; sourceTree = "<group>"; };
 		720000000000000000000101 /* DocumentImportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportModels.swift; sourceTree = "<group>"; };
 		720000000000000000000102 /* DocumentTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentTextExtractor.swift; sourceTree = "<group>"; };
@@ -456,6 +458,7 @@
 			isa = PBXGroup;
 			children = (
 				71000000000000000000010F /* AppTheme.swift */,
+				710000000000000000000124 /* FocusReadControlStyles.swift */,
 			);
 			path = Theme;
 			sourceTree = "<group>";
@@ -763,6 +766,7 @@
 				750000000000000000000003 /* StatsView.swift in Sources */,
 				72D000000000000000000006 /* DiscoverView.swift in Sources */,
 				71000000000000000000000E /* AppTheme.swift in Sources */,
+				710000000000000000000123 /* FocusReadControlStyles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -6,6 +6,12 @@ import Testing
 struct DiscoverMappingTests {
     private static let onePixelPNGBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
 
+    @Test func discoverIdentityPreservesNonLatinSearchText() {
+        #expect("こころ 夏目漱石".discoverIdentityComponent == "こころ 夏目漱石")
+        #expect("مدن الملح".discoverIdentityComponent == "مدن الملح")
+        #expect("Pride & Prejudice!".discoverIdentityComponent == "pride prejudice")
+    }
+
     @Test func gutenbergMappingPrefersEPUBAndCover() throws {
         let json = """
         {
@@ -426,6 +432,38 @@ struct DiscoverMappingTests {
 
         #expect(!sections.isEmpty)
         #expect(await counter.value == 0)
+    }
+
+    @MainActor
+    @Test func viewModelSkipsRepeatCuratedLoadAfterShelvesPopulate() async throws {
+        let counter = DiscoverMockCounter()
+        let session = Self.mockSession { request in
+            let url = try #require(request.url)
+            if url.host == "gutendex.com" {
+                await counter.increment()
+                return Self.jsonResponse(for: url, body: #"{"results":[]}"#)
+            }
+            return Self.jsonResponse(for: url, statusCode: 404, body: #"{"error":"not found"}"#)
+        }
+        let archiveService = Self.archiveService(session: session)
+        let service = DiscoverService(
+            gutenbergService: GutenbergDiscoveryService(session: session),
+            openLibraryService: OpenLibraryDiscoveryService(session: session, archiveMetadataService: archiveService),
+            archiveMetadataService: archiveService,
+            persistentMetadataCache: Self.persistentBookCache(),
+            session: session
+        )
+        let viewModel = DiscoverViewModel(store: temporaryStore(), service: service)
+
+        await viewModel.loadCuratedIfNeeded()
+        let initialRequestCount = await counter.value
+
+        #expect(viewModel.hasAttemptedCuratedLoad)
+        #expect(!viewModel.sections.isEmpty)
+
+        await viewModel.loadCuratedIfNeeded()
+
+        #expect(await counter.value == initialRequestCount)
     }
 
     @Test func openLibraryValidationQuietlySkipsRefusedArchiveURLs() async throws {
@@ -992,6 +1030,84 @@ struct DiscoverMappingTests {
 
         #expect(await metadataLimits.values.contains(12))
         #expect(await metadataLimits.values.contains(32))
+    }
+
+    @Test func hydratedOpenLibraryBookKeepsNonEnglishLanguageForValidation() async throws {
+        let session = Self.mockSession { request in
+            let url = try #require(request.url)
+            if url.host == "openlibrary.org",
+               url.path == "/search.json",
+               Self.queryValue("has_fulltext", in: url) == nil {
+                return Self.jsonResponse(for: url, body: #"{"docs":[]}"#)
+            }
+
+            if url.host == "openlibrary.org",
+               url.path == "/search.json",
+               Self.queryValue("has_fulltext", in: url) == "true" {
+                #expect(Self.queryValue("lang", in: url) == "ja")
+                #expect(Self.queryValue("q", in: url) == "こころ 夏目漱石 language:jpn")
+                return Self.jsonResponse(for: url, body: """
+                {
+                  "docs": [
+                    {
+                      "key": "/works/OLKOKOROW",
+                      "title": "こころ",
+                      "author_name": ["夏目漱石"],
+                      "ia": ["kokoro-readable"],
+                      "ebook_access": "public",
+                      "public_scan_b": true,
+                      "language": ["jpn"]
+                    }
+                  ]
+                }
+                """)
+            }
+
+            if url.host == "archive.org", url.path == "/metadata/kokoro-readable" {
+                return Self.jsonResponse(for: url, body: """
+                {
+                  "files": [
+                    { "name": "kokoro-readable.epub", "format": "EPUB" }
+                  ]
+                }
+                """)
+            }
+
+            return Self.jsonResponse(for: url, statusCode: 404, body: #"{"error":"not found"}"#)
+        }
+        let archiveService = Self.archiveService(session: session)
+        let service = DiscoverService(
+            gutenbergService: GutenbergDiscoveryService(session: session),
+            openLibraryService: OpenLibraryDiscoveryService(session: session, archiveMetadataService: archiveService),
+            archiveMetadataService: archiveService,
+            persistentMetadataCache: Self.persistentBookCache(),
+            session: session
+        )
+        let seed = DiscoverBook(
+            id: "openlibrary-works-OLKOKOROW",
+            source: .openLibrary,
+            sourceID: "works-OLKOKOROW",
+            title: "こころ",
+            author: "夏目漱石",
+            coverURL: nil,
+            subjects: [],
+            availability: nil,
+            webURL: URL(string: "https://openlibrary.org/works/OLKOKOROW"),
+            languageCode: "jpn",
+            pageCount: nil,
+            description: nil,
+            firstPublishYear: nil,
+            downloadCount: nil,
+            ratingAverage: nil,
+            ratingCount: nil,
+            editionCount: nil
+        )
+
+        let hydrated = await service.hydratedBook(seed)
+
+        #expect(hydrated.isReadable)
+        #expect(hydrated.availability?.localFileName == "こころ.epub")
+        #expect(hydrated.languageCode == "jpn")
     }
 
     @Test func validatedReadableSearchRetriesAfterTransientFailure() async throws {

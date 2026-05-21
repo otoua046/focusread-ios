@@ -151,7 +151,7 @@ struct ReaderView: View {
                 } label: {
                     Image(systemName: "xmark")
                 }
-                .buttonStyle(.topReaderControl)
+                .buttonStyle(.focusReadIconControl())
                 .accessibilityLabel(L10n.string(.readerClose))
                 .zIndex(1)
 
@@ -162,13 +162,13 @@ struct ReaderView: View {
                 } label: {
                     Image(systemName: "text.page")
                 }
-                .buttonStyle(.topReaderControl)
+                .buttonStyle(.focusReadIconControl())
                 .accessibilityLabel(L10n.string(.readerCurrentLocation))
                 .accessibilityHint(L10n.string(.readerCurrentLocationHint))
                 .zIndex(1)
             }
 
-            VStack(spacing: viewModel.readerModeBadge == nil ? 3 : 4) {
+            VStack(spacing: viewModel.readerModeBadge == nil ? 2 : 3) {
                 if let readerModeBadge = viewModel.readerModeBadge {
                     Text(readerModeBadge)
                         .font(.caption2.weight(.semibold))
@@ -179,11 +179,21 @@ struct ReaderView: View {
                         .lineLimit(1)
                 }
 
-                Text(viewModel.locationIndicatorTitle)
+                Text(viewModel.locationIndicatorPrimaryTitle)
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: .infinity)
+
+                if let secondaryTitle = viewModel.locationIndicatorSecondaryTitle {
+                    Text(secondaryTitle)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(AppTheme.secondaryText)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: .infinity)
+                }
+
                 Text(viewModel.progressLabel)
                     .font(.caption2)
                     .foregroundStyle(AppTheme.secondaryText)
@@ -192,12 +202,28 @@ struct ReaderView: View {
             }
             .monospacedDigit()
             .frame(maxWidth: .infinity)
-            .frame(height: viewModel.readerModeBadge == nil ? 38 : 52)
+            .frame(height: topBarTitleHeight)
             .padding(.horizontal, 58)
             .allowsHitTesting(false)
         }
         .padding(.horizontal, 2)
-        .frame(height: viewModel.readerModeBadge == nil ? 44 : 56)
+        .frame(height: topBarHeight)
+    }
+
+    private var topBarTitleHeight: CGFloat {
+        if viewModel.readerModeBadge != nil {
+            return 66
+        }
+
+        return viewModel.locationIndicatorSecondaryTitle == nil ? 38 : 54
+    }
+
+    private var topBarHeight: CGFloat {
+        if viewModel.readerModeBadge != nil {
+            return 70
+        }
+
+        return viewModel.locationIndicatorSecondaryTitle == nil ? 44 : 60
     }
 
     private var wordStage: some View {

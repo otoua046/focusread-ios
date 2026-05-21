@@ -225,6 +225,7 @@ enum L10n {
         case settingsAppAppearance = "settings.section.appAppearance"
         case settingsAppearance = "settings.appearance"
         case settingsAppLanguage = "settings.appLanguage"
+        case settingsLiquidGlass = "settings.liquidGlass"
         case settingsTheme = "settings.theme"
         case settingsTypography = "settings.typography"
         case settingsReaderBehavior = "settings.section.readerBehavior"

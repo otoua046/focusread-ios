@@ -33,6 +33,7 @@
 "settings.section.appAppearance" = "App Appearance";
 "settings.appearance" = "Appearance";
 "settings.appLanguage" = "App Language";
+"settings.liquidGlass" = "Liquid Glass";
 "settings.theme" = "Theme";
 "settings.typography" = "Typography";
 "settings.section.readerBehavior" = "Reader Behavior";

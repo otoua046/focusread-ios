@@ -139,11 +139,7 @@ private struct OnboardingThemeTile: View {
                 }
             }
             .padding(10)
-            .background(AppTheme.controlBackground, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(isSelected ? AppTheme.accent : AppTheme.border.opacity(0.68), lineWidth: isSelected ? 1.4 : 1)
-            }
+            .focusReadSelectableCard(isSelected: isSelected, shape: .rounded(18))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(theme.name)

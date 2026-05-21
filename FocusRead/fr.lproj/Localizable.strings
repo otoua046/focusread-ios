@@ -8,6 +8,7 @@
 "common.notSelected" = "Non sélectionné";
 "common.words" = "mots";
 
+"tab.discover" = "Découvrir";
 "tab.library" = "Bibliothèque";
 "tab.stats" = "Mes stats";
 "tab.settings" = "Réglages";
@@ -32,6 +33,7 @@
 "settings.section.appAppearance" = "Apparence de l’app";
 "settings.appearance" = "Apparence";
 "settings.appLanguage" = "Langue de l’app";
+"settings.liquidGlass" = "Verre liquide";
 "settings.theme" = "Thème";
 "settings.typography" = "Typographie";
 "settings.section.readerBehavior" = "Comportement du lecteur";
