@@ -693,7 +693,11 @@ actor DiscoverService {
         }
 
         if resolvedBook.source == .openLibrary, !resolvedBook.isReadable {
-            let validatedBooks = await validatedReadableBooks(query: query, limit: 8)
+            let validatedBooks = await validatedReadableBooks(
+                query: query,
+                limit: 8,
+                languageCode: Self.openLibraryPreferenceLanguageCode(from: resolvedBook.languageCode)
+            )
             if let validatedBook = Self.bestMetadataMatch(for: resolvedBook, in: validatedBooks),
                let availability = validatedBook.availability {
                 resolvedBook = resolvedBook
@@ -873,6 +877,29 @@ actor DiscoverService {
 
     private static func primaryLanguageCode(from languageCodes: [String]) -> String {
         normalizedLanguageCodes(languageCodes).first ?? "en"
+    }
+
+    private static func openLibraryPreferenceLanguageCode(from languageCode: String?) -> String {
+        let normalized = languageCode?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .split(separator: "-")
+            .first
+            .map(String.init) ?? ""
+        switch normalized {
+        case "ara": return "ar"
+        case "chi", "zho": return "zh"
+        case "fre", "fra": return "fr"
+        case "ger", "deu": return "de"
+        case "jpn": return "ja"
+        case "kor": return "ko"
+        case "por": return "pt"
+        case "spa": return "es"
+        case "eng": return "en"
+        case "ita": return "it"
+        default:
+            return normalized.isEmpty ? "en" : normalized
+        }
     }
 
     private nonisolated static func logSearch(
