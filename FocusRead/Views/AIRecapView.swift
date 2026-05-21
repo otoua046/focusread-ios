@@ -271,7 +271,11 @@ private struct AIRecapSessionRow: View {
 
     private var sessionSubtitle: String {
         let date = item.session.endedAt.formatted(date: .abbreviated, time: .shortened)
-        let words = "\(item.session.wordsRead) words"
+        let formattedWordCount = NumberFormatter.localizedString(
+            from: NSNumber(value: item.session.wordsRead),
+            number: .decimal
+        )
+        let words = L10n.format(.statsWordsReadFormat, formattedWordCount)
         return "\(date) · \(words)"
     }
 

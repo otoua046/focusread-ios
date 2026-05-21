@@ -2,15 +2,12 @@ import SwiftUI
 
 struct RootView: View {
     private enum MainTab: Hashable, CaseIterable {
-        case home
         case library
         case stats
         case settings
 
         var titleKey: L10n.Key {
             switch self {
-            case .home:
-                return .tabHome
             case .library:
                 return .tabLibrary
             case .stats:
@@ -22,8 +19,6 @@ struct RootView: View {
 
         var systemImage: String {
             switch self {
-            case .home:
-                return "house"
             case .library:
                 return "books.vertical"
             case .stats:
@@ -40,7 +35,9 @@ struct RootView: View {
     @StateObject private var cloudSyncManager = CloudSyncManager()
     @StateObject private var documentOpenInViewModel = DocumentImportViewModel()
     @State private var readerViewModel: ReaderViewModel?
-    @State private var selectedTab: MainTab = .home
+    @State private var selectedTab: MainTab = .library
+    @State private var isReplayingOnboarding = false
+    @AppStorage(FocusReadOnboardingSettingsKey.hasCompletedOnboarding) private var hasCompletedOnboarding = false
     @AppStorage(ReaderBehaviorSettingsKey.defaultWPM) private var defaultWPM: Int = ReadingSession.defaultWPM
     @AppStorage(AIRecapSettingsKey.isEnabled) private var aiRecapsEnabledPreference: Bool = AIRecapSettings.defaultEnabled()
     @Environment(\.focusReadTheme) private var theme
@@ -61,21 +58,16 @@ struct RootView: View {
                 .environmentObject(cloudSyncManager)
                 .environmentObject(recapStore)
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } else if !hasCompletedOnboarding {
+                FocusReadOnboardingView(
+                    mode: .firstLaunch,
+                    onComplete: completeOnboarding
+                )
+                .environmentObject(cloudSyncManager)
+                .environmentObject(recapStore)
+                .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else {
                 TabView(selection: $selectedTab) {
-                    TextInputView(
-                        onStartDemo: {
-                            startDemoReading()
-                        },
-                        onStartImportedDocument: { document in
-                            startReading(importedDocument: document)
-                        }
-                    )
-                    .tabItem {
-                        Label(MainTab.home.titleKey, systemImage: MainTab.home.systemImage)
-                    }
-                    .tag(MainTab.home)
-
                     LibraryView(
                         store: readingHistoryStore,
                         readingStatsStore: readingStatsStore,
@@ -89,6 +81,9 @@ struct RootView: View {
                         },
                         onStartImportedDocument: { document in
                             startReading(importedDocument: document)
+                        },
+                        onStartQuickRead: { text, title in
+                            startQuickRead(text: text, title: title)
                         },
                         onOpenRecapRSVP: { read, recap in
                             startRecapRSVP(for: read, recap: recap)
@@ -111,7 +106,10 @@ struct RootView: View {
                     TypographySettingsView(
                         readingStatsStore: readingStatsStore,
                         showsDismissButton: false,
-                        showsPageHeader: true
+                        showsPageHeader: true,
+                        onReplayOnboarding: {
+                            isReplayingOnboarding = true
+                        }
                     )
                     .environmentObject(cloudSyncManager)
                     .tabItem {
@@ -131,9 +129,24 @@ struct RootView: View {
             viewModel: documentOpenInViewModel,
             onStartImportedDocument: { document in
                 startReading(importedDocument: document)
+            },
+            onStartQuickRead: { text, title in
+                startQuickRead(text: text, title: title)
             }
         )
+        .fullScreenCover(isPresented: $isReplayingOnboarding) {
+            FocusReadOnboardingView(
+                mode: .replay,
+                onComplete: completeOnboarding
+            )
+            .environmentObject(readingStatsStore)
+            .environmentObject(cloudSyncManager)
+            .environmentObject(recapStore)
+        }
         .onOpenURL { url in
+            if !hasCompletedOnboarding {
+                hasCompletedOnboarding = true
+            }
             readerViewModel?.cleanup()
             readerViewModel = nil
             selectedTab = .library
@@ -145,6 +158,10 @@ struct RootView: View {
                 readingStatsStore: readingStatsStore,
                 recapStore: recapStore
             )
+            markOnboardingCompleteForExistingLibraryIfNeeded()
+        }
+        .onChange(of: readingHistoryStore.savedReads) { _, _ in
+            markOnboardingCompleteForExistingLibraryIfNeeded()
         }
     }
 
@@ -156,11 +173,12 @@ struct RootView: View {
     }
 
     private func startDemoReading() {
-        let tokens = tokenizer.tokenize(FocusReadHomeDemoContent.readerSampleText)
+        let sampleText = FocusReadOnboardingSample.passage
+        let tokens = tokenizer.tokenize(sampleText)
         guard !tokens.isEmpty else { return }
         let document = ReadingDocument(
-            title: L10n.string(.readerDemoTitle),
-            fileName: L10n.string(.readerDemoTitle),
+            title: FocusReadOnboardingSample.title,
+            fileName: FocusReadOnboardingSample.title,
             sourceType: .txt,
             sections: [
                 ReadingDocumentSection(
@@ -178,9 +196,9 @@ struct RootView: View {
             wordsPerMinute: defaultWPM
         )
         let savedRead = SavedReadMapper.makeDemoSavedRead(
-            from: FocusReadHomeDemoContent.readerSampleText,
+            from: sampleText,
             tokens: tokens,
-            title: L10n.string(.readerDemoTitle),
+            title: FocusReadOnboardingSample.title,
             existingReads: readingHistoryStore.savedReads
         )
         readingHistoryStore.save(savedRead)
@@ -191,6 +209,37 @@ struct RootView: View {
             readingStatsStore: readingStatsStore,
             savedReadID: savedRead.id
         )
+    }
+
+    private func completeOnboarding(_ action: FocusReadOnboardingCompletionAction) {
+        let wasReplaying = isReplayingOnboarding
+        if !hasCompletedOnboarding {
+            hasCompletedOnboarding = true
+        }
+        isReplayingOnboarding = false
+
+        switch action {
+        case .showLibrary:
+            if !wasReplaying {
+                selectedTab = .library
+            }
+        case .importBook:
+            selectedTab = .library
+            Task { @MainActor in
+                documentOpenInViewModel.presentFilePicker()
+            }
+        case .trySampleText:
+            selectedTab = .library
+            startDemoReading()
+        }
+    }
+
+    private func markOnboardingCompleteForExistingLibraryIfNeeded() {
+        guard !hasCompletedOnboarding else { return }
+        guard !readingHistoryStore.savedReads.isEmpty || FocusReadOnboardingMigration.hasExistingInstallSignal(
+            hasPersistedReadingHistory: readingHistoryStore.hasPersistedReadingHistory
+        ) else { return }
+        hasCompletedOnboarding = true
     }
 
     private func startReading(importedDocument: ImportedDocument) {
@@ -207,6 +256,31 @@ struct RootView: View {
         readerViewModel = ReaderViewModel(
             session: session,
             importedDocument: importedDocument,
+            readingHistoryStore: readingHistoryStore,
+            readingStatsStore: readingStatsStore,
+            savedReadID: savedRead.id
+        )
+    }
+
+    private func startQuickRead(text: String, title: String?) {
+        let normalizedText = text.focusReadNormalizedDocumentText
+        let tokens = tokenizer.tokenize(normalizedText)
+        guard !tokens.isEmpty else { return }
+
+        let savedRead = SavedReadMapper.makeSavedRead(
+            from: normalizedText,
+            tokens: tokens,
+            providedTitle: title
+        )
+        readingHistoryStore.save(savedRead)
+
+        let session = ReadingSession(
+            tokens: tokens,
+            document: SavedReadMapper.readingDocument(from: savedRead),
+            wordsPerMinute: defaultWPM
+        )
+        readerViewModel = ReaderViewModel(
+            session: session,
             readingHistoryStore: readingHistoryStore,
             readingStatsStore: readingStatsStore,
             savedReadID: savedRead.id

@@ -11,6 +11,7 @@ struct LibraryView: View {
     let onResume: (SavedRead) -> Void
     let onReadCompleted: (SavedRead) -> Void
     let onStartImportedDocument: (ImportedDocument) -> Void
+    let onStartQuickRead: (String, String?) -> Void
     let onOpenRecapRSVP: (SavedRead, AIRecap) -> Void
     @State private var renameTarget: SavedRead?
     @State private var deleteTarget: SavedRead?
@@ -35,6 +36,7 @@ struct LibraryView: View {
         onResume: @escaping (SavedRead) -> Void,
         onReadCompleted: @escaping (SavedRead) -> Void = { _ in },
         onStartImportedDocument: @escaping (ImportedDocument) -> Void,
+        onStartQuickRead: @escaping (String, String?) -> Void,
         onOpenRecapRSVP: @escaping (SavedRead, AIRecap) -> Void
     ) {
         self.store = store
@@ -44,6 +46,7 @@ struct LibraryView: View {
         self.onResume = onResume
         self.onReadCompleted = onReadCompleted
         self.onStartImportedDocument = onStartImportedDocument
+        self.onStartQuickRead = onStartQuickRead
         self.onOpenRecapRSVP = onOpenRecapRSVP
         _viewModel = StateObject(wrappedValue: LibraryViewModel(store: store))
     }
@@ -71,7 +74,8 @@ struct LibraryView: View {
             .focusReadTopSafeAreaMaterial(isElevated: hasScrolledUnderTop)
             .documentImportFlow(
                 viewModel: documentImportViewModel,
-                onStartImportedDocument: onStartImportedDocument
+                onStartImportedDocument: onStartImportedDocument,
+                onStartQuickRead: onStartQuickRead
             )
             .task(id: store.savedReads.map(\.id)) {
                 await reconcileThumbnails()
@@ -876,7 +880,7 @@ private extension SavedReadSourceType {
     var libraryLabel: String {
         switch self {
         case .pastedText:
-            L10n.string(.librarySourcePasted)
+            L10n.string(.librarySourceQuickRead)
         case .txt:
             L10n.string(.librarySourceText)
         case .pdf:

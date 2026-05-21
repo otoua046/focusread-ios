@@ -22,7 +22,7 @@ struct SmartCleanupService: Sendable {
         }
 
         await progress(DocumentImportProgress(
-            message: "Preparing readable text...",
+            message: L10n.string(.importProgressPreparingReadableText),
             completedUnitCount: nil,
             totalUnitCount: nil
         ))

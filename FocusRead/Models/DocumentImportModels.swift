@@ -263,6 +263,7 @@ enum DocumentSourceType: Equatable, Sendable {
 }
 
 enum ImportSource: String, CaseIterable, Identifiable, Sendable {
+    case quickRead
     case files
     case camera
     case photoLibrary
@@ -271,6 +272,8 @@ enum ImportSource: String, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
+        case .quickRead:
+            L10n.string(.importSourceQuickRead)
         case .files:
             L10n.string(.importSourceFiles)
         case .camera:
@@ -282,6 +285,8 @@ enum ImportSource: String, CaseIterable, Identifiable, Sendable {
 
     var systemImageName: String {
         switch self {
+        case .quickRead:
+            "doc.on.clipboard"
         case .files:
             "folder"
         case .camera:

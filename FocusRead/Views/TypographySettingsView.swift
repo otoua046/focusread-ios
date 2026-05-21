@@ -12,6 +12,7 @@ struct TypographySettingsView: View {
 
     let showsDismissButton: Bool
     let showsPageHeader: Bool
+    let onReplayOnboarding: (() -> Void)?
 
     @AppStorage(TypographySettingsKey.fontFamily) private var fontFamily: String = ReaderFontFamily.serif.rawValue
     @AppStorage(TypographySettingsKey.fontSize) private var fontSize: Double = FontStyle.defaultSize
@@ -41,11 +42,13 @@ struct TypographySettingsView: View {
     init(
         readingStatsStore: LocalReadingStatsStore,
         showsDismissButton: Bool = true,
-        showsPageHeader: Bool = false
+        showsPageHeader: Bool = false,
+        onReplayOnboarding: (() -> Void)? = nil
     ) {
         _readingStatsStore = ObservedObject(wrappedValue: readingStatsStore)
         self.showsDismissButton = showsDismissButton
         self.showsPageHeader = showsPageHeader
+        self.onReplayOnboarding = onReplayOnboarding
     }
 
     var body: some View {
@@ -108,7 +111,7 @@ struct TypographySettingsView: View {
                     }
                 )
 
-                settingsSection("Appearance") {
+                settingsSection(L10n.string(.settingsSectionAppearance)) {
                     settingsRow(
                         title: L10n.string(.settingsAppearance)
                     ) {
@@ -131,7 +134,7 @@ struct TypographySettingsView: View {
                     themeNavigationRow
                 }
 
-                settingsSection("Reading") {
+                settingsSection(L10n.string(.settingsSectionReading)) {
                     typographyNavigationRow
 
                     settingsDivider
@@ -181,7 +184,7 @@ struct TypographySettingsView: View {
                         .lineSpacing(1)
                 }
 
-                settingsSection("Sync") {
+                settingsSection(L10n.string(.settingsSectionSync)) {
                     cloudSyncNavigationRow
                 }
 
@@ -199,35 +202,44 @@ struct TypographySettingsView: View {
                     )
                 }
 
-                settingsSection("Support") {
-                    settingsLinkButtonRow(title: "Rate Us") {
+                settingsSection(L10n.string(.settingsSectionSupport)) {
+                    if let onReplayOnboarding {
+                        settingsActionRow(
+                            title: L10n.string(.settingsReplayDemo),
+                            action: onReplayOnboarding
+                        )
+
+                        settingsDivider
+                    }
+
+                    settingsLinkButtonRow(title: L10n.string(.settingsRateUs)) {
                         requestReview()
                     }
 
                     settingsDivider
 
                     ShareLink(item: shareMessage) {
-                        settingsLinkRow(title: "Share with friends")
+                        settingsLinkRow(title: L10n.string(.settingsShareWithFriends))
                     }
                     .buttonStyle(.plain)
 
                     settingsDivider
 
-                    settingsLinkButtonRow(title: "Share Feedback") {
+                    settingsLinkButtonRow(title: L10n.string(.settingsShareFeedback)) {
                         openURL(feedbackURL)
                     }
                 }
 
-                settingsSection("Legal") {
+                settingsSection(L10n.string(.settingsSectionLegal)) {
                     Link(destination: privacyPolicyURL) {
-                        settingsLinkRow(title: "Privacy Policy")
+                        settingsLinkRow(title: L10n.string(.settingsPrivacyPolicy))
                     }
                     .buttonStyle(.plain)
 
                     settingsDivider
 
                     Link(destination: termsOfServiceURL) {
-                        settingsLinkRow(title: "Terms of Service")
+                        settingsLinkRow(title: L10n.string(.settingsTermsOfService))
                     }
                     .buttonStyle(.plain)
                 }
@@ -311,7 +323,7 @@ struct TypographySettingsView: View {
 
     private var cloudSyncNavigationRow: some View {
         settingsNavigationRow(
-            title: "iCloud Sync",
+            title: L10n.string(.cloudSyncTitle),
             value: syncStatusText,
             valueColor: syncStatusColor,
             showsProgress: cloudSyncManager.status.kind == .syncing
@@ -353,7 +365,7 @@ struct TypographySettingsView: View {
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel("Decrease Daily Goal")
+            .accessibilityLabel(L10n.string(.settingsDecreaseDailyGoal))
 
             Rectangle()
                 .fill(AppTheme.border)
@@ -368,7 +380,7 @@ struct TypographySettingsView: View {
                     .frame(maxWidth: .infinity, minHeight: 30, alignment: .center)
                     .contentShape(Rectangle())
             }
-            .accessibilityLabel("Increase Daily Goal")
+            .accessibilityLabel(L10n.string(.settingsIncreaseDailyGoal))
         }
         .frame(width: 118, height: 30, alignment: .center)
         .foregroundStyle(AppTheme.primaryText)
@@ -405,11 +417,11 @@ struct TypographySettingsView: View {
     }
 
     private var textCleanupSectionTitle: String {
-        isAIRecapCapabilityAvailable ? "Text & AI" : "Text Cleanup"
+        isAIRecapCapabilityAvailable ? L10n.string(.settingsTextAI) : L10n.string(.settingsTextCleanupTitle)
     }
 
     private var shareMessage: String {
-        "FocusRead helps you read with less eye movement and more focus."
+        L10n.string(.settingsShareMessage)
     }
 
     private var feedbackURL: URL {
@@ -428,7 +440,7 @@ struct TypographySettingsView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Imported Text Cleanup")
+                    Text(.settingsImportedTextCleanup)
                         .font(.subheadline)
                         .foregroundStyle(AppTheme.primaryText)
                         .lineLimit(1)
@@ -437,7 +449,7 @@ struct TypographySettingsView: View {
                 Spacer(minLength: 8)
             }
 
-            Picker("Imported Text Cleanup", selection: cleanupModeBinding) {
+            Picker(L10n.string(.settingsImportedTextCleanup), selection: cleanupModeBinding) {
                 ForEach(availableCleanupModes) { mode in
                     Text(mode.title).tag(mode.rawValue)
                 }
@@ -453,7 +465,7 @@ struct TypographySettingsView: View {
 
     private var madeInCanadaFooter: some View {
         HStack(spacing: 7) {
-            Text("Made in Canada")
+            Text(.settingsMadeInCanada)
                 .font(.system(.footnote, design: .default, weight: .medium))
                 .foregroundStyle(AppTheme.secondaryText.opacity(0.72))
 
@@ -466,7 +478,7 @@ struct TypographySettingsView: View {
                 .accessibilityHidden(true)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Made in Canada")
+        .accessibilityLabel(L10n.string(.settingsMadeInCanada))
         .frame(maxWidth: .infinity)
         .padding(.top, 6)
         .padding(.bottom, 32)
@@ -522,15 +534,15 @@ struct TypographySettingsView: View {
     private var syncStatusText: String {
         switch cloudSyncManager.status.kind {
         case .off:
-            return "Off"
+            return L10n.string(.settingsStatusOff)
         case .unavailable:
-            return "Unavailable"
+            return L10n.string(.settingsStatusUnavailable)
         case .syncing:
-            return "Syncing"
+            return L10n.string(.settingsStatusSyncing)
         case .synced:
-            return "On"
+            return L10n.string(.settingsStatusOn)
         case .error:
-            return "Error"
+            return L10n.string(.settingsStatusError)
         }
     }
 
@@ -712,11 +724,11 @@ struct ProCTAHeaderView: View {
     @AppStorage(FocusReadProStorageKey.isActive) private var isProActive = false
 
     private var title: String {
-        isProActive ? "FocusRead Pro Active" : "FocusRead Pro"
+        isProActive ? L10n.string(.proActiveTitle) : L10n.string(.proTitle)
     }
 
     private var subtitle: String {
-        isProActive ? "Sync and intelligence are enabled" : "AI Recaps, Cloud Sync, and more"
+        isProActive ? L10n.string(.proActiveSubtitle) : L10n.string(.proSubtitle)
     }
 
     var body: some View {
@@ -789,7 +801,7 @@ struct ProCTAHeaderView: View {
     }
 
     private var proBadge: some View {
-        Text("PRO")
+        Text(.proBadge)
             .font(.caption2.weight(.bold))
             .foregroundStyle(theme.accent)
             .tracking(0.4)
@@ -822,11 +834,11 @@ struct FocusReadProSettingsView: View {
     @AppStorage(FocusReadProStorageKey.isActive) private var isProActive = false
 
     private let features: [FocusReadProFeature] = [
-        FocusReadProFeature(title: "AI Recaps", detail: "Reading-session summaries", symbolName: "sparkles"),
-        FocusReadProFeature(title: "iCloud Sync", detail: "Library and progress across devices", symbolName: "icloud"),
-        FocusReadProFeature(title: "Advanced Cleanup", detail: "Cleaner imports for dense documents", symbolName: "wand.and.stars"),
-        FocusReadProFeature(title: "Reading Analytics", detail: "Deeper pace and consistency insights", symbolName: "chart.xyaxis.line"),
-        FocusReadProFeature(title: "Early Access", detail: "Future reading intelligence tools", symbolName: "leaf")
+        FocusReadProFeature(title: L10n.string(.proFeatureAIRecapsTitle), detail: L10n.string(.proFeatureAIRecapsDetail), symbolName: "sparkles"),
+        FocusReadProFeature(title: L10n.string(.proFeatureICloudTitle), detail: L10n.string(.proFeatureICloudDetail), symbolName: "icloud"),
+        FocusReadProFeature(title: L10n.string(.proFeatureCleanupTitle), detail: L10n.string(.proFeatureCleanupDetail), symbolName: "wand.and.stars"),
+        FocusReadProFeature(title: L10n.string(.proFeatureAnalyticsTitle), detail: L10n.string(.proFeatureAnalyticsDetail), symbolName: "chart.xyaxis.line"),
+        FocusReadProFeature(title: L10n.string(.proFeatureEarlyAccessTitle), detail: L10n.string(.proFeatureEarlyAccessDetail), symbolName: "leaf")
     ]
 
     var body: some View {
@@ -834,7 +846,7 @@ struct FocusReadProSettingsView: View {
             VStack(spacing: 16) {
                 proIdentityCard
 
-                proSettingsSection("Included with Pro") {
+                proSettingsSection(L10n.string(.proIncluded)) {
                     ForEach(Array(features.enumerated()), id: \.element.id) { index, feature in
                         ProFeatureRow(feature: feature)
 
@@ -846,15 +858,15 @@ struct FocusReadProSettingsView: View {
                     }
                 }
 
-                proSettingsSection("Status") {
+                proSettingsSection(L10n.string(.proStatus)) {
                     HStack(spacing: 12) {
-                        Text("Membership")
+                        Text(.proMembership)
                             .font(.subheadline)
                             .foregroundStyle(theme.primaryText)
 
                         Spacer(minLength: 12)
 
-                        Text(isProActive ? "Active" : "Not Active")
+                        Text(isProActive ? L10n.string(.proActiveStatus) : L10n.string(.proInactiveStatus))
                             .font(.subheadline)
                             .foregroundStyle(isProActive ? theme.accent : theme.secondaryText)
                     }
@@ -869,7 +881,7 @@ struct FocusReadProSettingsView: View {
             .padding(.vertical, 16)
         }
         .focusReadSettingsPageChrome()
-        .navigationTitle("FocusRead Pro")
+        .navigationTitle(L10n.key(.proTitle))
         .navigationBarTitleDisplayMode(.inline)
         .tint(theme.accent)
         .focusReadThemeRefresh()
@@ -889,17 +901,17 @@ struct FocusReadProSettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(isProActive ? "FocusRead Pro Active" : "FocusRead Pro")
+                    Text(isProActive ? L10n.string(.proActiveTitle) : L10n.string(.proTitle))
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(theme.primaryText)
 
-                    Text("Advanced reading intelligence")
+                    Text(.proHeroSubtitle)
                         .font(.subheadline)
                         .foregroundStyle(theme.secondaryText)
                 }
             }
 
-            Text("A quieter layer of AI, sync, and reading insight for longer sessions and larger libraries.")
+            Text(.proHeroDescription)
                 .font(.footnote)
                 .foregroundStyle(theme.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)

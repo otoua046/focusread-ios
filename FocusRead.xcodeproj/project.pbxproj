@@ -11,7 +11,7 @@
 		4BB9D30B2FAACCED00E05D79 /* E001005.pdf in Resources */ = {isa = PBXBuildFile; fileRef = 4BB9D3082FAACCED00E05D79 /* E001005.pdf */; };
 		710000000000000000000001 /* FocusReadApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000101 /* FocusReadApp.swift */; };
 		710000000000000000000002 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000102 /* RootView.swift */; };
-		710000000000000000000003 /* TextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000103 /* TextInputView.swift */; };
+		710000000000000000000003 /* FocusReadBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000103 /* FocusReadBackground.swift */; };
 		710000000000000000000004 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000104 /* ReaderView.swift */; };
 		710000000000000000000005 /* ReaderControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000105 /* ReaderControlsView.swift */; };
 		710000000000000000000006 /* ReadingToken.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000106 /* ReadingToken.swift */; };
@@ -25,6 +25,16 @@
 		71000000000000000000000E /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010F /* AppTheme.swift */; };
 		71000000000000000000000F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 71000000000000000000010E /* Assets.xcassets */; };
 		710000000000000000000122 /* ReaderActionPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 710000000000000000000121 /* ReaderActionPaletteView.swift */; };
+		7A0000000000000000000001 /* OnboardingStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000101 /* OnboardingStep.swift */; };
+		7A0000000000000000000002 /* FocusReadOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000102 /* FocusReadOnboardingView.swift */; };
+		7A000000000000000000000A /* OnboardingPromiseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A000000000000000000010A /* OnboardingPromiseView.swift */; };
+		7A0000000000000000000003 /* OnboardingRSVPDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000103 /* OnboardingRSVPDemoView.swift */; };
+		7A0000000000000000000004 /* OnboardingComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000104 /* OnboardingComparisonView.swift */; };
+		7A0000000000000000000005 /* OnboardingWPMSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000105 /* OnboardingWPMSetupView.swift */; };
+		7A0000000000000000000006 /* OnboardingGoalPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000106 /* OnboardingGoalPickerView.swift */; };
+		7A0000000000000000000007 /* OnboardingThemePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000107 /* OnboardingThemePickerView.swift */; };
+		7A0000000000000000000008 /* OnboardingAIRecapDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000108 /* OnboardingAIRecapDemoView.swift */; };
+		7A0000000000000000000009 /* OnboardingFinishView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A0000000000000000000109 /* OnboardingFinishView.swift */; };
 		720000000000000000000001 /* DocumentImportModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000101 /* DocumentImportModels.swift */; };
 		720000000000000000000002 /* DocumentTextExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000102 /* DocumentTextExtractor.swift */; };
 		720000000000000000000003 /* DocumentPickerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 720000000000000000000103 /* DocumentPickerService.swift */; };
@@ -63,6 +73,7 @@
 		740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000107 /* ReaderSearchServiceTests.swift */; };
 		740000000000000000000008 /* ReaderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000108 /* ReaderViewModelTests.swift */; };
 		740000000000000000000009 /* ThumbnailImageNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */; };
+		74000000000000000000000A /* OnboardingMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74000000000000000000010A /* OnboardingMigrationTests.swift */; };
 		750000000000000000000001 /* ReadingStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000101 /* ReadingStats.swift */; };
 		750000000000000000000002 /* ReadingStatsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000102 /* ReadingStatsStore.swift */; };
 		750000000000000000000003 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750000000000000000000103 /* StatsView.swift */; };
@@ -134,7 +145,7 @@
 		790000000000000000000011 /* FocusReadStatsWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = FocusReadStatsWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		710000000000000000000101 /* FocusReadApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadApp.swift; sourceTree = "<group>"; };
 		710000000000000000000102 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
-		710000000000000000000103 /* TextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInputView.swift; sourceTree = "<group>"; };
+		710000000000000000000103 /* FocusReadBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadBackground.swift; sourceTree = "<group>"; };
 		710000000000000000000104 /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 		710000000000000000000105 /* ReaderControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderControlsView.swift; sourceTree = "<group>"; };
 		710000000000000000000106 /* ReadingToken.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingToken.swift; sourceTree = "<group>"; };
@@ -148,6 +159,16 @@
 		71000000000000000000010E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		71000000000000000000010F /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		710000000000000000000121 /* ReaderActionPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderActionPaletteView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000101 /* OnboardingStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStep.swift; sourceTree = "<group>"; };
+		7A0000000000000000000102 /* FocusReadOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusReadOnboardingView.swift; sourceTree = "<group>"; };
+		7A000000000000000000010A /* OnboardingPromiseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPromiseView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000103 /* OnboardingRSVPDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRSVPDemoView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000104 /* OnboardingComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingComparisonView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000105 /* OnboardingWPMSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWPMSetupView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000106 /* OnboardingGoalPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingGoalPickerView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000107 /* OnboardingThemePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingThemePickerView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000108 /* OnboardingAIRecapDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAIRecapDemoView.swift; sourceTree = "<group>"; };
+		7A0000000000000000000109 /* OnboardingFinishView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFinishView.swift; sourceTree = "<group>"; };
 		720000000000000000000101 /* DocumentImportModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentImportModels.swift; sourceTree = "<group>"; };
 		720000000000000000000102 /* DocumentTextExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentTextExtractor.swift; sourceTree = "<group>"; };
 		720000000000000000000103 /* DocumentPickerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPickerService.swift; sourceTree = "<group>"; };
@@ -186,6 +207,7 @@
 		740000000000000000000107 /* ReaderSearchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderSearchServiceTests.swift; sourceTree = "<group>"; };
 		740000000000000000000108 /* ReaderViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModelTests.swift; sourceTree = "<group>"; };
 		740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailImageNormalizerTests.swift; sourceTree = "<group>"; };
+		74000000000000000000010A /* OnboardingMigrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingMigrationTests.swift; sourceTree = "<group>"; };
 		750000000000000000000101 /* ReadingStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStats.swift; sourceTree = "<group>"; };
 		750000000000000000000102 /* ReadingStatsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingStatsStore.swift; sourceTree = "<group>"; };
 		750000000000000000000103 /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
@@ -377,7 +399,17 @@
 			isa = PBXGroup;
 			children = (
 				710000000000000000000102 /* RootView.swift */,
-				710000000000000000000103 /* TextInputView.swift */,
+				710000000000000000000103 /* FocusReadBackground.swift */,
+				7A0000000000000000000101 /* OnboardingStep.swift */,
+				7A0000000000000000000102 /* FocusReadOnboardingView.swift */,
+				7A000000000000000000010A /* OnboardingPromiseView.swift */,
+				7A0000000000000000000103 /* OnboardingRSVPDemoView.swift */,
+				7A0000000000000000000104 /* OnboardingComparisonView.swift */,
+				7A0000000000000000000105 /* OnboardingWPMSetupView.swift */,
+				7A0000000000000000000106 /* OnboardingGoalPickerView.swift */,
+				7A0000000000000000000107 /* OnboardingThemePickerView.swift */,
+				7A0000000000000000000108 /* OnboardingAIRecapDemoView.swift */,
+				7A0000000000000000000109 /* OnboardingFinishView.swift */,
 				710000000000000000000104 /* ReaderView.swift */,
 				710000000000000000000105 /* ReaderControlsView.swift */,
 				710000000000000000000121 /* ReaderActionPaletteView.swift */,
@@ -413,6 +445,7 @@
 				740000000000000000000107 /* ReaderSearchServiceTests.swift */,
 				740000000000000000000108 /* ReaderViewModelTests.swift */,
 				740000000000000000000109 /* ThumbnailImageNormalizerTests.swift */,
+				74000000000000000000010A /* OnboardingMigrationTests.swift */,
 				750000000000000000000104 /* ReadingStatsStoreTests.swift */,
 				760000000000000000000103 /* AIRecapStoreTests.swift */,
 				760000000000000000000105 /* AIRecapServiceTests.swift */,
@@ -630,10 +663,20 @@
 			files = (
 				710000000000000000000001 /* FocusReadApp.swift in Sources */,
 				710000000000000000000002 /* RootView.swift in Sources */,
-				710000000000000000000003 /* TextInputView.swift in Sources */,
+				710000000000000000000003 /* FocusReadBackground.swift in Sources */,
 				710000000000000000000004 /* ReaderView.swift in Sources */,
 				710000000000000000000005 /* ReaderControlsView.swift in Sources */,
 				710000000000000000000122 /* ReaderActionPaletteView.swift in Sources */,
+				7A0000000000000000000001 /* OnboardingStep.swift in Sources */,
+				7A0000000000000000000002 /* FocusReadOnboardingView.swift in Sources */,
+				7A000000000000000000000A /* OnboardingPromiseView.swift in Sources */,
+				7A0000000000000000000003 /* OnboardingRSVPDemoView.swift in Sources */,
+				7A0000000000000000000004 /* OnboardingComparisonView.swift in Sources */,
+				7A0000000000000000000005 /* OnboardingWPMSetupView.swift in Sources */,
+				7A0000000000000000000006 /* OnboardingGoalPickerView.swift in Sources */,
+				7A0000000000000000000007 /* OnboardingThemePickerView.swift in Sources */,
+				7A0000000000000000000008 /* OnboardingAIRecapDemoView.swift in Sources */,
+				7A0000000000000000000009 /* OnboardingFinishView.swift in Sources */,
 				710000000000000000000006 /* ReadingToken.swift in Sources */,
 				710000000000000000000007 /* ReadingSession.swift in Sources */,
 				720000000000000000000001 /* DocumentImportModels.swift in Sources */,
@@ -701,6 +744,7 @@
 				740000000000000000000007 /* ReaderSearchServiceTests.swift in Sources */,
 				740000000000000000000008 /* ReaderViewModelTests.swift in Sources */,
 				740000000000000000000009 /* ThumbnailImageNormalizerTests.swift in Sources */,
+				74000000000000000000000A /* OnboardingMigrationTests.swift in Sources */,
 				750000000000000000000004 /* ReadingStatsStoreTests.swift in Sources */,
 				760000000000000000000003 /* AIRecapStoreTests.swift in Sources */,
 				760000000000000000000005 /* AIRecapServiceTests.swift in Sources */,

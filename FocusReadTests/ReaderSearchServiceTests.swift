@@ -135,3 +135,21 @@ struct TextTokenizerTests {
     }
 }
 
+struct OnboardingSampleTests {
+    @Test func wordsTokenizesLanguagesWithoutWhitespace() {
+        let words = FocusReadOnboardingSample.words(in: "今日は図書館で静かに読みます")
+
+        #expect(words.count > 1)
+        #expect(words.joined() == "今日は図書館で静かに読みます")
+    }
+}
+
+struct SavedReadSourceTypeTests {
+    @Test func debugLogNameUsesStableRawValues() {
+        #expect(SavedReadSourceType.pastedText.debugLogName == "pastedText")
+        #expect(SavedReadSourceType.txt.debugLogName == "txt")
+        #expect(SavedReadSourceType.pdf.debugLogName == "pdf")
+        #expect(SavedReadSourceType.epub.debugLogName == "epub")
+        #expect(SavedReadSourceType.image.debugLogName == "image")
+    }
+}

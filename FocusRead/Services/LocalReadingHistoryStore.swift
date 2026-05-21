@@ -15,6 +15,11 @@ final class LocalReadingHistoryStore: ObservableObject, ReadingHistoryStore {
     private var persistenceSuspended = false
     private var hasLocalMutations = false
 
+    var hasPersistedReadingHistory: Bool {
+        fileManager.fileExists(atPath: fileURL.path)
+            || fileManager.fileExists(atPath: deletedReadsURL.path)
+    }
+
     init(fileManager: FileManager = .default, storageDirectory: URL? = nil) {
         self.fileManager = fileManager
         let supportDirectory = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first

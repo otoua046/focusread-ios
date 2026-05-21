@@ -41,18 +41,7 @@ enum SavedReadSourceType: String, Codable, Equatable, Sendable {
     case image
 
     var debugLogName: String {
-        switch self {
-        case .pastedText:
-            return "Pasted Text"
-        case .txt:
-            return "TXT"
-        case .pdf:
-            return "PDF"
-        case .epub:
-            return "EPUB"
-        case .image:
-            return "Image"
-        }
+        rawValue
     }
 }
 

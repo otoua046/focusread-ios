@@ -6,8 +6,8 @@ struct CloudSyncSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                settingsSection("Status") {
-                    settingsInlineRow("iCloud Sync") {
+                settingsSection(L10n.string(.cloudSyncStatus)) {
+                    settingsInlineRow(L10n.string(.cloudSyncTitle)) {
                         HStack(spacing: 8) {
                             if cloudSyncManager.status.kind == .syncing {
                                 ProgressView()
@@ -22,7 +22,7 @@ struct CloudSyncSettingsView: View {
 
                     Divider().foregroundStyle(AppTheme.border)
 
-                    settingsInlineRow("Last synced") {
+                    settingsInlineRow(L10n.string(.cloudSyncLastSynced)) {
                         Text(lastSyncedText)
                             .font(.subheadline)
                             .foregroundStyle(AppTheme.secondaryText)
@@ -38,11 +38,11 @@ struct CloudSyncSettingsView: View {
                     }
                 }
 
-                settingsSection("Sync") {
-                    Toggle("iCloud Sync", isOn: $cloudSyncManager.isSyncEnabled)
+                settingsSection(L10n.string(.settingsSectionSync)) {
+                    Toggle(L10n.string(.cloudSyncTitle), isOn: $cloudSyncManager.isSyncEnabled)
                         .tint(AppTheme.accent)
 
-                    Text("Sync reading progress, library metadata, settings, and stats across your Apple devices.")
+                    Text(.cloudSyncDescription)
                         .font(.footnote)
                         .foregroundStyle(AppTheme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -50,7 +50,7 @@ struct CloudSyncSettingsView: View {
                     Button {
                         cloudSyncManager.syncNow()
                     } label: {
-                        Label("Sync Now", systemImage: "arrow.triangle.2.circlepath")
+                        Label(.cloudSyncNow, systemImage: "arrow.triangle.2.circlepath")
                             .font(.subheadline.weight(.semibold))
                             .frame(maxWidth: .infinity)
                     }
@@ -59,14 +59,14 @@ struct CloudSyncSettingsView: View {
                     .disabled(!cloudSyncManager.isSyncEnabled || cloudSyncManager.status.kind == .syncing)
                 }
 
-                settingsSection("Document Files") {
-                    settingsInlineRow("File sync") {
-                        Text("Metadata only")
+                settingsSection(L10n.string(.cloudSyncDocumentFiles)) {
+                    settingsInlineRow(L10n.string(.cloudSyncFileSync)) {
+                        Text(.cloudSyncMetadataOnly)
                             .font(.subheadline)
                             .foregroundStyle(AppTheme.secondaryText)
                     }
 
-                    Text("Large document files are not uploaded automatically. FocusRead syncs metadata first so future file syncing can be added safely.")
+                    Text(.cloudSyncDocumentFilesDescription)
                         .font(.footnote)
                         .foregroundStyle(AppTheme.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -78,7 +78,7 @@ struct CloudSyncSettingsView: View {
             .padding(.vertical, 16)
         }
         .focusReadSettingsPageChrome()
-        .navigationTitle("iCloud Sync")
+        .navigationTitle(L10n.key(.cloudSyncTitle))
         .navigationBarTitleDisplayMode(.inline)
         .tint(AppTheme.accent)
         .focusReadThemeRefresh()
@@ -95,9 +95,9 @@ struct CloudSyncSettingsView: View {
     private var fallbackStatusMessage: String {
         switch cloudSyncManager.status.kind {
         case .unavailable:
-            return "iCloud Sync is not configured for this build."
+            return L10n.string(.cloudSyncUnavailableMessage)
         case .error:
-            return "Sync failed. Try again later."
+            return L10n.string(.cloudSyncFailedMessage)
         default:
             return ""
         }
@@ -106,15 +106,15 @@ struct CloudSyncSettingsView: View {
     private var syncStatusText: String {
         switch cloudSyncManager.status.kind {
         case .off:
-            return "Off"
+            return L10n.string(.settingsStatusOff)
         case .unavailable:
-            return "Unavailable"
+            return L10n.string(.settingsStatusUnavailable)
         case .syncing:
-            return "Syncing"
+            return L10n.string(.settingsStatusSyncing)
         case .synced:
-            return "On"
+            return L10n.string(.settingsStatusOn)
         case .error:
-            return "Error"
+            return L10n.string(.settingsStatusError)
         }
     }
 
@@ -131,7 +131,7 @@ struct CloudSyncSettingsView: View {
 
     private var lastSyncedText: String {
         guard let lastSyncedAt = cloudSyncManager.status.lastSyncedAt else {
-            return "Never"
+            return L10n.string(.settingsStatusNever)
         }
         return lastSyncedAt.formatted(date: .abbreviated, time: .shortened)
     }

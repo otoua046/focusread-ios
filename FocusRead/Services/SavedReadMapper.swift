@@ -6,12 +6,13 @@ enum SavedReadMapper {
     static func makeSavedRead(
         from text: String,
         tokens: [ReadingToken],
+        providedTitle: String? = nil,
         cleanupMode: SmartCleanupMode = .off,
         now: Date = Date()
     ) -> SavedRead {
         SavedRead(
             id: UUID(),
-            displayTitle: title(forPastedText: text),
+            displayTitle: quickReadTitle(from: text, explicitTitle: providedTitle, now: now),
             originalFileName: nil,
             sourceType: .pastedText,
             languageCode: nil,
@@ -178,12 +179,13 @@ enum SavedReadMapper {
         read.documentText.focusReadNormalizedDocumentText
     }
 
-    private static func title(forPastedText text: String) -> String {
-        let firstLine = text
-            .components(separatedBy: .newlines)
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty } ?? "Pasted Text"
-        return String(firstLine.prefix(64))
+    private static func quickReadTitle(from text: String, explicitTitle: String?, now: Date) -> String {
+        if let title = explicitTitle?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty {
+            return String(title.prefix(64))
+        }
+
+        let timestamp = DateFormatter.localizedString(from: now, dateStyle: .medium, timeStyle: .short)
+        return L10n.format(.quickReadGeneratedTitleFormat, timestamp)
     }
 
     private static func savedSection(_ section: ImportedDocumentSection) -> SavedReadSection {

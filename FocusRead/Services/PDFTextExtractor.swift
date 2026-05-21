@@ -30,7 +30,7 @@ struct PDFTextExtractor: DocumentTextExtractor {
             try Task.checkCancellation()
 
             await progress(DocumentImportProgress(
-                message: "Extracting PDF text...",
+                message: L10n.string(.importProgressExtractingPDFText),
                 completedUnitCount: pageIndex,
                 totalUnitCount: pageCount
             ))
@@ -54,7 +54,7 @@ struct PDFTextExtractor: DocumentTextExtractor {
         }
 
         await progress(DocumentImportProgress(
-            message: "Extracting PDF text...",
+            message: L10n.string(.importProgressExtractingPDFText),
             completedUnitCount: pageCount,
             totalUnitCount: pageCount
         ))
@@ -70,7 +70,7 @@ struct PDFTextExtractor: DocumentTextExtractor {
         }
 
         await progress(DocumentImportProgress(
-            message: "PDF looks scanned. Starting OCR...",
+            message: L10n.string(.importProgressScannedPDFStartingOCR),
             completedUnitCount: nil,
             totalUnitCount: nil
         ))
