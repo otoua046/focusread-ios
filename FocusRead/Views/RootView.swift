@@ -175,6 +175,9 @@ struct RootView: View {
             documentOpenInViewModel.importDocument(from: url)
         }
         .onAppear {
+            if ProcessInfo.processInfo.environment["FOCUSREAD_SKIP_ONBOARDING"] == "1" {
+                hasCompletedOnboarding = true
+            }
             cloudSyncManager.configure(
                 readingHistoryStore: readingHistoryStore,
                 readingStatsStore: readingStatsStore,
