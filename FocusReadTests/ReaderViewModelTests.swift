@@ -453,13 +453,29 @@ final class ReaderViewModelTests: XCTestCase {
             contentsTokenCountBySectionIndex: tokenCounts,
             readingStatsStore: partialStatsStore,
             savedReadID: readID,
-            preservingReadTokenCountBySectionIndex: [0: 2]
+            preservingReadProgressBySectionIndex: [
+                0: PreservedContentsReadProgress(readTokenCount: 2, totalTokenCount: 2)
+            ]
+        )
+        let shrunkPartialState = ReaderViewModel.makeContentsReadState(
+            tokens: [
+                Self.token("one", id: 0, sourceSectionIndex: 0),
+                Self.token("two", id: 1, sourceSectionIndex: 0),
+                Self.token("three", id: 2, sourceSectionIndex: 0)
+            ],
+            contentsTokenCountBySectionIndex: [0: 3],
+            readingStatsStore: nil,
+            savedReadID: nil,
+            preservingReadProgressBySectionIndex: [
+                0: PreservedContentsReadProgress(readTokenCount: 8, totalTokenCount: 10)
+            ]
         )
 
         XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.current, .read])
         XCTAssertEqual(rebuiltState.tokenCountBySectionIndex[0], 2)
         XCTAssertEqual(rebuiltState.tokenCountBySectionIndex[1], 1)
         XCTAssertEqual(rebuiltState.tokenIndices.count, 3)
+        XCTAssertEqual(shrunkPartialState.tokenCountBySectionIndex[0], 2)
     }
 
     @MainActor

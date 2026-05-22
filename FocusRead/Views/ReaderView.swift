@@ -411,7 +411,7 @@ private struct ReaderContentsView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(entry.title)
-                        .accessibilityValue(progress.accessibilityValue)
+                        .accessibilityValue("\(entry.subtitle), \(progress.accessibilityValue)")
                         .accessibilityHint(L10n.string(.readerContentsJumpHint))
                     }
                     .listStyle(.insetGrouped)

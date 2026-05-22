@@ -33,6 +33,11 @@ enum ReaderContentsProgress: Equatable, Sendable {
     case unread
 }
 
+struct PreservedContentsReadProgress: Equatable, Sendable {
+    let readTokenCount: Int
+    let totalTokenCount: Int
+}
+
 struct CurrentLocationPreview: Equatable, Sendable {
     let title: String
     let subtitle: String
@@ -843,7 +848,10 @@ final class ReaderViewModel: ObservableObject {
         let newTokens = tokenizer.tokenize(updatedDocument)
         guard !newTokens.isEmpty else { return }
 
-        let inMemoryReadTokenCountBySectionIndex = readContentsTokenCountBySectionIndex
+        let preservedReadProgressBySectionIndex = Self.makePreservedReadProgressBySectionIndex(
+            readTokenCountBySectionIndex: readContentsTokenCountBySectionIndex,
+            totalTokenCountBySectionIndex: contentsTokenCountBySectionIndex
+        )
         session.tokens = newTokens
         session.document = ReadingDocument(importedDocument: updatedDocument)
         session.currentIndex = tokenIndex(matching: currentLocation, in: newTokens)
@@ -852,9 +860,9 @@ final class ReaderViewModel: ObservableObject {
         let contentsReadState = Self.makeContentsReadState(
             tokens: session.tokens,
             contentsTokenCountBySectionIndex: contentsTokenCountBySectionIndex,
-            readingStatsStore: readingStatsStore,
-            savedReadID: savedReadID,
-            preservingReadTokenCountBySectionIndex: inMemoryReadTokenCountBySectionIndex
+            readingStatsStore: nil,
+            savedReadID: nil,
+            preservingReadProgressBySectionIndex: preservedReadProgressBySectionIndex
         )
         self.contentsEntries = contentsEntries
         self.contentsTokenCountBySectionIndex = contentsTokenCountBySectionIndex
@@ -1152,7 +1160,7 @@ final class ReaderViewModel: ObservableObject {
         contentsTokenCountBySectionIndex: [Int: Int],
         readingStatsStore: ReadingStatsStore?,
         savedReadID: UUID?,
-        preservingReadTokenCountBySectionIndex preservedTokenCountBySectionIndex: [Int: Int] = [:]
+        preservingReadProgressBySectionIndex preservedProgressBySectionIndex: [Int: PreservedContentsReadProgress] = [:]
     ) -> (tokenIndices: Set<Int>, tokenCountBySectionIndex: [Int: Int]) {
         var tokenIndices = Set<Int>()
         var tokenCountBySectionIndex: [Int: Int] = [:]
@@ -1178,13 +1186,17 @@ final class ReaderViewModel: ObservableObject {
             }
         }
 
-        for (sectionIndex, preservedTokenCount) in preservedTokenCountBySectionIndex {
+        for (sectionIndex, preservedProgress) in preservedProgressBySectionIndex {
             guard let totalTokenCount = contentsTokenCountBySectionIndex[sectionIndex],
                   totalTokenCount > 0 else {
                 continue
             }
 
-            let targetTokenCount = min(max(preservedTokenCount, tokenCountBySectionIndex[sectionIndex, default: 0]), totalTokenCount)
+            let preservedTokenCount = Self.remappedReadTokenCount(
+                from: preservedProgress,
+                newTotalTokenCount: totalTokenCount
+            )
+            let targetTokenCount = max(preservedTokenCount, tokenCountBySectionIndex[sectionIndex, default: 0])
             guard tokenCountBySectionIndex[sectionIndex, default: 0] < targetTokenCount else {
                 continue
             }
@@ -1200,6 +1212,46 @@ final class ReaderViewModel: ObservableObject {
         }
 
         return (tokenIndices, tokenCountBySectionIndex)
+    }
+
+    static func makePreservedReadProgressBySectionIndex(
+        readTokenCountBySectionIndex: [Int: Int],
+        totalTokenCountBySectionIndex: [Int: Int]
+    ) -> [Int: PreservedContentsReadProgress] {
+        readTokenCountBySectionIndex.reduce(into: [:]) { progressBySectionIndex, element in
+            let (sectionIndex, readTokenCount) = element
+            guard let totalTokenCount = totalTokenCountBySectionIndex[sectionIndex],
+                  totalTokenCount > 0,
+                  readTokenCount > 0 else {
+                return
+            }
+
+            progressBySectionIndex[sectionIndex] = PreservedContentsReadProgress(
+                readTokenCount: min(readTokenCount, totalTokenCount),
+                totalTokenCount: totalTokenCount
+            )
+        }
+    }
+
+    private static func remappedReadTokenCount(
+        from progress: PreservedContentsReadProgress,
+        newTotalTokenCount: Int
+    ) -> Int {
+        guard progress.readTokenCount > 0,
+              progress.totalTokenCount > 0,
+              newTotalTokenCount > 0 else {
+            return 0
+        }
+
+        if progress.readTokenCount >= progress.totalTokenCount {
+            return newTotalTokenCount
+        }
+
+        let proportionalCount = Int(
+            (Double(progress.readTokenCount) / Double(progress.totalTokenCount) * Double(newTotalTokenCount))
+                .rounded(.down)
+        )
+        return min(max(proportionalCount, 1), max(newTotalTokenCount - 1, 0))
     }
 
     private func markContentsTokensRead(in range: Range<Int>) {
