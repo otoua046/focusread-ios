@@ -212,6 +212,29 @@ final class AIRecapServiceTests: XCTestCase {
         XCTAssertTrue(source.text.contains("garçon"))
     }
 
+    func testMalformedMarkupControlCharactersAreCleanedBeforeRecapInput() throws {
+        let text = """
+        <?xml version="1.0"?><html><body><script>ignore()</script><!-- remove -->
+        <p>Chapter 3\u{0000} begins with clear prose&nbsp;about knowledge.</p>
+        <p>It keeps accents like Émilie, François, garçon, and œuvre.\u{200B}</p>
+        </body></html>
+        """
+        let read = makeImportedRead(text: repeatedWords([text], count: 260), sourceType: .epub, languageCode: "en")
+        let source = try AIRecapSourceExtractor(minimumInputWordCount: 1)
+            .source(for: read, sessionEvent: event(readID: read.id, range: 0..<read.totalWordCount))
+
+        XCTAssertFalse(source.text.contains("<script>"))
+        XCTAssertFalse(source.text.contains("ignore()"))
+        XCTAssertFalse(source.text.contains("<!--"))
+        XCTAssertFalse(source.text.contains("&nbsp;"))
+        XCTAssertFalse(source.text.contains("\u{0000}"))
+        XCTAssertFalse(source.text.contains("\u{200B}"))
+        XCTAssertTrue(source.text.contains("Émilie"))
+        XCTAssertTrue(source.text.contains("œuvre"))
+        XCTAssertGreaterThan(source.longestParagraphLength, 0)
+        XCTAssertGreaterThan(source.estimatedTokenCount, 0)
+    }
+
     func testFrenchEPUBSevenHundredWordLogicalSessionGeneratesRecap() async throws {
         let read = makeImportedRead(
             text: dirtyFrenchEPUBText(wordCount: 700),
@@ -250,6 +273,149 @@ final class AIRecapServiceTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? AIRecapGenerationError, .unsupportedLanguage)
         }
+    }
+
+    func testRussellChapterThreeStyleEPUBInputUsesCharacterAndTokenSafetyBudget() async throws {
+        let read = makeImportedRead(
+            text: russellChapterThreeStylePublicDomainText(wordCount: 2_800),
+            sourceType: .epub,
+            languageCode: "en"
+        )
+        let recorder = RecapModelAttemptRecorder()
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: RecordingRecapModel(recorder: recorder, output: "Russell weighs idealism against common sense.")
+        )
+
+        let recap = try await service.generateRecap(
+            for: read,
+            sessionEvent: event(readID: read.id, range: 0..<read.totalWordCount)
+        )
+        let attempts = await recorder.attempts
+
+        XCTAssertEqual(recap.generatedText, "Russell weighs idealism against common sense.")
+        XCTAssertEqual(attempts.count, 1)
+        XCTAssertLessThanOrEqual(attempts[0].wordCount, 2_800)
+        XCTAssertLessThanOrEqual(attempts[0].characterCount, 12_000)
+        XCTAssertLessThanOrEqual(attempts[0].estimatedTokenCount, 2_650)
+        XCTAssertEqual(attempts[0].documentSourceType, .epub)
+    }
+
+    func testDenseLongParagraphInputIsWindowedBelowModelSafetyCaps() async throws {
+        let longWords = (0..<3_000).map { "extraordinarilyelongatedphilosophicalterm\($0)" }.joined(separator: " ")
+        let read = makeImportedRead(text: longWords, sourceType: .epub, languageCode: "en")
+        let recorder = RecapModelAttemptRecorder()
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: RecordingRecapModel(recorder: recorder, output: "A compact recap.")
+        )
+
+        _ = try await service.generateRecap(
+            for: read,
+            sessionEvent: event(readID: read.id, range: 0..<read.totalWordCount)
+        )
+        let attempts = await recorder.attempts
+
+        XCTAssertEqual(attempts.count, 1)
+        XCTAssertLessThan(attempts[0].wordCount, 3_000)
+        XCTAssertLessThanOrEqual(attempts[0].characterCount, 12_000)
+        XCTAssertLessThanOrEqual(attempts[0].estimatedTokenCount, 2_650)
+        XCTAssertGreaterThan(attempts[0].averageWordLength, 20)
+        XCTAssertGreaterThan(attempts[0].longestParagraphLength, 8_000)
+    }
+
+    func testGenerationFailureRetriesOnceWithSmallerRecentWindow() async throws {
+        let read = makeImportedRead(
+            text: russellChapterThreeStylePublicDomainText(wordCount: 2_800),
+            sourceType: .epub,
+            languageCode: "en"
+        )
+        let recorder = RecapModelAttemptRecorder()
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: FailFirstThenSucceedRecapModel(recorder: recorder)
+        )
+
+        let recap = try await service.generateRecap(
+            for: read,
+            sessionEvent: event(readID: read.id, range: 0..<read.totalWordCount)
+        )
+        let attempts = await recorder.attempts
+
+        XCTAssertEqual(recap.generatedText, "Fallback recap succeeded.")
+        XCTAssertEqual(attempts.count, 2)
+        XCTAssertLessThan(attempts[1].wordCount, attempts[0].wordCount)
+        XCTAssertLessThanOrEqual(attempts[1].wordCount, 1_800)
+        XCTAssertLessThanOrEqual(attempts[1].characterCount, 7_500)
+        XCTAssertLessThanOrEqual(attempts[1].estimatedTokenCount, 1_750)
+    }
+
+    func testGenerationFailureDoesNotRetryEndlessly() async {
+        let read = makeImportedRead(
+            text: russellChapterThreeStylePublicDomainText(wordCount: 2_800),
+            sourceType: .epub,
+            languageCode: "en"
+        )
+        let recorder = RecapModelAttemptRecorder()
+        let service = AIRecapService(
+            extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+            model: AlwaysFailingRecapModel(recorder: recorder)
+        )
+
+        do {
+            _ = try await service.generateRecap(
+                for: read,
+                sessionEvent: event(readID: read.id, range: 0..<read.totalWordCount)
+            )
+            XCTFail("Expected generationFailed")
+        } catch {
+            let attempts = await recorder.attempts
+            XCTAssertEqual(error as? AIRecapGenerationError, .generationFailed)
+            XCTAssertEqual(attempts.count, 2)
+        }
+    }
+
+    @MainActor
+    func testFailedRegenerationPreservesExistingRecap() async {
+        let read = makeRead(wordCount: 800)
+        let session = event(readID: read.id, range: 0..<600)
+        let existing = AIRecap(
+            readID: read.id,
+            sessionID: session.id,
+            sessionStartedAt: session.startedAt,
+            sessionEndedAt: session.endedAt,
+            sourceStartWordIndex: 0,
+            sourceEndWordIndex: 600,
+            generatedText: "Existing valid recap.",
+            inputWordCount: 600,
+            outputWordCount: 3,
+            modelName: "Fake Local Model",
+            modelVersion: "test"
+        )
+        let statsStore = MockReadingStatsStore(sessionEvents: [session])
+        let recapStore = MockAIRecapStore(recaps: [existing])
+        let viewModel = AIRecapViewModel(
+            read: read,
+            readingStatsStore: statsStore,
+            recapStore: recapStore,
+            service: AIRecapService(
+                extractor: AIRecapSourceExtractor(minimumInputWordCount: 250),
+                model: AlwaysFailingRecapModel(recorder: RecapModelAttemptRecorder())
+            ),
+            isAIRecapsEnabledProvider: { true }
+        )
+
+        guard let item = viewModel.items.first else {
+            XCTFail("Expected an eligible recap session")
+            return
+        }
+
+        viewModel.generate(for: item, regenerate: true)
+        await waitForGenerationToFinish(viewModel)
+
+        XCTAssertEqual(recapStore.recaps(for: read.id), [existing])
+        XCTAssertEqual(recapStore.savedRecaps, [])
+        XCTAssertEqual(viewModel.errorMessage, L10n.string(.aiRecapGenerationFailed))
     }
 
     func testFrenchPromptUsesSimpleInstructionWithoutRedetection() throws {
@@ -480,8 +646,28 @@ final class AIRecapServiceTests: XCTestCase {
         ], count: wordCount)
     }
 
+    private func russellChapterThreeStylePublicDomainText(wordCount: Int) -> String {
+        let bodyWords = """
+        <section><h1>Chapter III. The Nature of Matter</h1>
+        In considering the problems of philosophy, Bertrand Russell asks whether the table that seems so familiar is known directly, or whether its colour, hardness, and shape are appearances related to our senses. The argument proceeds carefully through sense-data, belief, matter, idealism, and the stubborn habit of common sense. It is public-domain prose with long clauses, semicolons, and XHTML wrappers that should not confuse the recap input budget.
+        </section>
+        """.split { $0.isWhitespace || $0.isNewline }.map(String.init)
+        return """
+        *** START OF THE PROJECT GUTENBERG EBOOK THE PROBLEMS OF PHILOSOPHY ***
+        \(repeatedWords(bodyWords, count: wordCount))
+        """
+    }
+
     private func repeatedWords(_ words: [String], count: Int) -> String {
         (0..<count).map { words[$0 % words.count] }.joined(separator: " ")
+    }
+
+    @MainActor
+    private func waitForGenerationToFinish(_ viewModel: AIRecapViewModel) async {
+        for _ in 0..<500 where viewModel.isGenerating {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        await Task.yield()
     }
 }
 
@@ -523,5 +709,124 @@ private struct LanguageSupportFakeRecapModel: AIRecapModelGenerating {
 
     func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
         "This should not be generated."
+    }
+}
+
+private struct RecapModelAttempt: Equatable, Sendable {
+    let wordCount: Int
+    let characterCount: Int
+    let estimatedTokenCount: Int
+    let averageWordLength: Double
+    let longestParagraphLength: Int
+    let documentSourceType: SavedReadSourceType
+}
+
+private actor RecapModelAttemptRecorder {
+    private(set) var attempts: [RecapModelAttempt] = []
+
+    func record(_ source: AIRecapSource) {
+        attempts.append(RecapModelAttempt(
+            wordCount: source.wordCount,
+            characterCount: source.cleanedTextLength,
+            estimatedTokenCount: source.estimatedTokenCount,
+            averageWordLength: source.averageWordLength,
+            longestParagraphLength: source.longestParagraphLength,
+            documentSourceType: source.documentSourceType
+        ))
+    }
+}
+
+private enum RecapModelTestError: Error {
+    case failed
+}
+
+private struct RecordingRecapModel: AIRecapModelGenerating {
+    var isAvailable = true
+    let recorder: RecapModelAttemptRecorder
+    var output: String
+    var modelName: String { "Recording Fake Model" }
+    var modelVersion: String { "test" }
+    var contextWindowTokenLimit: Int? { 4_096 }
+
+    func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
+        await recorder.record(source)
+        return output
+    }
+}
+
+private struct FailFirstThenSucceedRecapModel: AIRecapModelGenerating {
+    var isAvailable = true
+    let recorder: RecapModelAttemptRecorder
+    var modelName: String { "Retry Fake Model" }
+    var modelVersion: String { "test" }
+    var contextWindowTokenLimit: Int? { 4_096 }
+
+    func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
+        await recorder.record(source)
+        if await recorder.attempts.count == 1 {
+            throw RecapModelTestError.failed
+        }
+
+        return "Fallback recap succeeded."
+    }
+}
+
+private struct AlwaysFailingRecapModel: AIRecapModelGenerating {
+    var isAvailable = true
+    let recorder: RecapModelAttemptRecorder
+    var modelName: String { "Failing Fake Model" }
+    var modelVersion: String { "test" }
+    var contextWindowTokenLimit: Int? { 4_096 }
+
+    func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String {
+        await recorder.record(source)
+        throw RecapModelTestError.failed
+    }
+}
+
+@MainActor
+private final class MockReadingStatsStore: ReadingStatsStore {
+    var snapshot: ReadingStatsSnapshot = .empty
+    var dailyStats: [DailyReadingStats] = []
+    var sessionEvents: [ReadingSessionEvent]
+
+    init(sessionEvents: [ReadingSessionEvent]) {
+        self.sessionEvents = sessionEvents
+    }
+
+    func record(_ event: ReadingSessionEvent) {
+        sessionEvents.append(event)
+    }
+
+    func markReadCompleted(readID: UUID, completedAt: Date) {}
+
+    func updateDailyGoalWords(_ words: Int) {}
+}
+
+@MainActor
+private final class MockAIRecapStore: AIRecapStore {
+    private var storedRecaps: [AIRecap]
+    private(set) var savedRecaps: [AIRecap] = []
+
+    init(recaps: [AIRecap]) {
+        storedRecaps = recaps
+    }
+
+    func recaps(for readID: UUID) -> [AIRecap] {
+        storedRecaps.filter { $0.readID == readID }
+    }
+
+    func save(_ recap: AIRecap) {
+        savedRecaps.append(recap)
+        storedRecaps.removeAll { $0.readID == recap.readID && $0.sessionID == recap.sessionID }
+        storedRecaps.append(recap)
+    }
+
+    func deleteRecap(sessionID: UUID, for readID: UUID) {
+        storedRecaps.removeAll { $0.readID == readID && $0.sessionID == sessionID }
+    }
+
+    func deleteRecaps(for readID: UUID) {
+        storedRecaps.removeAll { $0.readID == readID }
     }
 }

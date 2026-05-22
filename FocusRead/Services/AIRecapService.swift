@@ -46,6 +46,9 @@ struct AIRecapSource: Equatable, Sendable {
     let cleanedTextLength: Int
     let text: String
     let wordCount: Int
+    let estimatedTokenCount: Int
+    let averageWordLength: Double
+    let longestParagraphLength: Int
     let isCapped: Bool
     let detectedLanguage: AIRecapDetectedLanguage?
 }
@@ -64,6 +67,7 @@ protocol AIRecapModelGenerating: Sendable {
     var modelName: String { get }
     var modelVersion: String { get }
     var availabilityDebugDescription: String { get }
+    var contextWindowTokenLimit: Int? { get }
 
     func supportsLanguage(_ code: String) -> Bool?
     func generateRecap(from source: AIRecapSource, outputWordLimit: Int) async throws -> String
@@ -72,6 +76,10 @@ protocol AIRecapModelGenerating: Sendable {
 extension AIRecapModelGenerating {
     var availabilityDebugDescription: String {
         isAvailable ? "available" : "unavailable"
+    }
+
+    var contextWindowTokenLimit: Int? {
+        nil
     }
 
     func supportsLanguage(_ code: String) -> Bool? {
@@ -135,14 +143,13 @@ struct AIRecapSourceExtractor: Sendable {
         let sourceWordCountBeforeCap = upperBound - lowerBound
         let cappedLowerBound = max(lowerBound, upperBound - maximumInputWordCount)
         let sourceTokens = tokens[cappedLowerBound..<upperBound]
-        let rawSourceText = sourceTokens
-            .map { $0.rawText.isEmpty ? $0.text : $0.rawText }
-            .joined(separator: " ")
+        let rawSourceText = Self.sourceText(from: sourceTokens)
         let sourceText = AIRecapSourceTextCleaner.clean(rawSourceText)
         let wordCount = Self.wordCount(sourceText)
         guard wordCount >= minimumInputWordCount else {
             throw AIRecapGenerationError.notEnoughText
         }
+        let metrics = AIRecapInputMetrics(text: sourceText, wordCount: wordCount)
 
         return AIRecapSource(
             readID: read.id,
@@ -157,6 +164,9 @@ struct AIRecapSourceExtractor: Sendable {
             cleanedTextLength: sourceText.count,
             text: sourceText,
             wordCount: wordCount,
+            estimatedTokenCount: metrics.estimatedTokenCount,
+            averageWordLength: metrics.averageWordLength,
+            longestParagraphLength: metrics.longestParagraphLength,
             isCapped: sourceWordCountBeforeCap > maximumInputWordCount,
             detectedLanguage: Self.detectedLanguage(metadataLanguageCode: read.languageCode, text: sourceText)
         )
@@ -268,6 +278,27 @@ struct AIRecapSourceExtractor: Sendable {
         return tokenizer.tokenize(SavedReadMapper.text(from: read))
     }
 
+    private static func sourceText(from tokens: ArraySlice<ReadingToken>) -> String {
+        var output = ""
+        output.reserveCapacity(tokens.reduce(0) { $0 + max($1.rawText.count, $1.text.count) + 1 })
+
+        for token in tokens {
+            let text = token.rawText.isEmpty ? token.text : token.rawText
+            guard !text.isEmpty else { continue }
+
+            if !output.isEmpty, !output.hasSuffix(" "), !output.hasSuffix("\n") {
+                output.append(" ")
+            }
+            output.append(text)
+
+            if token.pauseKind == .paragraphBreak {
+                output.append("\n\n")
+            }
+        }
+
+        return output
+    }
+
     private func recoveredSourceWordRange(
         for read: SavedRead,
         sessionEvent: ReadingSessionEvent,
@@ -368,14 +399,137 @@ struct AIRecapSourceExtractor: Sendable {
 
 enum AIRecapSourceTextCleaner {
     static func clean(_ text: String) -> String {
-        text
+        stripPublicDomainBoilerplate(from: text)
             .precomposedStringWithCanonicalMapping
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .replacingOccurrences(of: #"(?is)<(script|style)\b[^>]*>.*?</\1>"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #"(?s)<!--.*?-->"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #"(?s)<!\[CDATA\[.*?\]\]>"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #"<\s*/?\s*(p|div|section|article|chapter|h[1-6]|br)\b[^>]*>"#, with: "\n\n", options: [.regularExpression, .caseInsensitive])
             .replacingOccurrences(of: #"<[^>]+>"#, with: " ", options: .regularExpression)
             .focusReadDecodedHTMLEntities
-            .focusReadRemovingControlCharacters
-            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .focusReadRemovingRecapControlCharacters
+            .replacingOccurrences(of: #"[ \t\f\v\u{00A0}]+"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #" *\n+ *"#, with: "\n", options: .regularExpression)
+            .focusReadNormalizedDocumentText
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .precomposedStringWithCanonicalMapping
+    }
+
+    private static func stripPublicDomainBoilerplate(from text: String) -> String {
+        let markerStrippedText = text
+            .replacingOccurrences(
+                of: #"\*{3}\s*START OF (THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*{3}"#,
+                with: " ",
+                options: [.regularExpression, .caseInsensitive]
+            )
+            .replacingOccurrences(
+                of: #"\*{3}\s*END OF (THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*{3}"#,
+                with: "\nEnd of Project Gutenberg\n",
+                options: [.regularExpression, .caseInsensitive]
+            )
+        let lines = markerStrippedText
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+            .components(separatedBy: "\n")
+
+        var lowerBound = 0
+        var upperBound = lines.count
+
+        for (index, line) in lines.enumerated() {
+            let normalized = line.uppercased()
+            if normalized.contains("*** START OF")
+                && normalized.contains("PROJECT GUTENBERG")
+                && normalized.contains("EBOOK") {
+                lowerBound = index + 1
+            }
+
+            if normalized.contains("*** END OF")
+                && normalized.contains("PROJECT GUTENBERG")
+                && normalized.contains("EBOOK") {
+                upperBound = min(upperBound, index)
+                break
+            }
+
+            if normalized.contains("END OF PROJECT GUTENBERG") {
+                upperBound = min(upperBound, index)
+                break
+            }
+        }
+
+        guard lowerBound < upperBound else { return "" }
+        return lines[lowerBound..<upperBound].joined(separator: "\n")
+    }
+}
+
+private extension String {
+    var focusReadRemovingRecapControlCharacters: String {
+        String(unicodeScalars.map { scalar in
+            if scalar.value == 0x0A || scalar.value == 0x09 {
+                return String(scalar)
+            }
+
+            if scalar.properties.generalCategory == .control ||
+                scalar.value == 0x200B ||
+                scalar.value == 0x200C ||
+                scalar.value == 0x200D ||
+                scalar.value == 0x200E ||
+                scalar.value == 0x200F ||
+                scalar.value == 0x2028 ||
+                scalar.value == 0x2029 ||
+                scalar.value == 0x2060 ||
+                scalar.value == 0xFEFF {
+                return " "
+            }
+
+            return String(scalar)
+        }.joined())
+    }
+}
+
+struct AIRecapInputMetrics: Equatable, Sendable {
+    let characterCount: Int
+    let estimatedTokenCount: Int
+    let averageWordLength: Double
+    let longestParagraphLength: Int
+
+    init(text: String, wordCount: Int? = nil) {
+        let words = text.split { $0.isWhitespace || $0.isNewline }
+        let resolvedWordCount = wordCount ?? words.count
+        let wordCharacterCount = words.reduce(0) { $0 + $1.count }
+        characterCount = text.count
+        estimatedTokenCount = Self.estimatedTokenCount(for: text)
+        averageWordLength = resolvedWordCount > 0 ? Double(wordCharacterCount) / Double(resolvedWordCount) : 0
+        longestParagraphLength = text
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).count }
+            .max() ?? 0
+    }
+
+    private static func estimatedTokenCount(for text: String) -> Int {
+        let scalars = text.unicodeScalars.filter {
+            !CharacterSet.whitespacesAndNewlines.contains($0)
+        }
+        guard !scalars.isEmpty else { return 0 }
+
+        let containsDenseScript = scalars.contains { scalar in
+            switch scalar.value {
+            case 0x3040...0x30FF, 0x3400...0x9FFF, 0xAC00...0xD7AF:
+                return true
+            default:
+                return false
+            }
+        }
+
+        if containsDenseScript {
+            return scalars.count
+        }
+
+        let words = text.split { $0.isWhitespace || $0.isNewline }.count
+        let characterEstimate = Int((Double(text.count) / 3.4).rounded(.up))
+        let wordEstimate = Int((Double(words) * 1.35).rounded(.up))
+        return max(characterEstimate, wordEstimate, 1)
     }
 }
 
@@ -421,6 +575,12 @@ private struct StableSessionHasher {
 
 struct AIRecapService: Sendable {
     static let maximumOutputWordCount = 500
+    private static let primaryMaximumInputCharacterCount = 12_000
+    private static let primaryMaximumInputTokenCount = 2_650
+    private static let fallbackMaximumInputWordCount = 1_800
+    private static let fallbackMaximumInputCharacterCount = 7_500
+    private static let fallbackMaximumInputTokenCount = 1_750
+    private static let estimatedPromptOverheadTokens = 450
     private static let logger = Logger(subsystem: "FocusRead", category: "AIRecap")
 
     let extractor: AIRecapSourceExtractor
@@ -462,8 +622,70 @@ struct AIRecapService: Sendable {
             throw AIRecapGenerationError.unsupportedLanguage
         }
 
+        let primaryBudget = Self.primaryInputBudget(
+            contextWindowTokenLimit: model.contextWindowTokenLimit,
+            outputWordLimit: Self.maximumOutputWordCount
+        )
+        let fallbackBudget = Self.fallbackInputBudget(primaryBudget: primaryBudget)
+        let primarySource = Self.windowedSource(source, budget: primaryBudget)
+        guard !primarySource.text.isEmpty else {
+            Self.logger.error("AI recap input cleaning failed. stage=inputCleaning reason=emptyCleanedText documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public)")
+            throw AIRecapGenerationError.notEnoughText
+        }
+
+        do {
+            return try await generateRecap(
+                for: read,
+                source: primarySource,
+                attemptIndex: 1,
+                fallbackUsed: false,
+                budget: primaryBudget
+            )
+        } catch is CancellationError {
+            Self.logger.error("AI recap generation cancelled. stage=timeoutCancellation fallbackUsed=false documentType=\(primarySource.documentSourceType.debugLogName, privacy: .public)")
+            throw CancellationError()
+        } catch {
+            let mappedError = Self.mappedGenerationError(error)
+            guard mappedError != .unsupportedLanguage,
+                  primarySource.sourceWordCountBeforeCap <= extractor.maximumInputWordCount else {
+                throw Self.cleanFailureError(for: error)
+            }
+
+            let fallbackSource = Self.windowedSource(source, budget: fallbackBudget)
+            guard fallbackSource.text != primarySource.text,
+                  !fallbackSource.text.isEmpty else {
+                throw Self.cleanFailureError(for: error)
+            }
+
+            Self.logger.error("AI recap generation retrying with smaller input window. previousReason=\(Self.debugDescription(for: error), privacy: .public) mappedReason=\(String(describing: mappedError), privacy: .public) documentType=\(source.documentSourceType.debugLogName, privacy: .public) fallbackUsed=true primaryWords=\(primarySource.wordCount, privacy: .public) fallbackWords=\(fallbackSource.wordCount, privacy: .public) primaryCharacters=\(primarySource.cleanedTextLength, privacy: .public) fallbackCharacters=\(fallbackSource.cleanedTextLength, privacy: .public) primaryEstimatedTokens=\(primarySource.estimatedTokenCount, privacy: .public) fallbackEstimatedTokens=\(fallbackSource.estimatedTokenCount, privacy: .public)")
+
+            do {
+                return try await generateRecap(
+                    for: read,
+                    source: fallbackSource,
+                    attemptIndex: 2,
+                    fallbackUsed: true,
+                    budget: fallbackBudget
+                )
+            } catch is CancellationError {
+                Self.logger.error("AI recap fallback generation cancelled. stage=timeoutCancellation fallbackUsed=true documentType=\(fallbackSource.documentSourceType.debugLogName, privacy: .public)")
+                throw CancellationError()
+            } catch {
+                Self.logger.error("AI recap fallback generation failed. stage=modelInvocation fallbackUsed=true reason=\(Self.debugDescription(for: error), privacy: .public) mappedReason=\(String(describing: Self.mappedGenerationError(error)), privacy: .public) documentType=\(fallbackSource.documentSourceType.debugLogName, privacy: .public)")
+                throw Self.cleanFailureError(for: error)
+            }
+        }
+    }
+
+    private func generateRecap(
+        for read: SavedRead,
+        source: AIRecapSource,
+        attemptIndex: Int,
+        fallbackUsed: Bool,
+        budget: AIRecapInputBudget
+    ) async throws -> AIRecap {
         let prompt = AIRecapPromptBuilder.makePrompt(for: source, outputWordLimit: Self.maximumOutputWordCount)
-        Self.logger.debug("AI recap generation starting. documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsBeforeCap=\(source.sourceWordCountBeforeCap, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(source.detectedLanguage?.code ?? "unknown", privacy: .public) isCapped=\(source.isCapped, privacy: .public) cleanedSourcePreview=\(Self.loggableSnippet(source.text, limit: 500), privacy: .private) promptPreview=\(prompt.logDescription, privacy: .private)")
+        Self.logger.debug("AI recap generation starting. stage=modelInvocation attempt=\(attemptIndex, privacy: .public) fallbackUsed=\(fallbackUsed, privacy: .public) documentType=\(source.documentSourceType.debugLogName, privacy: .public) localAIAvailable=\(model.isAvailable, privacy: .public) availability=\(model.availabilityDebugDescription, privacy: .public) modelContextWindowTokens=\(model.contextWindowTokenLimit ?? -1, privacy: .public) inputWindowWordLimit=\(budget.maximumWordCount, privacy: .public) inputWindowCharacterLimit=\(budget.maximumCharacterCount, privacy: .public) inputWindowEstimatedTokenLimit=\(budget.maximumEstimatedTokenCount, privacy: .public) sourceWordCount=\(source.wordCount, privacy: .public) sourceCharacterCount=\(source.cleanedTextLength, privacy: .public) sourceEstimatedTokens=\(source.estimatedTokenCount, privacy: .public) averageWordLength=\(source.averageWordLength, privacy: .public) longestParagraphLength=\(source.longestParagraphLength, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) sourceWordsBeforeCap=\(source.sourceWordCountBeforeCap, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) detectedLanguageCode=\(source.detectedLanguage?.code ?? "unknown", privacy: .public) isCapped=\(source.isCapped, privacy: .public) cleanedSourcePreview=\(Self.loggableSnippet(source.text, limit: 500), privacy: .private) promptPreview=\(prompt.logDescription, privacy: .private)")
 
         let generationStartedAt = Date()
         do {
@@ -474,12 +696,12 @@ struct AIRecapService: Sendable {
             let sanitizedText = Self.sanitizedSummary(generatedText, wordLimit: Self.maximumOutputWordCount)
             guard !sanitizedText.isEmpty else {
                 let duration = Date().timeIntervalSince(generationStartedAt)
-                Self.logger.error("AI recap generation failed. reason=emptyOutput documentType=\(source.documentSourceType.debugLogName, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
+                Self.logger.error("AI recap generation failed. stage=modelInvocation reason=emptyOutput fallbackUsed=\(fallbackUsed, privacy: .public) documentType=\(source.documentSourceType.debugLogName, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
                 throw AIRecapGenerationError.generationFailed
             }
 
             let duration = Date().timeIntervalSince(generationStartedAt)
-            Self.logger.debug("AI recap generation finished. documentType=\(source.documentSourceType.debugLogName, privacy: .public) outputWords=\(Self.wordCount(sanitizedText), privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
+            Self.logger.debug("AI recap generation finished. stage=modelInvocation attempt=\(attemptIndex, privacy: .public) fallbackUsed=\(fallbackUsed, privacy: .public) documentType=\(source.documentSourceType.debugLogName, privacy: .public) inputWords=\(source.wordCount, privacy: .public) inputCharacters=\(source.cleanedTextLength, privacy: .public) inputEstimatedTokens=\(source.estimatedTokenCount, privacy: .public) outputWords=\(Self.wordCount(sanitizedText), privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
 
             return AIRecap(
                 readID: read.id,
@@ -500,10 +722,7 @@ struct AIRecapService: Sendable {
         } catch {
             let mappedError = Self.mappedGenerationError(error)
             let duration = Date().timeIntervalSince(generationStartedAt)
-            Self.logger.error("AI recap generation failed. reason=\(Self.debugDescription(for: error), privacy: .public) mappedReason=\(String(describing: mappedError), privacy: .public) documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
-            if mappedError == .unsupportedLanguage {
-                throw mappedError
-            }
+            Self.logger.error("AI recap generation failed. stage=modelInvocation attempt=\(attemptIndex, privacy: .public) fallbackUsed=\(fallbackUsed, privacy: .public) reason=\(Self.debugDescription(for: error), privacy: .public) mappedReason=\(String(describing: mappedError), privacy: .public) documentType=\(source.documentSourceType.debugLogName, privacy: .public) rawTextLength=\(source.rawTextLength, privacy: .public) cleanedTextLength=\(source.cleanedTextLength, privacy: .public) sourceWordsAfterCap=\(source.wordCount, privacy: .public) sourceCharacters=\(source.cleanedTextLength, privacy: .public) sourceEstimatedTokens=\(source.estimatedTokenCount, privacy: .public) averageWordLength=\(source.averageWordLength, privacy: .public) longestParagraphLength=\(source.longestParagraphLength, privacy: .public) detectedLanguage=\(source.detectedLanguage?.name ?? "unknown", privacy: .public) durationSeconds=\(duration, privacy: .public)")
             throw error
         }
     }
@@ -540,6 +759,130 @@ struct AIRecapService: Sendable {
         return snippet.replacingOccurrences(of: "\n", with: "\\n")
     }
 
+    private static func primaryInputBudget(
+        contextWindowTokenLimit: Int?,
+        outputWordLimit: Int
+    ) -> AIRecapInputBudget {
+        let responseTokenBudget = max(outputWordLimit * 2, 300)
+        let contextAwareTokenLimit = contextWindowTokenLimit.map {
+            max(750, $0 - responseTokenBudget - estimatedPromptOverheadTokens)
+        }
+
+        return AIRecapInputBudget(
+            maximumWordCount: 5_000,
+            maximumCharacterCount: primaryMaximumInputCharacterCount,
+            maximumEstimatedTokenCount: min(primaryMaximumInputTokenCount, contextAwareTokenLimit ?? primaryMaximumInputTokenCount)
+        )
+    }
+
+    private static func fallbackInputBudget(primaryBudget: AIRecapInputBudget) -> AIRecapInputBudget {
+        AIRecapInputBudget(
+            maximumWordCount: min(fallbackMaximumInputWordCount, primaryBudget.maximumWordCount),
+            maximumCharacterCount: min(fallbackMaximumInputCharacterCount, primaryBudget.maximumCharacterCount),
+            maximumEstimatedTokenCount: min(fallbackMaximumInputTokenCount, primaryBudget.maximumEstimatedTokenCount)
+        )
+    }
+
+    private static func windowedSource(_ source: AIRecapSource, budget: AIRecapInputBudget) -> AIRecapSource {
+        let text = suffixText(
+            source.text,
+            maximumWordCount: budget.maximumWordCount,
+            maximumCharacterCount: budget.maximumCharacterCount,
+            maximumEstimatedTokenCount: budget.maximumEstimatedTokenCount
+        )
+        let wordCount = Self.wordCount(text)
+        let metrics = AIRecapInputMetrics(text: text, wordCount: wordCount)
+        let sourceStartWordIndex = max(source.sourceEndWordIndex - wordCount, source.sourceStartWordIndex)
+
+        return AIRecapSource(
+            readID: source.readID,
+            sessionID: source.sessionID,
+            sessionStartedAt: source.sessionStartedAt,
+            sessionEndedAt: source.sessionEndedAt,
+            documentSourceType: source.documentSourceType,
+            sourceStartWordIndex: sourceStartWordIndex,
+            sourceEndWordIndex: source.sourceEndWordIndex,
+            sourceWordCountBeforeCap: source.sourceWordCountBeforeCap,
+            rawTextLength: source.rawTextLength,
+            cleanedTextLength: metrics.characterCount,
+            text: text,
+            wordCount: wordCount,
+            estimatedTokenCount: metrics.estimatedTokenCount,
+            averageWordLength: metrics.averageWordLength,
+            longestParagraphLength: metrics.longestParagraphLength,
+            isCapped: source.isCapped || wordCount < source.wordCount,
+            detectedLanguage: source.detectedLanguage
+        )
+    }
+
+    private static func suffixText(
+        _ text: String,
+        maximumWordCount: Int,
+        maximumCharacterCount: Int,
+        maximumEstimatedTokenCount: Int
+    ) -> String {
+        let ranges = wordRanges(in: text)
+        guard !ranges.isEmpty else { return "" }
+
+        var low = 1
+        var high = min(max(maximumWordCount, 1), ranges.count)
+        var best = ""
+
+        while low <= high {
+            let candidateCount = (low + high) / 2
+            let candidate = suffixText(text, wordRanges: ranges, count: candidateCount)
+            let metrics = AIRecapInputMetrics(text: candidate, wordCount: candidateCount)
+            if metrics.characterCount <= maximumCharacterCount,
+               metrics.estimatedTokenCount <= maximumEstimatedTokenCount {
+                best = candidate
+                low = candidateCount + 1
+            } else {
+                high = candidateCount - 1
+            }
+        }
+
+        if best.isEmpty {
+            best = suffixText(text, wordRanges: ranges, count: 1)
+        }
+
+        return best
+    }
+
+    private static func wordRanges(in text: String) -> [Range<String.Index>] {
+        var ranges: [Range<String.Index>] = []
+        var wordStart: String.Index?
+        var index = text.startIndex
+
+        while index < text.endIndex {
+            if text[index].isWhitespace {
+                if let start = wordStart {
+                    ranges.append(start..<index)
+                    wordStart = nil
+                }
+            } else if wordStart == nil {
+                wordStart = index
+            }
+
+            index = text.index(after: index)
+        }
+
+        if let start = wordStart {
+            ranges.append(start..<text.endIndex)
+        }
+
+        return ranges
+    }
+
+    private static func suffixText(
+        _ text: String,
+        wordRanges: [Range<String.Index>],
+        count: Int
+    ) -> String {
+        let lowerIndex = max(wordRanges.count - max(count, 1), 0)
+        let start = wordRanges[lowerIndex].lowerBound
+        return String(text[start...]).trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private static func mappedGenerationError(_ error: Error) -> AIRecapGenerationError {
         if let recapError = error as? AIRecapGenerationError {
             return recapError
@@ -555,6 +898,15 @@ struct AIRecapService: Sendable {
         #endif
 
         return .generationFailed
+    }
+
+    private static func cleanFailureError(for error: Error) -> Error {
+        let mappedError = mappedGenerationError(error)
+        if mappedError != .generationFailed {
+            return mappedError
+        }
+
+        return AIRecapGenerationError.generationFailed
     }
 
     private static func debugDescription(for error: Error) -> String {
@@ -573,6 +925,12 @@ struct AIRecapService: Sendable {
 
         return String(describing: error)
     }
+}
+
+private struct AIRecapInputBudget: Equatable, Sendable {
+    let maximumWordCount: Int
+    let maximumCharacterCount: Int
+    let maximumEstimatedTokenCount: Int
 }
 
 struct AIRecapPromptPayload: Equatable, Sendable {
@@ -642,12 +1000,23 @@ private struct FoundationModelAIRecapModel: AIRecapModelGenerating {
             let model = SystemLanguageModel.default
             return [
                 "availability=\(String(describing: model.availability))",
+                "contextSize=\(model.contextSize)",
                 "supportedLanguages=\(model.supportedLanguages.map(\.minimalIdentifier).sorted().joined(separator: ","))"
             ].joined(separator: " ")
         }
         #endif
 
         return "FoundationModelsUnavailable"
+    }
+
+    var contextWindowTokenLimit: Int? {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            return SystemLanguageModel.default.contextSize
+        }
+        #endif
+
+        return nil
     }
 
     func supportsLanguage(_ code: String) -> Bool? {
