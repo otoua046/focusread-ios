@@ -179,7 +179,9 @@ final class ReaderViewModel: ObservableObject {
     private var structureProcessedChunkCount = 0
     private var structureSummariesByChunkID: [UUID: ChunkStructureSummary] = [:]
     private var structureLabelBySectionIndex: [Int: String] = [:]
-    private var contentsEntryPositionBySectionIndex: [Int: Int]
+    private var contentsTokenCountBySectionIndex: [Int: Int]
+    private var readContentsTokenIndices: Set<Int>
+    private var readContentsTokenCountBySectionIndex: [Int: Int]
     private var cleanupTask: Task<Void, Never>?
     private var readingStatsSessionStartedAt: Date?
     private var readingStatsSessionWordsRead = 0
@@ -224,8 +226,17 @@ final class ReaderViewModel: ObservableObject {
         self.lastPersistedWordIndex = session.currentIndex
         self.cleanupChunks = importedDocument?.cleanupChunks ?? []
         let contentsEntries = Self.makeContentsEntries(document: session.document, tokens: session.tokens)
+        let contentsTokenCountBySectionIndex = Self.makeContentsTokenCountBySectionIndex(contentsEntries, tokens: session.tokens)
+        let initialContentsReadState = Self.makeContentsReadState(
+            tokens: session.tokens,
+            contentsTokenCountBySectionIndex: contentsTokenCountBySectionIndex,
+            readingStatsStore: readingStatsStore,
+            savedReadID: savedReadID
+        )
         self.contentsEntries = contentsEntries
-        self.contentsEntryPositionBySectionIndex = Self.makeContentsEntryPositionBySectionIndex(contentsEntries)
+        self.contentsTokenCountBySectionIndex = contentsTokenCountBySectionIndex
+        self.readContentsTokenIndices = initialContentsReadState.tokenIndices
+        self.readContentsTokenCountBySectionIndex = initialContentsReadState.tokenCountBySectionIndex
         haptics.prepare()
         startBackgroundAICleanupIfNeeded()
     }
@@ -406,20 +417,18 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func contentsProgress(for entry: ReaderContentsEntry) -> ReaderContentsProgress {
-        guard let entryPosition = contentsEntryPositionBySectionIndex[entry.sectionIndex] else {
-            return .unread
+        if let totalTokenCount = contentsTokenCountBySectionIndex[entry.sectionIndex],
+           totalTokenCount > 0,
+           readContentsTokenCountBySectionIndex[entry.sectionIndex, default: 0] >= totalTokenCount {
+            return .read
         }
 
         guard let currentSectionIndex = currentContentsSectionIndex,
-              let currentPosition = contentsEntryPositionBySectionIndex[currentSectionIndex] else {
-            return entry.firstTokenIndex < session.currentIndex ? .read : .unread
+              currentSectionIndex == entry.sectionIndex else {
+            return .unread
         }
 
-        if entryPosition == currentPosition {
-            return .current
-        }
-
-        return entryPosition < currentPosition ? .read : .unread
+        return .current
     }
 
     var locationIndicatorTitle: String {
@@ -838,8 +847,17 @@ final class ReaderViewModel: ObservableObject {
         session.document = ReadingDocument(importedDocument: updatedDocument)
         session.currentIndex = tokenIndex(matching: currentLocation, in: newTokens)
         let contentsEntries = Self.makeContentsEntries(document: session.document, tokens: session.tokens)
+        let contentsTokenCountBySectionIndex = Self.makeContentsTokenCountBySectionIndex(contentsEntries, tokens: session.tokens)
+        let contentsReadState = Self.makeContentsReadState(
+            tokens: session.tokens,
+            contentsTokenCountBySectionIndex: contentsTokenCountBySectionIndex,
+            readingStatsStore: readingStatsStore,
+            savedReadID: savedReadID
+        )
         self.contentsEntries = contentsEntries
-        contentsEntryPositionBySectionIndex = Self.makeContentsEntryPositionBySectionIndex(contentsEntries)
+        self.contentsTokenCountBySectionIndex = contentsTokenCountBySectionIndex
+        readContentsTokenIndices = contentsReadState.tokenIndices
+        readContentsTokenCountBySectionIndex = contentsReadState.tokenCountBySectionIndex
     }
 
     private func updateCleanupProgress() {
@@ -1111,12 +1129,73 @@ final class ReaderViewModel: ObservableObject {
         }
     }
 
-    private static func makeContentsEntryPositionBySectionIndex(_ entries: [ReaderContentsEntry]) -> [Int: Int] {
-        Dictionary(entries.enumerated().map { offset, entry in
-            (entry.sectionIndex, offset)
-        }, uniquingKeysWith: { first, _ in
-            first
-        })
+    private static func makeContentsTokenCountBySectionIndex(
+        _ entries: [ReaderContentsEntry],
+        tokens: [ReadingToken]
+    ) -> [Int: Int] {
+        let readableSectionIndexes = Set(entries.map(\.sectionIndex))
+
+        return tokens.reduce(into: [Int: Int]()) { counts, token in
+            guard let sectionIndex = token.sourceSectionIndex,
+                  readableSectionIndexes.contains(sectionIndex) else {
+                return
+            }
+
+            counts[sectionIndex, default: 0] += 1
+        }
+    }
+
+    private static func makeContentsReadState(
+        tokens: [ReadingToken],
+        contentsTokenCountBySectionIndex: [Int: Int],
+        readingStatsStore: ReadingStatsStore?,
+        savedReadID: UUID?
+    ) -> (tokenIndices: Set<Int>, tokenCountBySectionIndex: [Int: Int]) {
+        guard let savedReadID,
+              let readingStatsStore else {
+            return ([], [:])
+        }
+
+        let ranges = readingStatsStore.sessionEvents
+            .filter { $0.readID == savedReadID }
+            .compactMap(\.sourceWordRange)
+
+        guard !ranges.isEmpty else {
+            return ([], [:])
+        }
+
+        var tokenIndices = Set<Int>()
+        var tokenCountBySectionIndex: [Int: Int] = [:]
+
+        for range in ranges {
+            let lowerBound = min(max(range.lowerBound, tokens.startIndex), tokens.endIndex)
+            let upperBound = min(max(range.upperBound, lowerBound), tokens.endIndex)
+
+            for tokenIndex in lowerBound..<upperBound where tokenIndices.insert(tokenIndex).inserted {
+                guard let sectionIndex = tokens[tokenIndex].sourceSectionIndex,
+                      contentsTokenCountBySectionIndex[sectionIndex] != nil else {
+                    continue
+                }
+
+                tokenCountBySectionIndex[sectionIndex, default: 0] += 1
+            }
+        }
+
+        return (tokenIndices, tokenCountBySectionIndex)
+    }
+
+    private func markContentsTokensRead(in range: Range<Int>) {
+        let lowerBound = min(max(range.lowerBound, session.tokens.startIndex), session.tokens.endIndex)
+        let upperBound = min(max(range.upperBound, lowerBound), session.tokens.endIndex)
+
+        for tokenIndex in lowerBound..<upperBound where readContentsTokenIndices.insert(tokenIndex).inserted {
+            guard let sectionIndex = session.tokens[tokenIndex].sourceSectionIndex,
+                  contentsTokenCountBySectionIndex[sectionIndex] != nil else {
+                continue
+            }
+
+            readContentsTokenCountBySectionIndex[sectionIndex, default: 0] += 1
+        }
     }
 
     private static func contentsTitle(
@@ -1220,13 +1299,15 @@ final class ReaderViewModel: ObservableObject {
     }
 
     private func recordCurrentWordReadForStats() {
-        guard readingStatsSessionStartedAt != nil else { return }
-
         let wordsInStep = session.currentTokens.count
         guard wordsInStep > 0 else { return }
 
         let sourceStart = session.currentIndex
         let sourceEnd = min(session.currentIndex + wordsInStep, session.tokens.count)
+        markContentsTokensRead(in: sourceStart..<sourceEnd)
+
+        guard readingStatsSessionStartedAt != nil else { return }
+
         readingStatsSessionStartWordIndex = min(readingStatsSessionStartWordIndex ?? sourceStart, sourceStart)
         readingStatsSessionEndWordIndex = max(readingStatsSessionEndWordIndex ?? sourceEnd, sourceEnd)
 

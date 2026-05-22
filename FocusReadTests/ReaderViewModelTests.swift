@@ -391,7 +391,7 @@ final class ReaderViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testContentsProgressMarksReadCurrentAndUnreadSections() {
+    func testContentsProgressDoesNotMarkPreviousSectionsReadAfterJump() {
         let document = ReadingDocument(
             title: "Book",
             fileName: "book.epub",
@@ -409,11 +409,49 @@ final class ReaderViewModelTests: XCTestCase {
         ]
         let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, document: document, currentIndex: 1))
 
-        XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.read, .current, .unread])
+        XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.unread, .current, .unread])
+        viewModel.jumpToSection(index: 2)
+        XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.unread, .unread, .current])
     }
 
     @MainActor
-    func testContentsProgressUsesReadableEntryOrderWhenSectionsHaveGaps() {
+    func testContentsProgressRestoresOnlyFullyReadSectionsFromStats() {
+        let readID = UUID()
+        let statsStore = ReadingStatsStoreProbe()
+        statsStore.sessionEvents = [
+            Self.event(readID: readID, range: 0..<1),
+            Self.event(readID: readID, range: 2..<3)
+        ]
+        let document = ReadingDocument(
+            title: "Book",
+            fileName: "book.epub",
+            sourceType: .epub,
+            sections: [
+                Self.section(index: 0, title: "Opening", chapterNumber: 1, role: .chapter),
+                Self.section(index: 1, title: "Middle", chapterNumber: 2, role: .chapter)
+            ]
+        )
+        let tokens = [
+            Self.token("one", id: 0, sourceSectionIndex: 0),
+            Self.token("two", id: 1, sourceSectionIndex: 0),
+            Self.token("three", id: 2, sourceSectionIndex: 1)
+        ]
+        let viewModel = ReaderViewModel(
+            session: ReadingSession(tokens: tokens, document: document, currentIndex: 1),
+            readingStatsStore: statsStore,
+            savedReadID: readID
+        )
+
+        XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.current, .read])
+    }
+
+    @MainActor
+    func testContentsProgressUsesReadableEntriesWhenRestoringReadSections() {
+        let readID = UUID()
+        let statsStore = ReadingStatsStoreProbe()
+        statsStore.sessionEvents = [
+            Self.event(readID: readID, range: 0..<1)
+        ]
         let document = ReadingDocument(
             title: "Book",
             fileName: "book.epub",
@@ -430,7 +468,11 @@ final class ReaderViewModelTests: XCTestCase {
             Self.token("current", id: 1, sourceSectionIndex: 3),
             Self.token("later", id: 2, sourceSectionIndex: 4)
         ]
-        let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, document: document, currentIndex: 1))
+        let viewModel = ReaderViewModel(
+            session: ReadingSession(tokens: tokens, document: document, currentIndex: 1),
+            readingStatsStore: statsStore,
+            savedReadID: readID
+        )
 
         XCTAssertEqual(viewModel.contentsEntries.map(\.sectionIndex), [0, 3, 4])
         XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.read, .current, .unread])
@@ -515,6 +557,18 @@ final class ReaderViewModelTests: XCTestCase {
             wordRange: nil,
             epubNavigationLevel: level,
             epubSectionRole: role
+        )
+    }
+
+    private static func event(readID: UUID, range: Range<Int>) -> ReadingSessionEvent {
+        ReadingSessionEvent(
+            readID: readID,
+            startedAt: Date(timeIntervalSince1970: 0),
+            endedAt: Date(timeIntervalSince1970: 60),
+            wordsRead: range.count,
+            averageWPM: 350,
+            sourceStartWordIndex: range.lowerBound,
+            sourceEndWordIndex: range.upperBound
         )
     }
 }
