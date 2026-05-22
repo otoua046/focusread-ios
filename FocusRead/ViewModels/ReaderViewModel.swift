@@ -179,6 +179,7 @@ final class ReaderViewModel: ObservableObject {
     private var structureProcessedChunkCount = 0
     private var structureSummariesByChunkID: [UUID: ChunkStructureSummary] = [:]
     private var structureLabelBySectionIndex: [Int: String] = [:]
+    private var contentsEntryPositionBySectionIndex: [Int: Int]
     private var cleanupTask: Task<Void, Never>?
     private var readingStatsSessionStartedAt: Date?
     private var readingStatsSessionWordsRead = 0
@@ -222,7 +223,9 @@ final class ReaderViewModel: ObservableObject {
         self.savedReadID = savedReadID
         self.lastPersistedWordIndex = session.currentIndex
         self.cleanupChunks = importedDocument?.cleanupChunks ?? []
-        self.contentsEntries = Self.makeContentsEntries(document: session.document, tokens: session.tokens)
+        let contentsEntries = Self.makeContentsEntries(document: session.document, tokens: session.tokens)
+        self.contentsEntries = contentsEntries
+        self.contentsEntryPositionBySectionIndex = Self.makeContentsEntryPositionBySectionIndex(contentsEntries)
         haptics.prepare()
         startBackgroundAICleanupIfNeeded()
     }
@@ -403,12 +406,12 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func contentsProgress(for entry: ReaderContentsEntry) -> ReaderContentsProgress {
-        guard let entryPosition = contentsEntries.firstIndex(where: { $0.sectionIndex == entry.sectionIndex }) else {
+        guard let entryPosition = contentsEntryPositionBySectionIndex[entry.sectionIndex] else {
             return .unread
         }
 
         guard let currentSectionIndex = currentContentsSectionIndex,
-              let currentPosition = contentsEntries.firstIndex(where: { $0.sectionIndex == currentSectionIndex }) else {
+              let currentPosition = contentsEntryPositionBySectionIndex[currentSectionIndex] else {
             return entry.firstTokenIndex < session.currentIndex ? .read : .unread
         }
 
@@ -834,7 +837,9 @@ final class ReaderViewModel: ObservableObject {
         session.tokens = newTokens
         session.document = ReadingDocument(importedDocument: updatedDocument)
         session.currentIndex = tokenIndex(matching: currentLocation, in: newTokens)
-        contentsEntries = Self.makeContentsEntries(document: session.document, tokens: session.tokens)
+        let contentsEntries = Self.makeContentsEntries(document: session.document, tokens: session.tokens)
+        self.contentsEntries = contentsEntries
+        contentsEntryPositionBySectionIndex = Self.makeContentsEntryPositionBySectionIndex(contentsEntries)
     }
 
     private func updateCleanupProgress() {
@@ -1106,6 +1111,14 @@ final class ReaderViewModel: ObservableObject {
         }
     }
 
+    private static func makeContentsEntryPositionBySectionIndex(_ entries: [ReaderContentsEntry]) -> [Int: Int] {
+        Dictionary(entries.enumerated().map { offset, entry in
+            (entry.sectionIndex, offset)
+        }, uniquingKeysWith: { first, _ in
+            first
+        })
+    }
+
     private static func contentsTitle(
         for section: ReadingDocumentSection,
         sourceType: ReadingDocumentSourceType
@@ -1140,7 +1153,17 @@ final class ReaderViewModel: ObservableObject {
             return wordLocation
         case .epub:
             if let chapterNumber = section.chapterNumber, let title = trimmedNonEmpty(section.title) {
-                return "\(L10n.format(.readerChapterWithTitleFormat, chapterNumber, title)) · \(wordLocation)"
+                let sectionLocation = switch section.epubSectionRole {
+                case .chapter:
+                    L10n.format(.readerChapterWithTitleFormat, chapterNumber, title)
+                case .part, .frontMatter, .backMatter, .appendix, .reference, .body:
+                    L10n.format(
+                        .readerDocumentLocationFormat,
+                        L10n.format(epubContentsKindFormatKey(for: section.epubSectionRole), chapterNumber),
+                        title
+                    )
+                }
+                return "\(sectionLocation) · \(wordLocation)"
             }
             if let chapterNumber = section.chapterNumber {
                 return "\(L10n.format(epubContentsKindFormatKey(for: section.epubSectionRole), chapterNumber)) · \(wordLocation)"

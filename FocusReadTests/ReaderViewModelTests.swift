@@ -279,6 +279,9 @@ final class ReaderViewModelTests: XCTestCase {
         XCTAssertEqual(entries.map(\.firstTokenIndex), [0, 1, 2])
         XCTAssertEqual(entries.map(\.epubSectionRole), [.chapter, .part, .chapter])
         XCTAssertEqual(entries.map(\.epubNavigationLevel), [1, 1, 2])
+        XCTAssertEqual(entries[0].subtitle, "Chapter 1: Opening · Word 1 of 3")
+        XCTAssertEqual(entries[1].subtitle, "Part 2: Part Two · Word 2 of 3")
+        XCTAssertEqual(entries[2].subtitle, "Chapter 3: Nested · Word 3 of 3")
     }
 
     @MainActor

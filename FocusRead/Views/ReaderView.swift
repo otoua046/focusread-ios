@@ -399,18 +399,19 @@ private struct ReaderContentsView: View {
                     )
                 } else {
                     List(viewModel.contentsEntries) { entry in
+                        let progress = viewModel.contentsProgress(for: entry)
                         Button {
                             viewModel.jumpToSection(index: entry.sectionIndex)
                             dismiss()
                         } label: {
                             ReaderContentsRow(
                                 entry: entry,
-                                progress: viewModel.contentsProgress(for: entry)
+                                progress: progress
                             )
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(entry.title)
-                        .accessibilityValue(viewModel.contentsProgress(for: entry).accessibilityValue)
+                        .accessibilityValue(progress.accessibilityValue)
                         .accessibilityHint(L10n.string(.readerContentsJumpHint))
                     }
                     .listStyle(.insetGrouped)
