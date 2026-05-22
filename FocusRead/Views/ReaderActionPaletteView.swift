@@ -6,10 +6,12 @@ struct ReaderActionPaletteView: View {
     let isVisible: Bool
     let isTranslateSupported: Bool
     let isAIRecapSupported: Bool
+    let isContentsSupported: Bool
     let currentWord: String
     let onToggle: () -> Void
     let onDictionary: () -> Void
     let onAIRecap: () -> Void
+    let onContents: () -> Void
     let onLookup: () -> Void
     let onTranslate: () -> Void
     let onSettings: () -> Void
@@ -89,6 +91,17 @@ struct ReaderActionPaletteView: View {
             }
 
             HStack(spacing: spacing) {
+                ReaderActionItem(
+                    title: L10n.string(.readerContents),
+                    systemImage: "list.bullet",
+                    size: actionSize,
+                    isEnabled: isContentsSupported,
+                    onPressedChange: updateInteractionState
+                ) {
+                    runAndClose(onContents)
+                }
+                .accessibilityHint(L10n.string(.readerContentsHint))
+
                 ReaderActionItem(
                     title: L10n.string(.readerDictionary),
                     systemImage: "book",

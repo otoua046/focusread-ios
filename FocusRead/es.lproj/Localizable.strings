@@ -396,6 +396,14 @@
 "reader.settings" = "Ajustes";
 "reader.dictionary" = "Diccionario";
 "reader.lookup" = "Buscar";
+"reader.contents" = "Contenido";
+"reader.contents.hint" = "Abrir la lista de contenidos.";
+"reader.contents.title" = "Contenido";
+"reader.contents.empty" = "No hay contenidos disponibles";
+"reader.contents.jump.hint" = "Ir a esta sección.";
+"reader.contents.read" = "Leído";
+"reader.contents.current" = "Actual";
+"reader.contents.unread" = "No leído";
 "reader.dictionary.hint" = "Abrir la palabra actual en el diccionario.";
 "reader.dictionaryCurrentWord.hint.format" = "Abrir «%@» en el diccionario.";
 "reader.actionOpen.hint" = "Toca dos veces para abrir.";

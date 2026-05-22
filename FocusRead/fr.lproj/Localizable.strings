@@ -396,6 +396,14 @@
 "reader.settings" = "Réglages";
 "reader.dictionary" = "Dictionnaire";
 "reader.lookup" = "Rechercher";
+"reader.contents" = "Sommaire";
+"reader.contents.hint" = "Ouvrir le sommaire.";
+"reader.contents.title" = "Sommaire";
+"reader.contents.empty" = "Aucun sommaire disponible";
+"reader.contents.jump.hint" = "Aller à cette section.";
+"reader.contents.read" = "Lu";
+"reader.contents.current" = "Actuel";
+"reader.contents.unread" = "Non lu";
 "reader.dictionary.hint" = "Ouvrir le mot actuel dans le dictionnaire.";
 "reader.dictionaryCurrentWord.hint.format" = "Ouvrir « %@ » dans le dictionnaire.";
 "reader.actionOpen.hint" = "Touchez deux fois pour ouvrir.";

@@ -395,6 +395,14 @@
 "reader.settings" = "Settings";
 "reader.dictionary" = "Dictionary";
 "reader.lookup" = "Lookup";
+"reader.contents" = "Contents";
+"reader.contents.hint" = "Open the contents list.";
+"reader.contents.title" = "Contents";
+"reader.contents.empty" = "No contents available";
+"reader.contents.jump.hint" = "Jump to this section.";
+"reader.contents.read" = "Read";
+"reader.contents.current" = "Current";
+"reader.contents.unread" = "Unread";
 "reader.dictionary.hint" = "Open the current word in the dictionary.";
 "reader.dictionaryCurrentWord.hint.format" = "Open \"%@\" in the dictionary.";
 "reader.actionOpen.hint" = "Double tap to open.";
