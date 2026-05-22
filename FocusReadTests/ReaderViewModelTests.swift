@@ -419,7 +419,7 @@ final class ReaderViewModelTests: XCTestCase {
         let readID = UUID()
         let statsStore = ReadingStatsStoreProbe()
         statsStore.sessionEvents = [
-            Self.event(readID: readID, range: 0..<1),
+            Self.event(readID: readID, range: 0..<2),
             Self.event(readID: readID, range: 2..<3)
         ]
         let document = ReadingDocument(
@@ -441,8 +441,25 @@ final class ReaderViewModelTests: XCTestCase {
             readingStatsStore: statsStore,
             savedReadID: readID
         )
+        let contentsEntries = ReaderViewModel.makeContentsEntries(document: document, tokens: tokens)
+        let tokenCounts = ReaderViewModel.makeContentsTokenCountBySectionIndex(contentsEntries, tokens: tokens)
+        let partialStatsStore = ReadingStatsStoreProbe()
+        partialStatsStore.sessionEvents = [
+            Self.event(readID: readID, range: 0..<1),
+            Self.event(readID: readID, range: 2..<3)
+        ]
+        let rebuiltState = ReaderViewModel.makeContentsReadState(
+            tokens: tokens,
+            contentsTokenCountBySectionIndex: tokenCounts,
+            readingStatsStore: partialStatsStore,
+            savedReadID: readID,
+            preservingReadTokenCountBySectionIndex: [0: 2]
+        )
 
         XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.current, .read])
+        XCTAssertEqual(rebuiltState.tokenCountBySectionIndex[0], 2)
+        XCTAssertEqual(rebuiltState.tokenCountBySectionIndex[1], 1)
+        XCTAssertEqual(rebuiltState.tokenIndices.count, 3)
     }
 
     @MainActor

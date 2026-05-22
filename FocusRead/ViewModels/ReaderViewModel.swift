@@ -417,18 +417,18 @@ final class ReaderViewModel: ObservableObject {
     }
 
     func contentsProgress(for entry: ReaderContentsEntry) -> ReaderContentsProgress {
+        if let currentSectionIndex = currentContentsSectionIndex,
+           currentSectionIndex == entry.sectionIndex {
+            return .current
+        }
+
         if let totalTokenCount = contentsTokenCountBySectionIndex[entry.sectionIndex],
            totalTokenCount > 0,
            readContentsTokenCountBySectionIndex[entry.sectionIndex, default: 0] >= totalTokenCount {
             return .read
         }
 
-        guard let currentSectionIndex = currentContentsSectionIndex,
-              currentSectionIndex == entry.sectionIndex else {
-            return .unread
-        }
-
-        return .current
+        return .unread
     }
 
     var locationIndicatorTitle: String {
@@ -843,6 +843,7 @@ final class ReaderViewModel: ObservableObject {
         let newTokens = tokenizer.tokenize(updatedDocument)
         guard !newTokens.isEmpty else { return }
 
+        let inMemoryReadTokenCountBySectionIndex = readContentsTokenCountBySectionIndex
         session.tokens = newTokens
         session.document = ReadingDocument(importedDocument: updatedDocument)
         session.currentIndex = tokenIndex(matching: currentLocation, in: newTokens)
@@ -852,7 +853,8 @@ final class ReaderViewModel: ObservableObject {
             tokens: session.tokens,
             contentsTokenCountBySectionIndex: contentsTokenCountBySectionIndex,
             readingStatsStore: readingStatsStore,
-            savedReadID: savedReadID
+            savedReadID: savedReadID,
+            preservingReadTokenCountBySectionIndex: inMemoryReadTokenCountBySectionIndex
         )
         self.contentsEntries = contentsEntries
         self.contentsTokenCountBySectionIndex = contentsTokenCountBySectionIndex
@@ -1129,7 +1131,7 @@ final class ReaderViewModel: ObservableObject {
         }
     }
 
-    private static func makeContentsTokenCountBySectionIndex(
+    static func makeContentsTokenCountBySectionIndex(
         _ entries: [ReaderContentsEntry],
         tokens: [ReadingToken]
     ) -> [Int: Int] {
@@ -1145,35 +1147,51 @@ final class ReaderViewModel: ObservableObject {
         }
     }
 
-    private static func makeContentsReadState(
+    static func makeContentsReadState(
         tokens: [ReadingToken],
         contentsTokenCountBySectionIndex: [Int: Int],
         readingStatsStore: ReadingStatsStore?,
-        savedReadID: UUID?
+        savedReadID: UUID?,
+        preservingReadTokenCountBySectionIndex preservedTokenCountBySectionIndex: [Int: Int] = [:]
     ) -> (tokenIndices: Set<Int>, tokenCountBySectionIndex: [Int: Int]) {
-        guard let savedReadID,
-              let readingStatsStore else {
-            return ([], [:])
-        }
-
-        let ranges = readingStatsStore.sessionEvents
-            .filter { $0.readID == savedReadID }
-            .compactMap(\.sourceWordRange)
-
-        guard !ranges.isEmpty else {
-            return ([], [:])
-        }
-
         var tokenIndices = Set<Int>()
         var tokenCountBySectionIndex: [Int: Int] = [:]
 
-        for range in ranges {
-            let lowerBound = min(max(range.lowerBound, tokens.startIndex), tokens.endIndex)
-            let upperBound = min(max(range.upperBound, lowerBound), tokens.endIndex)
+        if let savedReadID,
+           let readingStatsStore {
+            let ranges = readingStatsStore.sessionEvents
+                .filter { $0.readID == savedReadID }
+                .compactMap(\.sourceWordRange)
 
-            for tokenIndex in lowerBound..<upperBound where tokenIndices.insert(tokenIndex).inserted {
-                guard let sectionIndex = tokens[tokenIndex].sourceSectionIndex,
-                      contentsTokenCountBySectionIndex[sectionIndex] != nil else {
+            for range in ranges {
+                let lowerBound = min(max(range.lowerBound, tokens.startIndex), tokens.endIndex)
+                let upperBound = min(max(range.upperBound, lowerBound), tokens.endIndex)
+
+                for tokenIndex in lowerBound..<upperBound where tokenIndices.insert(tokenIndex).inserted {
+                    guard let sectionIndex = tokens[tokenIndex].sourceSectionIndex,
+                          contentsTokenCountBySectionIndex[sectionIndex] != nil else {
+                        continue
+                    }
+
+                    tokenCountBySectionIndex[sectionIndex, default: 0] += 1
+                }
+            }
+        }
+
+        for (sectionIndex, preservedTokenCount) in preservedTokenCountBySectionIndex {
+            guard let totalTokenCount = contentsTokenCountBySectionIndex[sectionIndex],
+                  totalTokenCount > 0 else {
+                continue
+            }
+
+            let targetTokenCount = min(max(preservedTokenCount, tokenCountBySectionIndex[sectionIndex, default: 0]), totalTokenCount)
+            guard tokenCountBySectionIndex[sectionIndex, default: 0] < targetTokenCount else {
+                continue
+            }
+
+            for tokenIndex in tokens.indices where tokenCountBySectionIndex[sectionIndex, default: 0] < targetTokenCount {
+                guard tokens[tokenIndex].sourceSectionIndex == sectionIndex,
+                      tokenIndices.insert(tokenIndex).inserted else {
                     continue
                 }
 
