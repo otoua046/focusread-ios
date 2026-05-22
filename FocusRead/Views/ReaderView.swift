@@ -26,6 +26,7 @@ struct ReaderView: View {
     @State private var showingActionPalette = false
     @State private var showingTypographySettings = false
     @State private var showingGoToNavigation = false
+    @State private var showingContents = false
     @State private var showingCurrentLocationPreview = false
     @State private var showingTranslation = false
     @State private var aiRecapTarget: SavedRead?
@@ -62,6 +63,7 @@ struct ReaderView: View {
                 isVisible: viewModel.controlsVisible || showingActionPalette,
                 isTranslateSupported: viewModel.isTranslationAvailable,
                 isAIRecapSupported: viewModel.savedReadForAIRecap != nil,
+                isContentsSupported: viewModel.contentsAvailable,
                 currentWord: viewModel.currentWord,
                 onToggle: toggleActionPalette,
                 onDictionary: {
@@ -69,6 +71,9 @@ struct ReaderView: View {
                 },
                 onAIRecap: {
                     presentAIRecap()
+                },
+                onContents: {
+                    presentContents()
                 },
                 onLookup: {
                     viewModel.prepareForSearchNavigation()
@@ -95,6 +100,9 @@ struct ReaderView: View {
         }
         .sheet(isPresented: $showingGoToNavigation) {
             GoToNavigationView(readerViewModel: viewModel)
+        }
+        .sheet(isPresented: $showingContents) {
+            ReaderContentsView(viewModel: viewModel)
         }
         .sheet(item: $aiRecapTarget) { read in
             AIRecapView(
@@ -334,6 +342,13 @@ struct ReaderView: View {
         aiRecapTarget = viewModel.savedReadForAIRecap
     }
 
+    private func presentContents() {
+        showingActionPalette = false
+        viewModel.pause(showControls: true)
+        viewModel.revealControls()
+        showingContents = true
+    }
+
     private var horizontalSwipeGesture: some Gesture {
         DragGesture(minimumDistance: 32)
             .onEnded { value in
@@ -367,6 +382,133 @@ struct ReaderView: View {
             .onEnded { _ in
                 verticalDragStartWPM = nil
             }
+    }
+}
+
+private struct ReaderContentsView: View {
+    @ObservedObject var viewModel: ReaderViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if viewModel.contentsEntries.isEmpty {
+                    ContentUnavailableView(
+                        L10n.string(.readerContentsEmpty),
+                        systemImage: "list.bullet"
+                    )
+                } else {
+                    List(viewModel.contentsEntries) { entry in
+                        Button {
+                            viewModel.jumpToSection(index: entry.sectionIndex)
+                            dismiss()
+                        } label: {
+                            ReaderContentsRow(
+                                entry: entry,
+                                progress: viewModel.contentsProgress(for: entry)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(entry.title)
+                        .accessibilityValue(viewModel.contentsProgress(for: entry).accessibilityValue)
+                        .accessibilityHint(L10n.string(.readerContentsJumpHint))
+                    }
+                    .listStyle(.insetGrouped)
+                }
+            }
+            .navigationTitle(L10n.string(.readerContentsTitle))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(.commonDone) {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationContentInteraction(.scrolls)
+        .presentationDragIndicator(.visible)
+        .focusReadThemeRefresh()
+    }
+}
+
+private struct ReaderContentsRow: View {
+    let entry: ReaderContentsEntry
+    let progress: ReaderContentsProgress
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: iconName)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(progress == .current ? AppTheme.primaryText : AppTheme.secondaryText)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.title)
+                    .font(.body.weight(progress == .current ? .semibold : .regular))
+                    .foregroundStyle(AppTheme.primaryText)
+                    .lineLimit(2)
+
+                Text(entry.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.secondaryText)
+                    .lineLimit(1)
+                    .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let progressIconName {
+                Image(systemName: progressIconName)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(progress == .read ? AppTheme.secondaryText : AppTheme.primaryText)
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.leading, leadingIndent)
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
+    }
+
+    private var leadingIndent: CGFloat {
+        CGFloat(max((entry.epubNavigationLevel ?? 1) - 1, 0)) * 14
+    }
+
+    private var iconName: String {
+        switch entry.epubSectionRole {
+        case .chapter:
+            return "text.book.closed"
+        case .part:
+            return "folder"
+        case .appendix, .reference:
+            return "doc.text"
+        case .frontMatter, .backMatter, .body:
+            return "list.bullet"
+        }
+    }
+
+    private var progressIconName: String? {
+        switch progress {
+        case .read:
+            return "checkmark.circle.fill"
+        case .current:
+            return "location.fill"
+        case .unread:
+            return nil
+        }
+    }
+}
+
+private extension ReaderContentsProgress {
+    var accessibilityValue: String {
+        switch self {
+        case .read:
+            return L10n.string(.readerContentsRead)
+        case .current:
+            return L10n.string(.readerContentsCurrent)
+        case .unread:
+            return L10n.string(.readerContentsUnread)
+        }
     }
 }
 

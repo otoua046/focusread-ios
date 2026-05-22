@@ -396,6 +396,14 @@
 "reader.settings" = "الإعدادات";
 "reader.dictionary" = "القاموس";
 "reader.lookup" = "بحث";
+"reader.contents" = "المحتويات";
+"reader.contents.hint" = "افتح قائمة المحتويات.";
+"reader.contents.title" = "المحتويات";
+"reader.contents.empty" = "لا توجد محتويات متاحة";
+"reader.contents.jump.hint" = "انتقل إلى هذا القسم.";
+"reader.contents.read" = "مقروء";
+"reader.contents.current" = "الحالي";
+"reader.contents.unread" = "غير مقروء";
 "reader.dictionary.hint" = "افتح الكلمة الحالية في القاموس.";
 "reader.dictionaryCurrentWord.hint.format" = "افتح \"%@\" في القاموس.";
 "reader.actionOpen.hint" = "اضغط مرتين للفتح.";

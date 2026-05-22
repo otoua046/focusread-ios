@@ -396,6 +396,14 @@
 "reader.settings" = "設定";
 "reader.dictionary" = "辞書";
 "reader.lookup" = "検索";
+"reader.contents" = "目次";
+"reader.contents.hint" = "目次リストを開きます。";
+"reader.contents.title" = "目次";
+"reader.contents.empty" = "利用できる目次がありません";
+"reader.contents.jump.hint" = "このセクションへ移動します。";
+"reader.contents.read" = "既読";
+"reader.contents.current" = "現在";
+"reader.contents.unread" = "未読";
 "reader.dictionary.hint" = "現在の単語を辞書で開きます。";
 "reader.dictionaryCurrentWord.hint.format" = "“%@” を辞書で開きます。";
 "reader.actionOpen.hint" = "ダブルタップして開きます。";

@@ -255,6 +255,185 @@ final class ReaderViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testContentsEntriesUseEPUBSectionMetadataInOrder() {
+        let document = ReadingDocument(
+            title: "Book",
+            fileName: "book.epub",
+            sourceType: .epub,
+            sections: [
+                Self.section(index: 0, title: "Opening", chapterNumber: 1, role: .chapter, level: 1),
+                Self.section(index: 1, title: "Part Two", chapterNumber: 2, role: .part, level: 1),
+                Self.section(index: 2, title: "Nested", chapterNumber: 3, role: .chapter, level: 2)
+            ]
+        )
+        let tokens = [
+            Self.token("one", id: 0, sourceSectionIndex: 0),
+            Self.token("two", id: 1, sourceSectionIndex: 1),
+            Self.token("three", id: 2, sourceSectionIndex: 2)
+        ]
+
+        let entries = ReaderViewModel.makeContentsEntries(document: document, tokens: tokens)
+
+        XCTAssertEqual(entries.map(\.sectionIndex), [0, 1, 2])
+        XCTAssertEqual(entries.map(\.title), ["Opening", "Part Two", "Nested"])
+        XCTAssertEqual(entries.map(\.firstTokenIndex), [0, 1, 2])
+        XCTAssertEqual(entries.map(\.epubSectionRole), [.chapter, .part, .chapter])
+        XCTAssertEqual(entries.map(\.epubNavigationLevel), [1, 1, 2])
+    }
+
+    @MainActor
+    func testContentsEntriesUsePDFPageMetadata() {
+        let document = ReadingDocument(
+            title: "PDF",
+            fileName: "sample.pdf",
+            sourceType: .pdf,
+            sections: [
+                Self.section(index: 0, pageNumber: 1),
+                Self.section(index: 1, pageNumber: 2)
+            ]
+        )
+        let tokens = [
+            Self.token("one", id: 0, sourceSectionIndex: 0),
+            Self.token("two", id: 1, sourceSectionIndex: 1)
+        ]
+
+        let entries = ReaderViewModel.makeContentsEntries(document: document, tokens: tokens)
+
+        XCTAssertEqual(entries.map(\.title), ["Page 1", "Page 2"])
+        XCTAssertEqual(entries.map(\.subtitle), ["Page 1 · Word 1 of 2", "Page 2 · Word 2 of 2"])
+    }
+
+    @MainActor
+    func testContentsEntriesOmitUnreadableSections() {
+        let document = ReadingDocument(
+            title: "Book",
+            fileName: "book.epub",
+            sourceType: .epub,
+            sections: [
+                Self.section(index: 0, title: "Readable", chapterNumber: 1, role: .chapter),
+                Self.section(index: 1, title: "Empty", chapterNumber: 2, role: .chapter),
+                Self.section(index: 2, title: "Readable Again", chapterNumber: 3, role: .chapter)
+            ]
+        )
+        let tokens = [
+            Self.token("one", id: 0, sourceSectionIndex: 0),
+            Self.token("three", id: 1, sourceSectionIndex: 2)
+        ]
+
+        let entries = ReaderViewModel.makeContentsEntries(document: document, tokens: tokens)
+
+        XCTAssertEqual(entries.map(\.sectionIndex), [0, 2])
+        XCTAssertEqual(entries.map(\.title), ["Readable", "Readable Again"])
+    }
+
+    @MainActor
+    func testContentsEntriesAreEmptyForEmptyTokensAndSingleSectionDocuments() {
+        let multiSectionDocument = ReadingDocument(
+            title: "Book",
+            fileName: "book.epub",
+            sourceType: .epub,
+            sections: [
+                Self.section(index: 0, title: "One", chapterNumber: 1, role: .chapter),
+                Self.section(index: 1, title: "Two", chapterNumber: 2, role: .chapter)
+            ]
+        )
+        let singleSectionDocument = ReadingDocument(
+            title: "Text",
+            fileName: nil,
+            sourceType: .pastedText,
+            sections: [
+                Self.section(index: 0)
+            ]
+        )
+
+        XCTAssertTrue(ReaderViewModel.makeContentsEntries(document: multiSectionDocument, tokens: []).isEmpty)
+        XCTAssertTrue(ReaderViewModel.makeContentsEntries(
+            document: singleSectionDocument,
+            tokens: [Self.token("one", id: 0, sourceSectionIndex: 0)]
+        ).isEmpty)
+    }
+
+    @MainActor
+    func testContentsAvailabilityMatchesSectionNavigationSupport() {
+        let txtDocument = ReadingDocument(
+            title: "Text",
+            fileName: "sample.txt",
+            sourceType: .txt,
+            sections: [
+                Self.section(index: 0, title: "First"),
+                Self.section(index: 1, title: "Second")
+            ]
+        )
+        let pdfDocument = ReadingDocument(
+            title: "PDF",
+            fileName: "sample.pdf",
+            sourceType: .pdf,
+            sections: [
+                Self.section(index: 0, pageNumber: 1),
+                Self.section(index: 1, pageNumber: 2)
+            ]
+        )
+        let tokens = [
+            Self.token("one", id: 0, sourceSectionIndex: 0),
+            Self.token("two", id: 1, sourceSectionIndex: 1)
+        ]
+
+        let txtViewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, document: txtDocument))
+        let pdfViewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, document: pdfDocument))
+
+        XCTAssertEqual(txtViewModel.contentsAvailable, txtViewModel.sectionNavigationAvailable)
+        XCTAssertFalse(txtViewModel.contentsAvailable)
+        XCTAssertEqual(pdfViewModel.contentsAvailable, pdfViewModel.sectionNavigationAvailable)
+        XCTAssertTrue(pdfViewModel.contentsAvailable)
+    }
+
+    @MainActor
+    func testContentsProgressMarksReadCurrentAndUnreadSections() {
+        let document = ReadingDocument(
+            title: "Book",
+            fileName: "book.epub",
+            sourceType: .epub,
+            sections: [
+                Self.section(index: 0, title: "Opening", chapterNumber: 1, role: .chapter),
+                Self.section(index: 1, title: "Middle", chapterNumber: 2, role: .chapter),
+                Self.section(index: 2, title: "Ending", chapterNumber: 3, role: .chapter)
+            ]
+        )
+        let tokens = [
+            Self.token("one", id: 0, sourceSectionIndex: 0),
+            Self.token("two", id: 1, sourceSectionIndex: 1),
+            Self.token("three", id: 2, sourceSectionIndex: 2)
+        ]
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, document: document, currentIndex: 1))
+
+        XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.read, .current, .unread])
+    }
+
+    @MainActor
+    func testContentsProgressUsesReadableEntryOrderWhenSectionsHaveGaps() {
+        let document = ReadingDocument(
+            title: "Book",
+            fileName: "book.epub",
+            sourceType: .epub,
+            sections: [
+                Self.section(index: 0, title: "Readable", chapterNumber: 1, role: .chapter),
+                Self.section(index: 1, title: "Empty", chapterNumber: 2, role: .chapter),
+                Self.section(index: 3, title: "Current", chapterNumber: 3, role: .chapter),
+                Self.section(index: 4, title: "Unread", chapterNumber: 4, role: .chapter)
+            ]
+        )
+        let tokens = [
+            Self.token("one", id: 0, sourceSectionIndex: 0),
+            Self.token("current", id: 1, sourceSectionIndex: 3),
+            Self.token("later", id: 2, sourceSectionIndex: 4)
+        ]
+        let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, document: document, currentIndex: 1))
+
+        XCTAssertEqual(viewModel.contentsEntries.map(\.sectionIndex), [0, 3, 4])
+        XCTAssertEqual(viewModel.contentsEntries.map { viewModel.contentsProgress(for: $0) }, [.read, .current, .unread])
+    }
+
+    @MainActor
     func testCurrentLocationPreviewLimitsLargeBooksToVisibleSnippet() {
         let tokens = Self.tokens(count: 20_000)
         let viewModel = ReaderViewModel(session: ReadingSession(tokens: tokens, currentIndex: 10_000))
@@ -314,6 +493,25 @@ final class ReaderViewModelTests: XCTestCase {
             pauseKind: .none,
             sentenceIndex: 0,
             containsNumber: false
+        )
+    }
+
+    private static func section(
+        index: Int,
+        title: String? = nil,
+        pageNumber: Int? = nil,
+        chapterNumber: Int? = nil,
+        role: EPUBSectionRole = .body,
+        level: Int? = nil
+    ) -> ReadingDocumentSection {
+        ReadingDocumentSection(
+            index: index,
+            title: title,
+            pageNumber: pageNumber,
+            chapterNumber: chapterNumber,
+            wordRange: nil,
+            epubNavigationLevel: level,
+            epubSectionRole: role
         )
     }
 }

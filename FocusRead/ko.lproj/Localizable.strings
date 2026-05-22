@@ -396,6 +396,14 @@
 "reader.settings" = "설정";
 "reader.dictionary" = "사전";
 "reader.lookup" = "찾아보기";
+"reader.contents" = "목차";
+"reader.contents.hint" = "목차 목록을 엽니다.";
+"reader.contents.title" = "목차";
+"reader.contents.empty" = "사용 가능한 목차가 없습니다";
+"reader.contents.jump.hint" = "이 섹션으로 이동합니다.";
+"reader.contents.read" = "읽음";
+"reader.contents.current" = "현재";
+"reader.contents.unread" = "읽지 않음";
 "reader.dictionary.hint" = "현재 단어를 사전에서 엽니다.";
 "reader.dictionaryCurrentWord.hint.format" = "사전에서 “%@” 열기.";
 "reader.actionOpen.hint" = "두 번 탭하여 엽니다.";

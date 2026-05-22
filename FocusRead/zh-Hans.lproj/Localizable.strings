@@ -396,6 +396,14 @@
 "reader.settings" = "设置";
 "reader.dictionary" = "词典";
 "reader.lookup" = "查找";
+"reader.contents" = "目录";
+"reader.contents.hint" = "打开目录列表。";
+"reader.contents.title" = "目录";
+"reader.contents.empty" = "没有可用目录";
+"reader.contents.jump.hint" = "跳转到此部分。";
+"reader.contents.read" = "已读";
+"reader.contents.current" = "当前";
+"reader.contents.unread" = "未读";
 "reader.dictionary.hint" = "在词典中打开当前词。";
 "reader.dictionaryCurrentWord.hint.format" = "在词典中打开“%@”。";
 "reader.actionOpen.hint" = "轻点两下打开。";

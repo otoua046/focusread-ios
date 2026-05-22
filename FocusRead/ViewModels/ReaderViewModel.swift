@@ -16,6 +16,23 @@ struct WordParts: Equatable {
     let fullWord: String
 }
 
+struct ReaderContentsEntry: Identifiable, Equatable, Sendable {
+    var id: Int { sectionIndex }
+
+    let sectionIndex: Int
+    let title: String
+    let subtitle: String
+    let epubNavigationLevel: Int?
+    let epubSectionRole: EPUBSectionRole
+    let firstTokenIndex: Int
+}
+
+enum ReaderContentsProgress: Equatable, Sendable {
+    case read
+    case current
+    case unread
+}
+
 struct CurrentLocationPreview: Equatable, Sendable {
     let title: String
     let subtitle: String
@@ -174,6 +191,7 @@ final class ReaderViewModel: ObservableObject {
     @Published var controlsVisible = true
     @Published var lookupRequest: WordLookupRequest?
     @Published var noDefinitionFound = false
+    @Published private(set) var contentsEntries: [ReaderContentsEntry]
 
     init(
         session: ReadingSession,
@@ -204,6 +222,7 @@ final class ReaderViewModel: ObservableObject {
         self.savedReadID = savedReadID
         self.lastPersistedWordIndex = session.currentIndex
         self.cleanupChunks = importedDocument?.cleanupChunks ?? []
+        self.contentsEntries = Self.makeContentsEntries(document: session.document, tokens: session.tokens)
         haptics.prepare()
         startBackgroundAICleanupIfNeeded()
     }
@@ -317,6 +336,14 @@ final class ReaderViewModel: ObservableObject {
         return text.trimmingCharacters(in: edgeCharacters)
     }
 
+    private static func trimmedNonEmpty(_ text: String?) -> String? {
+        guard let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return trimmed
+    }
+
     var sanitizedCurrentWordForLookup: String? {
         guard let firstToken = session.currentTokens.first else { return nil }
         return wordLookupService.sanitizedTerm(from: firstToken.text)
@@ -365,6 +392,31 @@ final class ReaderViewModel: ObservableObject {
 
     var searchableTokens: [ReadingToken] {
         session.tokens
+    }
+
+    var contentsAvailable: Bool {
+        sectionNavigationAvailable
+    }
+
+    var currentContentsSectionIndex: Int? {
+        currentSectionMetadata?.index
+    }
+
+    func contentsProgress(for entry: ReaderContentsEntry) -> ReaderContentsProgress {
+        guard let entryPosition = contentsEntries.firstIndex(where: { $0.sectionIndex == entry.sectionIndex }) else {
+            return .unread
+        }
+
+        guard let currentSectionIndex = currentContentsSectionIndex,
+              let currentPosition = contentsEntries.firstIndex(where: { $0.sectionIndex == currentSectionIndex }) else {
+            return entry.firstTokenIndex < session.currentIndex ? .read : .unread
+        }
+
+        if entryPosition == currentPosition {
+            return .current
+        }
+
+        return entryPosition < currentPosition ? .read : .unread
     }
 
     var locationIndicatorTitle: String {
@@ -416,7 +468,7 @@ final class ReaderViewModel: ObservableObject {
     var sectionNavigationAvailable: Bool {
         switch session.document.sourceType {
         case .pdf, .epub, .image:
-            return session.document.sections.count > 1
+            return contentsEntries.count > 1
         case .pastedText, .txt:
             return false
         }
@@ -782,6 +834,7 @@ final class ReaderViewModel: ObservableObject {
         session.tokens = newTokens
         session.document = ReadingDocument(importedDocument: updatedDocument)
         session.currentIndex = tokenIndex(matching: currentLocation, in: newTokens)
+        contentsEntries = Self.makeContentsEntries(document: session.document, tokens: session.tokens)
     }
 
     private func updateCleanupProgress() {
@@ -1004,26 +1057,124 @@ final class ReaderViewModel: ObservableObject {
     }
 
     private func firstReadableTokenIndex(in sectionIndex: Int) -> Int? {
-        session.tokens.firstIndex { $0.sourceSectionIndex == sectionIndex }
+        contentsEntries.first { $0.sectionIndex == sectionIndex }?.firstTokenIndex
+            ?? session.tokens.firstIndex { $0.sourceSectionIndex == sectionIndex }
     }
 
-    private func sectionHasReadableTokens(_ sectionIndex: Int) -> Bool {
-        firstReadableTokenIndex(in: sectionIndex) != nil
+    static func makeContentsEntries(
+        document: ReadingDocument,
+        tokens: [ReadingToken]
+    ) -> [ReaderContentsEntry] {
+        guard document.sections.count > 1, !tokens.isEmpty else {
+            return []
+        }
+
+        switch document.sourceType {
+        case .pdf, .epub, .image:
+            break
+        case .pastedText, .txt:
+            return []
+        }
+
+        var firstTokenIndexBySection: [Int: Int] = [:]
+        for tokenIndex in tokens.indices {
+            guard let sectionIndex = tokens[tokenIndex].sourceSectionIndex,
+                  firstTokenIndexBySection[sectionIndex] == nil else {
+                continue
+            }
+            firstTokenIndexBySection[sectionIndex] = tokenIndex
+        }
+
+        return document.sections.compactMap { section in
+            guard let firstTokenIndex = firstTokenIndexBySection[section.index] else {
+                return nil
+            }
+
+            return ReaderContentsEntry(
+                sectionIndex: section.index,
+                title: contentsTitle(for: section, sourceType: document.sourceType),
+                subtitle: contentsSubtitle(
+                    for: section,
+                    sourceType: document.sourceType,
+                    firstTokenIndex: firstTokenIndex,
+                    totalTokenCount: tokens.count
+                ),
+                epubNavigationLevel: section.epubNavigationLevel,
+                epubSectionRole: section.epubSectionRole,
+                firstTokenIndex: firstTokenIndex
+            )
+        }
+    }
+
+    private static func contentsTitle(
+        for section: ReadingDocumentSection,
+        sourceType: ReadingDocumentSourceType
+    ) -> String {
+        if let title = trimmedNonEmpty(section.title) {
+            return title
+        }
+
+        switch sourceType {
+        case .pdf, .image:
+            return L10n.format(.readerPageFormat, section.pageNumber ?? section.index + 1)
+        case .epub:
+            return L10n.format(epubContentsKindFormatKey(for: section.epubSectionRole), section.chapterNumber ?? section.index + 1)
+        case .pastedText, .txt:
+            return L10n.format(.readerSectionFormat, section.index + 1)
+        }
+    }
+
+    private static func contentsSubtitle(
+        for section: ReadingDocumentSection,
+        sourceType: ReadingDocumentSourceType,
+        firstTokenIndex: Int,
+        totalTokenCount: Int
+    ) -> String {
+        let wordLocation = L10n.format(.readerWordLocationFormat, firstTokenIndex + 1, totalTokenCount)
+
+        switch sourceType {
+        case .pdf, .image:
+            if let pageNumber = section.pageNumber {
+                return L10n.format(.readerPageLocationFormat, pageNumber, wordLocation)
+            }
+            return wordLocation
+        case .epub:
+            if let chapterNumber = section.chapterNumber, let title = trimmedNonEmpty(section.title) {
+                return "\(L10n.format(.readerChapterWithTitleFormat, chapterNumber, title)) · \(wordLocation)"
+            }
+            if let chapterNumber = section.chapterNumber {
+                return "\(L10n.format(epubContentsKindFormatKey(for: section.epubSectionRole), chapterNumber)) · \(wordLocation)"
+            }
+            return wordLocation
+        case .pastedText, .txt:
+            return wordLocation
+        }
+    }
+
+    private static func epubContentsKindFormatKey(for role: EPUBSectionRole) -> L10n.Key {
+        switch role {
+        case .chapter:
+            return .readerChapterFormat
+        case .part:
+            return .readerPartFormat
+        case .frontMatter, .backMatter, .appendix, .reference, .body:
+            return .readerSectionFormat
+        }
     }
 
     private func readableSectionIndex(before sectionIndex: Int) -> Int? {
-        session.document.sections
-            .map(\.index)
+        contentsEntries
+            .map(\.sectionIndex)
             .filter { $0 < sectionIndex }
             .reversed()
-            .first { sectionHasReadableTokens($0) }
+            .first
     }
 
     private func readableSectionIndex(after sectionIndex: Int) -> Int? {
-        session.document.sections
-            .map(\.index)
+        contentsEntries
+            .map(\.sectionIndex)
             .filter { $0 > sectionIndex }
-            .first { sectionHasReadableTokens($0) }
+            .first
     }
 
     private func triggerHaptic(intensity: CGFloat) {
